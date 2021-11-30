@@ -1,10 +1,11 @@
+package ru.pel.usbddc.entity;
+
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.*;
@@ -20,12 +21,12 @@ import java.util.*;
  * </ul>
  */
 /*
- * Учитывая что для конструирования объекта USBDevice требуется много параметров, как вариант дальнейшей "пробы пера" и
- * прокачки навыков, можно попробовать реализовать создание USBDevice, используя паттерн Строитель/Builder.
+ * Учитывая что для конструирования объекта ru.pel.usbddc.entity.USBDevice требуется много параметров, как вариант дальнейшей "пробы пера" и
+ * прокачки навыков, можно попробовать реализовать создание ru.pel.usbddc.entity.USBDevice, используя паттерн Строитель/Builder.
  * Однако, плюсов применения его в данной версии ПО не вижу пока что - уменьшим количество параметров, увеличим количество
  * классов и интерфесов ради одного типа? Сомнительно... Или не понимаю еще каких-то плюсов применения паттерна.
  * */
-//TODO общие с USBSTOR, USBPRINT поля вынести в Device
+//TODO общие с USBSTOR, USBPRINT поля вынести в ru.pel.usbddc.entity.Device
 public class USBDevice extends Device {
     @Getter
     @Setter
@@ -143,7 +144,7 @@ public class USBDevice extends Device {
         return found;
     }
 
-//TODO в случа удачной реализации перенести в Device class
+//TODO в случа удачной реализации перенести в ru.pel.usbddc.entity.Device class
     public void setField(String fieldName, Object value) {
         //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
         //try-catch навалены дург на друга, надо передалать в более простую логику.

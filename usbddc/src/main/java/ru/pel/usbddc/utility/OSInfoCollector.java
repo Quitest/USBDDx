@@ -1,3 +1,5 @@
+package ru.pel.usbddc.utility;
+
 import lombok.Getter;
 
 import java.io.IOException;
@@ -66,7 +68,7 @@ public class OSInfoCollector {
                 (p, bfa) -> p.getFileName().toString().matches("setupapi\\.dev[0-9_.]*\\.log"))) {
             listLogs = pathStream.collect(Collectors.toList());
         } catch (IOException e) {
-            System.err.println("Косяк при работе OSInfoCollector.getListSetupapiDevLogs()");
+            System.err.println("Косяк при работе ru.pel.usbddc.utility.OSInfoCollector.getListSetupapiDevLogs()");
             e.printStackTrace();
         }
         return listLogs;

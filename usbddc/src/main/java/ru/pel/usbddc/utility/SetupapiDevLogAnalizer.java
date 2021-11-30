@@ -1,3 +1,5 @@
+package ru.pel.usbddc.utility;
+
 import lombok.Setter;
 
 import java.io.*;

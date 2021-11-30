@@ -1,3 +1,7 @@
+package ru.pel.usbddc.utility;
+
+import ru.pel.usbddc.entity.USBDevice;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

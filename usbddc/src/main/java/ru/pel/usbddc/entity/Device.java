@@ -1,3 +1,5 @@
+package ru.pel.usbddc.entity;
+
 import lombok.Getter;
 import lombok.Setter;
 
