@@ -17,8 +17,8 @@ public class RegistryAnalizer {
         String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<USBDevice> usbDevices = new ArrayList<>();
         USBDevice.setUsbIds("usb.ids");
-        List<String> subkeys = WinRegReader.getSubkeys(regKeyUSB);
-        for (String pidvid : subkeys) {
+        List<String> pidVidList = WinRegReader.getSubkeys(regKeyUSB);
+        for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
                 /*if (serialKey.contains("5&7d0600&0&7"))*/ {
@@ -31,7 +31,7 @@ public class RegistryAnalizer {
                     String service = WinRegReader.getValue(serialKey, "Service").orElse("");
                     String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
 
-                    USBDevice currUsbDev = new USBDevice();
+                    USBDevice currUsbDev = new USBDevice(); //TODO спользовтаь паттерн билдер
 
                     Map<String,String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
                     for (Map.Entry<String, String> entry : currValues.entrySet()){

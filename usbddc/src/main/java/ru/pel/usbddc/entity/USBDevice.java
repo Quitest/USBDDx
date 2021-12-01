@@ -32,10 +32,12 @@ import java.util.*;
 @Getter
 @EqualsAndHashCode
 public class USBDevice extends Device {
+    @Getter
+    @Setter
     private static String usbIds; //TODO Организовать хранение пути к файлу в конфиг файле, например conf.xml
-//    private String containerID;
+    //    private String containerID;
     private String friendlyName;
-//    private String hardwareID;
+    //    private String hardwareID;
 //    private String serial;
     private String vid;
     //    @Getter
