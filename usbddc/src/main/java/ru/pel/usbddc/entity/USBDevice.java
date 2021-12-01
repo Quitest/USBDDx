@@ -1,5 +1,6 @@
 package ru.pel.usbddc.entity;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -27,39 +28,22 @@ import java.util.*;
  * классов и интерфесов ради одного типа? Сомнительно... Или не понимаю еще каких-то плюсов применения паттерна.
  * */
 //TODO общие с USBSTOR, USBPRINT поля вынести в ru.pel.usbddc.entity.Device
+@Setter
+@Getter
+@EqualsAndHashCode
 public class USBDevice extends Device {
-    @Getter
-    @Setter
     private static String usbIds; //TODO Организовать хранение пути к файлу в конфиг файле, например conf.xml
-    //    @Getter
-//    @Setter
 //    private String containerID;
-    @Getter
-    @Setter
     private String friendlyName;
-    //    @Getter
-//    @Setter
 //    private String hardwareID;
-//    @Getter
-//    @Setter
 //    private String serial;
-    @Getter
     private String vid;
     //    @Getter
 //    private String vendorName;
-    @Getter
     private String pid;
-    @Setter
-    @Getter
     private String parentIdPrefix;
-    @Setter
-    @Getter
     private String address;
-    @Setter
-    @Getter
     private String locationInformation;
-    @Setter
-    @Getter
     private String lowerFilters;
 
     //TODO выполнить классификацию USB устройства. См. подробнее на http://www.linux-usb.org/usb-ids.html Все данные
@@ -70,8 +54,6 @@ public class USBDevice extends Device {
     //  ДатуВремя из разных источников для возможности поиска попыток чистки системы от следов.
     //    @Getter
 //    private String productName;
-    @Getter
-    @Setter
     private String service; //TODO узнать назначение одноименного параметра в реестре винды
 
     // TODO запрос данных о классе, попробовать реализовать через интернет, прямо с сайта.
@@ -117,13 +99,13 @@ public class USBDevice extends Device {
         return nameFound;
     }
 
-        /**
+    /**
      * Метод определяет имя производителя по его VID. Данные берутся из файла
      * <a href = http://www.linux-usb.org/usb.ids>usb.ids</a>. Файл должен находиться рядом с jar
      *
      * @return true - если имя производителя определено и установлено. false - в иных случаях.
      */
-        //FIXME очень долго отрабатывает
+    //FIXME очень долго отрабатывает
     public boolean determineVendorName() {
         boolean found = false;
         super.vendorName = "";
@@ -144,7 +126,7 @@ public class USBDevice extends Device {
         return found;
     }
 
-//TODO в случа удачной реализации перенести в ru.pel.usbddc.entity.Device class
+    //TODO в случа удачной реализации перенести в ru.pel.usbddc.entity.Device class
     public void setField(String fieldName, Object value) {
         //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
         //try-catch навалены дург на друга, надо передалать в более простую логику.
@@ -164,7 +146,7 @@ public class USBDevice extends Device {
                 //noSuchFieldException.printStackTrace();
             }
         }
-        if (field != null){
+        if (field != null) {
             field.setAccessible(true);
             try {
                 field.set(this, value);
@@ -185,7 +167,6 @@ public class USBDevice extends Device {
         this.vid = vid;
         this.pid = pid;
     }
-
 
 
     @Override
