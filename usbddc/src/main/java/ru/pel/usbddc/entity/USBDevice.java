@@ -3,6 +3,8 @@ package ru.pel.usbddc.entity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -10,8 +12,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.*;
-
-//TODO реализовать сбор информации из setupapi.dev.log
 
 /**
  * Класс предназначен для описания USB устройства.
@@ -32,34 +32,18 @@ import java.util.*;
 @Getter
 @EqualsAndHashCode
 public class USBDevice extends Device {
+    private static Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
-    private static String usbIds; //TODO Организовать хранение пути к файлу в конфиг файле, например conf.xml
-    //    private String containerID;
+    private static String usbIds;
     private String friendlyName;
-    //    private String hardwareID;
-//    private String serial;
     private String vid;
-    //    @Getter
-//    private String vendorName;
     private String pid;
     private String parentIdPrefix;
     private String address;
     private String locationInformation;
     private String lowerFilters;
-
-    //TODO выполнить классификацию USB устройства. См. подробнее на http://www.linux-usb.org/usb-ids.html Все данные
-    //  также есть и в usb.ids. Думаю, это поле стоит реализовать как тип USBDeviceClasses
-    //TODO запрос данных о классе, попробовать реализовать через интернет, прямо с сайта.
-
-    //TODO сделать поле хранения ДатыВремени первого и последнего использования USB устройства. Поле должно хранить
-    //  ДатуВремя из разных источников для возможности поиска попыток чистки системы от следов.
-    //    @Getter
-//    private String productName;
-    private String service; //TODO узнать назначение одноименного параметра в реестре винды
-
-    // TODO запрос данных о классе, попробовать реализовать через интернет, прямо с сайта.
-    // TODO запрос данных о классе устройства, попробовать реализовать через интернет, прямо с сайта.
+//    private String service; //TODO узнать назначение одноименного параметра в реестре винды
 
     /**
      * Метод определяет имя устройства (продукта) по его PID. Данные берутся из файла
@@ -146,6 +130,8 @@ public class USBDevice extends Device {
                 field = Device.class.getDeclaredField(fieldName);
             } catch (NoSuchFieldException noSuchFieldException) {
                 //noSuchFieldException.printStackTrace();
+//                System.err.println("Параметр " + fieldName + " не представлен в USBDevice.class и Device.class");
+                logger.warn("WARN: ", noSuchFieldException);
             }
         }
         if (field != null) {
@@ -179,7 +165,7 @@ public class USBDevice extends Device {
         //WTF Как делать лучше или допустимо: один раз получить символ новой строки, сохранить его в String и потом
         // использовать в цикле или же в цикле напрямую использовать System.lineSeparator() ?
         final String NEW_LINE = System.lineSeparator();
-        StringBuilder sb = new StringBuilder("");
+        StringBuilder sb = new StringBuilder();
         try {
             Field[] fieldsThis = USBDevice.class.getDeclaredFields();
             Field[] fieldsSuper = Device.class.getDeclaredFields();
