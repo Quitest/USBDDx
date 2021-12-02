@@ -31,7 +31,8 @@ public class RegistryAnalizer {
                     String service = WinRegReader.getValue(serialKey, "Service").orElse("");
                     String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
 
-                    USBDevice currUsbDev = new USBDevice(); //TODO спользовтаь паттерн билдер
+//                    USBDevice currUsbDev = new USBDevice(); //TODO спользовтаь паттерн билдер
+                    USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
 
                     Map<String,String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
                     for (Map.Entry<String, String> entry : currValues.entrySet()){
@@ -41,16 +42,10 @@ public class RegistryAnalizer {
 //                    currUsbDev.setFriendlyName(friendlyName);
 //                    currUsbDev.setHardwareID(hardwareID);
 //                    currUsbDev.setService(service);
+                    currUsbDev.withSerial(serial);
+                    currUsbDev.withVidPid(vid,pid);
 
-
-                    currUsbDev.setSerial(serial);
-                    currUsbDev.setVidPid(vid,pid);
-                    currUsbDev.determineVendorName();
-                    currUsbDev.determineProductName();
-
-
-
-                    usbDevices.add(currUsbDev);
+                    usbDevices.add(currUsbDev.build());
                 }
             }
         }
@@ -67,8 +62,9 @@ public class RegistryAnalizer {
             List<String> serials = WinRegReader.getSubkeys(pidvid);
             for (String serial : serials){
                 Map<String,String> valueList = WinRegReader.getAllValuesInKey(serial).get();
-                USBDevice currDevice=new USBDevice();
+                USBDevice.Builder currDevice=USBDevice.Builder.builder();
                 valueList.forEach(currDevice::setField);
+                usbDevices.add(currDevice.build());
             }
         }
         return usbDevices;

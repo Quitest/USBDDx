@@ -27,8 +27,8 @@ public abstract class Device {
     protected String productName;
     protected String mfg;    //REG_SZ    @oem30.inf,%mfg%;HP
 
-    public abstract boolean determineVendorName();
-    public abstract boolean determineProductName();
+//    public abstract boolean determineVendorName();
+//    public abstract boolean determineProductName();
 
 
 }

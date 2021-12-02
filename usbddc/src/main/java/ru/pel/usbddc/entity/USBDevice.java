@@ -28,7 +28,7 @@ import java.util.*;
  * классов и интерфесов ради одного типа? Сомнительно... Или не понимаю еще каких-то плюсов применения паттерна.
  * */
 //TODO общие с USBSTOR, USBPRINT поля вынести в ru.pel.usbddc.entity.Device
-@Setter
+//@Setter
 @Getter
 @EqualsAndHashCode
 public class USBDevice extends Device {
@@ -36,14 +36,27 @@ public class USBDevice extends Device {
     @Getter
     @Setter
     private static String usbIds;
-    private String friendlyName;
-    private String vid;
-    private String pid;
-    private String parentIdPrefix;
-    private String address;
-    private String locationInformation;
-    private String lowerFilters;
-//    private String service; //TODO узнать назначение одноименного параметра в реестре винды
+    private final String NOT_DEFINE = "not defined";
+    private final String friendlyName;
+    private final String vid;
+    private final String pid;
+    private final String parentIdPrefix;
+    private final String address;
+    private final String locationInformation;
+    private final String lowerFilters;
+//    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
+
+    private USBDevice(Builder builder) {
+        this.friendlyName = builder.friendlyName;
+        this.vid = builder.vid;
+        this.pid = builder.pid;
+        this.parentIdPrefix = builder.parentIdPrefix;
+        this.address = builder.address;
+        this.locationInformation = builder.locationInformation;
+        this.lowerFilters = builder.lowerFilters;
+        this.vendorName = builder.vendorName;
+        this.productName = builder.productName;
+    }
 
     /**
      * Метод определяет имя устройства (продукта) по его PID. Данные берутся из файла
@@ -52,38 +65,38 @@ public class USBDevice extends Device {
      * @return true - если имя устройства (продукта) определено и установлено. false - в иных случаях.
      */
     //FIXME очень долго отрабатывает
-    public boolean determineProductName() {
-        if (vid.equals("<not defined>")) {
-            return false;
-        }
-        //парсинг файла usb.ids на наличие человеческого имени устройства и PID
-        //код лажа, но работает. Желательно переделать его на более читаемый вариант.
-        boolean nameFound = false;
-        try (Scanner scanner = new Scanner(Paths.get(usbIds))) {
-            boolean vendorFound = false;
-            //в цикле читаются строки из файла usb.ids для поиска Product name. Очевидно. :)
-            while (scanner.hasNextLine()) {
-                String currStr = scanner.nextLine();
-                if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
-                    vendorFound = true;
-                    continue;
-                }
-                if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
-                    super.productName = currStr.split(" {2}")[1];
-                    nameFound = true;
-                    break;
-                }
-                if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
-                    super.productName = "<not defined>";
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return nameFound;
-    }
+//    public boolean determineProductName() {
+//        if (vid.equals(NOT_DEFINE)) {
+//            return false;
+//        }
+//        //парсинг файла usb.ids на наличие человеческого имени устройства и PID
+//        //код лажа, но работает. Желательно переделать его на более читаемый вариант.
+//        boolean nameFound = false;
+//        try (Scanner scanner = new Scanner(Paths.get(usbIds))) {
+//            boolean vendorFound = false;
+//            //в цикле читаются строки из файла usb.ids для поиска Product name. Очевидно. :)
+//            while (scanner.hasNextLine()) {
+//                String currStr = scanner.nextLine();
+//                if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
+//                    vendorFound = true;
+//                    continue;
+//                }
+//                if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
+//                    super.productName = currStr.split(" {2}")[1];
+//                    nameFound = true;
+//                    break;
+//                }
+//                if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
+//                    super.productName = NOT_DEFINE;
+//                    break;
+//                }
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        return nameFound;
+//    }
 
     /**
      * Метод определяет имя производителя по его VID. Данные берутся из файла
@@ -92,69 +105,63 @@ public class USBDevice extends Device {
      * @return true - если имя производителя определено и установлено. false - в иных случаях.
      */
     //FIXME очень долго отрабатывает
-    public boolean determineVendorName() {
-        boolean found = false;
-        super.vendorName = "";
-        try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(usbIds))) {
-            super.vendorName = usbIdsReader.lines()
-                    .filter(l -> l.matches(vid + ".+"))//фильтруем строки, начинающиеся с VendorID
-                    .map(s -> s.split(" {2}")[1])   // делитель - два пробела, т.о.:
-                    // [0] - vid
-                    // [1] - vendor name (имя производителя)
-                    .findFirst().orElse("<not defined>");
-
-            found = super.vendorName.trim()
-                    .matches("\\S+"); // если в имени есть хотябы один любой символ кроме [ \t\n\x0B\f\r],
-            // то поиск считается усешным.
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return found;
-    }
+//    public boolean determineVendorName() {
+//        boolean found = false;
+//        super.vendorName = "";
+//        try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(usbIds))) {
+//            super.vendorName = usbIdsReader.lines()
+//                    .filter(l -> l.matches(vid + ".+"))//фильтруем строки, начинающиеся с VendorID
+//                    .map(s -> s.split(" {2}")[1])   // делитель - два пробела, т.о.:
+//                    // [0] - vid
+//                    // [1] - vendor name (имя производителя)
+//                    .findFirst().orElse(NOT_DEFINE);
+//
+//            found = super.vendorName.trim()
+//                    .matches("\\S+"); // если в имени есть хотя бы один любой символ кроме [ \t\n\x0B\f\r],
+//            // то поиск считается успешным.
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return found;
+//    }
 
     //TODO в случа удачной реализации перенести в ru.pel.usbddc.entity.Device class
-    public void setField(String fieldName, Object value) {
-        //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
-        //try-catch навалены дург на друга, надо передалать в более простую логику.
-        char[] chars = fieldName.toCharArray();
-        chars[0] = Character.toLowerCase(chars[0]);
-        fieldName = new String(chars);
+//    public void setField(String fieldName, Object value) {
+//        //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
+//        //try-catch навалены дург на друга, надо передалать в более простую логику.
+//        char[] chars = fieldName.toCharArray();
+//        chars[0] = Character.toLowerCase(chars[0]);
+//        fieldName = new String(chars);
+//
+//        Field field = null;
+//        try {
+////            field = this.getClass().getDeclaredField(fieldName);
+//            field = USBDevice.class.getDeclaredField(fieldName);
+//        } catch (NoSuchFieldException e) {
+//            try {
+////                field = super.getClass().getDeclaredField(fieldName);
+//                field = Device.class.getDeclaredField(fieldName);
+//            } catch (NoSuchFieldException noSuchFieldException) {
+//                //noSuchFieldException.printStackTrace();
+////                System.err.println("Параметр " + fieldName + " не представлен в USBDevice.class и Device.class");
+//                logger.warn("WARN: ", noSuchFieldException);
+//            }
+//        }
+//        if (field != null) {
+//            field.setAccessible(true);
+//            try {
+//                field.set(this, value);
+//            } catch (IllegalAccessException illegalAccessException) {
+//                illegalAccessException.printStackTrace();
+//            }
+//        }
+//    }
 
-        Field field = null;
-        try {
-//            field = this.getClass().getDeclaredField(fieldName);
-            field = USBDevice.class.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
-            try {
-//                field = super.getClass().getDeclaredField(fieldName);
-                field = Device.class.getDeclaredField(fieldName);
-            } catch (NoSuchFieldException noSuchFieldException) {
-                //noSuchFieldException.printStackTrace();
-//                System.err.println("Параметр " + fieldName + " не представлен в USBDevice.class и Device.class");
-                logger.warn("WARN: ", noSuchFieldException);
-            }
-        }
-        if (field != null) {
-            field.setAccessible(true);
-            try {
-                field.set(this, value);
-            } catch (IllegalAccessException illegalAccessException) {
-                illegalAccessException.printStackTrace();
-            }
-        }
-    }
 
-    /**
-     * Метод единовременно устанавливает значения Vendor ID и Product ID. Для  корректного определения Product ID
-     * необходимо наличие Vendor ID, т.к. у разных Vendor ID могут быть одинаковые Product ID.
-     *
-     * @param vid Vendor ID
-     * @param pid Product ID
-     */
-    public void setVidPid(String vid, String pid) {
-        this.vid = vid;
-        this.pid = pid;
-    }
+//    public void setVidPid(String vid, String pid) {
+//        this.vid = vid;
+//        this.pid = pid;
+//    }
 
 
     @Override
@@ -185,5 +192,176 @@ public class USBDevice extends Device {
             e.printStackTrace();
         }
         return sb.toString();
+    }
+
+    public static class Builder {
+        public String vendorName;
+        public String productName;
+        //        private static String usbIds = USBDevice.usbIds;
+        private String friendlyName;
+        private String vid;
+        private String pid;
+        private String parentIdPrefix;
+        private String address;
+        private String locationInformation;
+        private String lowerFilters;
+        private String serial;
+        //    private  String service; //TODO узнать назначение одноименного параметра в реестре винды
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public Builder withFriendlyName(String friendlyName) {
+            this.friendlyName = friendlyName;
+            return this;
+        }
+
+        //FIXME избавиться от двойного прохода файла
+        public Builder withVidPid(String vid, String pid) {
+            this.vid = vid;
+            this.pid = pid;
+            try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
+                vendorName = usbIdsReader.lines()
+                        .filter(l -> l.matches(vid + ".+"))//фильтруем строки, начинающиеся с VendorID
+                        .map(s -> s.split(" {2}")[1])   // делитель - два пробела, т.о.:
+                        // [0] - vid
+                        // [1] - vendor name (имя производителя)
+                        .findFirst().orElse("");
+
+//                found = super.vendorName.trim()
+//                        .matches("\\S+"); // если в имени есть хотя бы один любой символ кроме [ \t\n\x0B\f\r],
+                // то поиск считается успешным.
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            if (this.vid.isEmpty()) {
+                productName="";
+                return this;
+            }
+            //парсинг файла usb.ids на наличие человеческого имени устройства и PID
+            //код лажа, но работает. Желательно переделать его на более читаемый вариант.
+//            boolean nameFound = false;
+            try (Scanner scanner = new Scanner(Paths.get(USBDevice.usbIds))) {
+                boolean vendorFound = false;
+                //в цикле читаются строки из файла usb.ids для поиска Product name. Очевидно. :)
+                while (scanner.hasNextLine()) {
+                    String currStr = scanner.nextLine();
+                    if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
+                        vendorFound = true;
+                        continue;
+                    }
+                    if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
+                        productName = currStr.split(" {2}")[1];
+//                        nameFound = true;
+                        break;
+                    }
+                    if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
+                        productName = "";
+                        break;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return this;
+        }
+
+//        public Builder withPid(String pid) {
+//            this.pid = pid;
+//            if (vid.isEmpty()) {
+//                productName="";
+//                return this;
+//            }
+//            //парсинг файла usb.ids на наличие человеческого имени устройства и PID
+//            //код лажа, но работает. Желательно переделать его на более читаемый вариант.
+////            boolean nameFound = false;
+//            try (Scanner scanner = new Scanner(Paths.get(USBDevice.usbIds))) {
+//                boolean vendorFound = false;
+//                //в цикле читаются строки из файла usb.ids для поиска Product name. Очевидно. :)
+//                while (scanner.hasNextLine()) {
+//                    String currStr = scanner.nextLine();
+//                    if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
+//                        vendorFound = true;
+//                        continue;
+//                    }
+//                    if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
+//                        productName = currStr.split(" {2}")[1];
+////                        nameFound = true;
+//                        break;
+//                    }
+//                    if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
+//                        productName = "";
+//                        break;
+//                    }
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            return this;
+//        }
+
+        public Builder withParentIdPrefix(String parentIdPrefix) {
+            this.parentIdPrefix = parentIdPrefix;
+            return this;
+        }
+
+        public Builder withAddress(String address) {
+            this.address = address;
+            return this;
+        }
+
+        public Builder withLocationInformation(String locationInformation) {
+            this.locationInformation = locationInformation;
+            return this;
+        }
+
+        public Builder withLowerFilters(String lowerFilters) {
+            this.lowerFilters = lowerFilters;
+            return this;
+        }
+
+        public Builder withSerial(String serial){
+            this.serial = serial;
+            return this;
+        }
+
+        public USBDevice build() {
+            return new USBDevice(this);
+        }
+
+        public void setField(String fieldName, Object value) {
+            //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
+            //try-catch навалены дург на друга, надо передалать в более простую логику.
+            char[] chars = fieldName.toCharArray();
+            chars[0] = Character.toLowerCase(chars[0]);
+            fieldName = new String(chars);
+
+            Field field = null;
+            try {
+//            field = this.getClass().getDeclaredField(fieldName);
+                field = USBDevice.Builder.class.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+//                try {
+////                field = super.getClass().getDeclaredField(fieldName);
+//                    field = Device.class.getDeclaredField(fieldName);
+//                } catch (NoSuchFieldException noSuchFieldException) {
+//                    //noSuchFieldException.printStackTrace();
+////                System.err.println("Параметр " + fieldName + " не представлен в USBDevice.class и Device.class");
+//
+//                }
+                logger.warn("WARN: ", e);
+            }
+            if (field != null) {
+                field.setAccessible(true);
+                try {
+                    field.set(this, value);
+                } catch (IllegalAccessException illegalAccessException) {
+                    illegalAccessException.printStackTrace();
+                }
+            }
+        }
     }
 }
