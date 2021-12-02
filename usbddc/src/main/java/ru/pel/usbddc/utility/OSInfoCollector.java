@@ -17,23 +17,16 @@ import java.util.stream.Stream;
  * Класс предназначен для получения сведений об операционной системе, необходимых для сбора исходных данных
  * для анализатора.
  */
+@Getter
 public class OSInfoCollector {
-    @Getter
-    private String osName = null;
-    @Getter
-    private double osVersion = 0.0;
-    @Getter
-    private String osArch = null;
-    @Getter
-    private Path tmpdir = null;
-    @Getter
-    private String username = null;
-    @Getter
-    private Path homedir = null;
-    @Getter
-    private Path currentdir = null;
-    @Getter
-    private Path systemroot = null;
+    private String osName;
+    private double osVersion;
+    private String osArch;
+    private Path tmpdir;
+    private String username;
+    private Path homedir;
+    private Path currentdir;
+    private Path systemroot;
     //TODO надо получить имя ПК
     //TODO надо получить сетевые настройки для идентификации ПК в сети
 
@@ -94,7 +87,7 @@ public class OSInfoCollector {
                 .orElse(systemroot.toString());
 
         if (osVersion >= 6.1) { // 6.1 - версия Windows 7 в линейке Windows NT
-            logPath = systemroot.toString() + "\\inf";
+            logPath = systemroot + "\\inf";
         }
         //FIXME выкинуть имя файла из return'а
         return Paths.get(logPath + "\\setupapi.dev.log");
@@ -111,7 +104,7 @@ public class OSInfoCollector {
         //Почему? Да просто захотелось попробовать эту рефлексию. Плюс количество полей класса может меняться, и что бы
         //не лазить в метод лишний раз, решено автоматизировать немного.
         final String NEW_LINE = System.lineSeparator();
-        StringBuilder sb = new StringBuilder("");
+        StringBuilder sb = new StringBuilder();
         try {
             Field[] fields = OSInfoCollector.class.getDeclaredFields();
 
