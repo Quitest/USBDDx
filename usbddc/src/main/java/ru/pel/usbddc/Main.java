@@ -1,4 +1,4 @@
-package ru.pel.usbddc.legacy;
+package ru.pel.usbddc;
 /**
  * USBDDC - USB devices data collector
  */

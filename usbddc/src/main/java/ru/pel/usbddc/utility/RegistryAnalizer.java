@@ -14,16 +14,16 @@ import java.util.regex.Pattern;
  */
 public class RegistryAnalizer {
     public static List<USBDevice> getUSBDevices() {
-        String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
+        String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
         List<USBDevice> usbDevices = new ArrayList<>();
         USBDevice.setUsbIds("usb.ids");
         List<String> pidVidList = WinRegReader.getSubkeys(regKeyUSB);
         for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
-                /*if (serialKey.contains("5&7d0600&0&7"))*/ {
-                    String containerID = WinRegReader.getValue(serialKey, "ContainerID").orElse("");
-                    String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<N/A>");
+                if (serialKey.contains("9000938F29B1F646")) {
+                    String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
+                    String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
                     String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
                     String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
                     String[] tmpArr = serialKey.split("\\\\");
@@ -38,12 +38,13 @@ public class RegistryAnalizer {
                     for (Map.Entry<String, String> entry : currValues.entrySet()){
                         currUsbDev.setField(entry.getKey(),entry.getValue());
                     }
-//                    currUsbDev.setContainerID(containerID);
-//                    currUsbDev.setFriendlyName(friendlyName);
-//                    currUsbDev.setHardwareID(hardwareID);
-//                    currUsbDev.setService(service);
-                    currUsbDev.withSerial(serial);
-                    currUsbDev.withVidPid(vid,pid);
+
+                    currUsbDev
+                            .withCompatibleIDs(compatibleIDs)
+                            .withHardwareId(hardwareID)
+                            .withFriendlyName(friendlyName)
+                            .withSerial(serial)
+                            .withVidPid(vid,pid);
 
                     usbDevices.add(currUsbDev.build());
                 }

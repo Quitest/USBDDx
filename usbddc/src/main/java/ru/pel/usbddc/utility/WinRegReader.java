@@ -112,7 +112,7 @@ public class WinRegReader {
                 return Optional.empty();
             }
 
-            String[] parsed = output.split("\\s+"); //в оригинале регулярка была "\t", что давало неверный результат,
+            String[] parsed = output.split("\\s{4}"); //в оригинале регулярка была "\t", что давало неверный результат,
             // т.к. в output деление идет четырьмя символами пробела
             return Optional.of(parsed[parsed.length - 1]);
         } catch (Exception e) {

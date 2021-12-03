@@ -27,12 +27,11 @@ import java.util.*;
  * Однако, плюсов применения его в данной версии ПО не вижу пока что - уменьшим количество параметров, увеличим количество
  * классов и интерфесов ради одного типа? Сомнительно... Или не понимаю еще каких-то плюсов применения паттерна.
  * */
-//TODO общие с USBSTOR, USBPRINT поля вынести в ru.pel.usbddc.entity.Device
 //@Setter
 @Getter
 @EqualsAndHashCode
 public class USBDevice extends Device {
-    private static Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
     private static String usbIds;
@@ -40,22 +39,25 @@ public class USBDevice extends Device {
     private final String friendlyName;
     private final String vid;
     private final String pid;
-    private final String parentIdPrefix;
-    private final String address;
-    private final String locationInformation;
-    private final String lowerFilters;
+//    private final String parentIdPrefix;
+//    private final String address;
+//    private final String locationInformation;
+//    private final String lowerFilters;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
 
     private USBDevice(Builder builder) {
+        super();
         this.friendlyName = builder.friendlyName;
         this.vid = builder.vid;
         this.pid = builder.pid;
-        this.parentIdPrefix = builder.parentIdPrefix;
-        this.address = builder.address;
-        this.locationInformation = builder.locationInformation;
-        this.lowerFilters = builder.lowerFilters;
+//        this.parentIdPrefix = builder.parentIdPrefix;
+//        this.address = builder.address;
+//        this.locationInformation = builder.locationInformation;
+//        this.lowerFilters = builder.lowerFilters;
         this.vendorName = builder.vendorName;
         this.productName = builder.productName;
+        this.serial = builder.serial;
+        this.isSerialOSGenerated = builder.isSerialOSGenerated;
     }
 
     /**
@@ -195,21 +197,40 @@ public class USBDevice extends Device {
     }
 
     public static class Builder {
-        public String vendorName;
-        public String productName;
+        private String compatibleIDs;
+        private String deviceDesc;
+        private String hardwareID;
+        private String vendorName;
+        private String productName;
         //        private static String usbIds = USBDevice.usbIds;
         private String friendlyName;
         private String vid;
         private String pid;
-        private String parentIdPrefix;
-        private String address;
-        private String locationInformation;
-        private String lowerFilters;
+//        private String parentIdPrefix;
+//        private String address;
+//        private String locationInformation;
+//        private String lowerFilters;
         private String serial;
-        //    private  String service; //TODO узнать назначение одноименного параметра в реестре винды
+        private boolean isSerialOSGenerated;
+        //    private  String service;
 
         public static Builder builder() {
             return new Builder();
+        }
+
+        public Builder withCompatibleIDs(String compatibleIDs){
+            this.compatibleIDs = compatibleIDs;
+            return this;
+        }
+
+        public Builder withDeviceDesc(String deviceDesc){
+            this.deviceDesc = deviceDesc;
+            return this;
+        }
+
+        public Builder withHardwareId(String hardwareID){
+            this.hardwareID = hardwareID;
+            return this;
         }
 
         public Builder withFriendlyName(String friendlyName) {
@@ -303,28 +324,29 @@ public class USBDevice extends Device {
 //            return this;
 //        }
 
-        public Builder withParentIdPrefix(String parentIdPrefix) {
-            this.parentIdPrefix = parentIdPrefix;
-            return this;
-        }
+//        public Builder withParentIdPrefix(String parentIdPrefix) {
+//            this.parentIdPrefix = parentIdPrefix;
+//            return this;
+//        }
 
-        public Builder withAddress(String address) {
-            this.address = address;
-            return this;
-        }
+//        public Builder withAddress(String address) {
+//            this.address = address;
+//            return this;
+//        }
 
-        public Builder withLocationInformation(String locationInformation) {
-            this.locationInformation = locationInformation;
-            return this;
-        }
+//        public Builder withLocationInformation(String locationInformation) {
+//            this.locationInformation = locationInformation;
+//            return this;
+//        }
 
-        public Builder withLowerFilters(String lowerFilters) {
-            this.lowerFilters = lowerFilters;
-            return this;
-        }
+//        public Builder withLowerFilters(String lowerFilters) {
+//            this.lowerFilters = lowerFilters;
+//            return this;
+//        }
 
         public Builder withSerial(String serial){
             this.serial = serial;
+            isSerialOSGenerated = serial.charAt(1) == '&';
             return this;
         }
 
@@ -332,9 +354,15 @@ public class USBDevice extends Device {
             return new USBDevice(this);
         }
 
+        /**
+         * @deprecated Рефлексия в данном случае = выстрел в ногу.
+         * @param fieldName
+         * @param value
+         */
+        @Deprecated(forRemoval = true)
         public void setField(String fieldName, Object value) {
             //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
-            //try-catch навалены дург на друга, надо передалать в более простую логику.
+            //try-catch навалены друг на друга, надо переделать в более простую логику.
             char[] chars = fieldName.toCharArray();
             chars[0] = Character.toLowerCase(chars[0]);
             fieldName = new String(chars);
