@@ -13,11 +13,13 @@ import java.util.regex.Pattern;
  * Предназначен для сбора информации о USB устройствах из рестра ОС Windows.
  */
 public class RegistryAnalizer {
+    private final static String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
+
     public static List<USBDevice> getUSBDevices() {
-        String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
+//        String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<USBDevice> usbDevices = new ArrayList<>();
         USBDevice.setUsbIds("usb.ids");
-        List<String> pidVidList = WinRegReader.getSubkeys(regKeyUSB);
+        List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
         for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
@@ -55,8 +57,8 @@ public class RegistryAnalizer {
     }
 
     public static List<USBDevice> getUSBDevicesWithAutoFilling() {
-        String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
-        List<String> subkeys = WinRegReader.getSubkeys(regKeyUSB);
+//        String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
+        List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
         USBDevice.setUsbIds("usb.ids");
         List<USBDevice> usbDevices = new ArrayList<>();
         for (String pidvid : subkeys) {

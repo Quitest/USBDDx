@@ -27,7 +27,7 @@ import java.util.*;
  * Однако, плюсов применения его в данной версии ПО не вижу пока что - уменьшим количество параметров, увеличим количество
  * классов и интерфесов ради одного типа? Сомнительно... Или не понимаю еще каких-то плюсов применения паттерна.
  * */
-//@Setter
+
 @Getter
 @EqualsAndHashCode
 public class USBDevice extends Device {
@@ -193,7 +193,7 @@ public class USBDevice extends Device {
             try {
                 field = USBDevice.Builder.class.getDeclaredField(fieldName);
             } catch (NoSuchFieldException e) {
-                logger.warn("WARN: {} = {}", e, value);
+//                logger.warn("WARN: {} = {}", e, value);
             }
             if (field != null) {
                 field.setAccessible(true);
