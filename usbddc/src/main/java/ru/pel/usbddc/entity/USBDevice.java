@@ -121,6 +121,7 @@ public class USBDevice extends Device {
         }
 
         //FIXME избавиться от двойного прохода файла
+        //TODO для ускорения работы: подумать над отображением файла в память.
         public Builder withVidPid(String vid, String pid) {
             this.vid = vid;
             this.pid = pid;
@@ -131,6 +132,12 @@ public class USBDevice extends Device {
                         // [0] - vid
                         // [1] - vendor name (имя производителя)
                         .findFirst().orElse("");
+//                String vendorList = usbIdsReader.lines()
+                        //(058f  (.+)\s)(\t.+\s)*(\t(6387  (.+))\s)
+//                        .filter(l-> l.matches("("+vid+".+\\s)(\\s.+\\s)*")) //найти блок VID со всеми PID. или без PID'ов
+//                        .findFirst().orElse("");
+//                vendorName = vendorList.matches()
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
