@@ -25,27 +25,13 @@ public class Main {
         writer.println("\nTESTING ru.pel.usbddc.utility.RegistryAnalizer.getUSBDevices()");
         List<USBDevice> usbDevices = RegistryAnalizer.getUSBDevices();
         usbDevices.stream()
-//                .filter(d->d.getVid()!=null)
                 .forEach(System.out::println);
         usbDevices.forEach(writer::println);
 
-//        System.out.println("\nTESTING getInstallDateTime()");
-//        ru.pel.usbddc.utility.SetupapiDevLogAnalizer.setPathToLog(new ru.pel.usbddc.utility.OSInfoCollector().getPathToSetupapiDevLog());
-//        for (ru.pel.usbddc.entity.USBDevice d : usbDevices){
-//            String serial = d.getSerial();
-//            LocalDateTime td = new ru.pel.usbddc.utility.SetupapiDevLogAnalizer().getInstallDateTime(serial).orElse(LocalDateTime.MIN);
-//            System.out.printf("USB VID/PID: %5s/%-5S | Install date: %s %n",d.getVid(), d.getPid(),
-//                    DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss").format(td));
-//        }
+        RegistryAnalizer.getMountedDevices().forEach(
+                (k,v) -> System.out.println(k+" = "+v)
+        );
 
-//        System.out.println("\nTESTING getAllValuesInKey()");
-//        Map<String, String> values = ru.pel.usbddc.utility.WinRegReader
-//                .getAllValuesInKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB\\" +
-//                        "VID_125F&PID_312B\\1492710242260098").get();
-//        values.forEach((k, v) -> System.out.println(k + " = " + v));
-
-//        List<String> l =ru.pel.usbddc.utility.WinRegReader.getSubkeys("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB\\VID_125F&PID_312B");
-//                l.forEach(System.out::println);
         writer.close();
     }
 }

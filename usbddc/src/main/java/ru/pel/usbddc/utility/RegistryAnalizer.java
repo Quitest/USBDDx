@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
  */
 public class RegistryAnalizer {
     private final static String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
+    private final static String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
 
     public static List<USBDevice> getUSBDevices() {
 //        String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
@@ -54,6 +55,17 @@ public class RegistryAnalizer {
         }
 
         return usbDevices;
+    }
+
+    /**
+     * Метод собирает сведения о смонтированных разделах.
+     * @return
+     */
+    public static Map<String, String> getMountedDevices() {
+        return WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
+//        for (Map.Entry<String,String> entry : mountedDevicesList.entrySet()){
+//            System.out.println();
+//        }
     }
 
     public static List<USBDevice> getUSBDevicesWithAutoFilling() {
