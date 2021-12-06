@@ -14,14 +14,15 @@ import java.util.regex.Pattern;
  */
 public class RegistryAnalizer {
     public static List<USBDevice> getUSBDevices() {
-        String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
+        String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<USBDevice> usbDevices = new ArrayList<>();
         USBDevice.setUsbIds("usb.ids");
         List<String> pidVidList = WinRegReader.getSubkeys(regKeyUSB);
         for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
-                if (serialKey.contains("9000938F29B1F646")) {
+                /*if (serialKey.contains("9000938F29B1F646"))*/
+                {
                     String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
                     String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
                     String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
@@ -31,12 +32,11 @@ public class RegistryAnalizer {
                     String service = WinRegReader.getValue(serialKey, "Service").orElse("");
                     String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
 
-//                    USBDevice currUsbDev = new USBDevice(); //TODO спользовтаь паттерн билдер
                     USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
 
-                    Map<String,String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
-                    for (Map.Entry<String, String> entry : currValues.entrySet()){
-                        currUsbDev.setField(entry.getKey(),entry.getValue());
+                    Map<String, String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
+                    for (Map.Entry<String, String> entry : currValues.entrySet()) {
+                        currUsbDev.setField(entry.getKey(), entry.getValue());
                     }
 
                     currUsbDev
@@ -44,7 +44,7 @@ public class RegistryAnalizer {
                             .withHardwareId(hardwareID)
                             .withFriendlyName(friendlyName)
                             .withSerial(serial)
-                            .withVidPid(vid,pid);
+                            .withVidPid(vid, pid);
 
                     usbDevices.add(currUsbDev.build());
                 }
@@ -54,16 +54,16 @@ public class RegistryAnalizer {
         return usbDevices;
     }
 
-    public static List<USBDevice> getUSBDevicesWithAutoFilling(){
+    public static List<USBDevice> getUSBDevicesWithAutoFilling() {
         String regKeyUSB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<String> subkeys = WinRegReader.getSubkeys(regKeyUSB);
         USBDevice.setUsbIds("usb.ids");
         List<USBDevice> usbDevices = new ArrayList<>();
-        for (String pidvid : subkeys){
+        for (String pidvid : subkeys) {
             List<String> serials = WinRegReader.getSubkeys(pidvid);
-            for (String serial : serials){
-                Map<String,String> valueList = WinRegReader.getAllValuesInKey(serial).get();
-                USBDevice.Builder currDevice=USBDevice.Builder.builder();
+            for (String serial : serials) {
+                Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).get();
+                USBDevice.Builder currDevice = USBDevice.Builder.builder();
                 valueList.forEach(currDevice::setField);
                 usbDevices.add(currDevice.build());
             }
