@@ -10,8 +10,10 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * Класс предназначен для описания USB устройства.
@@ -35,10 +37,10 @@ public class USBDevice extends Device {
     @Getter
     @Setter
     private static String usbIds;
-    private final String NOT_DEFINE = "not defined";
-    private final String friendlyName;
-    private final String vid;
-    private final String pid;
+    private String NOT_DEFINE = "not defined";
+    private String friendlyName;
+    private String vid;
+    private String pid;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
 
     private USBDevice(Builder builder) {
@@ -88,7 +90,6 @@ public class USBDevice extends Device {
         private String hardwareID;
         private String vendorName;
         private String productName;
-        //        private static String usbIds = USBDevice.usbIds;
         private String friendlyName;
         private String vid;
         private String pid;
@@ -100,86 +101,14 @@ public class USBDevice extends Device {
             return new Builder();
         }
 
-        public Builder withCompatibleIDs(String compatibleIDs){
-            this.compatibleIDs = compatibleIDs;
-            return this;
-        }
-
-        public Builder withDeviceDesc(String deviceDesc){
-            this.deviceDesc = deviceDesc;
-            return this;
-        }
-
-        public Builder withHardwareId(String hardwareID){
-            this.hardwareID = hardwareID;
-            return this;
-        }
-
-        public Builder withFriendlyName(String friendlyName) {
-            this.friendlyName = friendlyName;
-            return this;
-        }
-
-        //FIXME избавиться от двойного прохода файла
-        public Builder withVidPid(String vid, String pid) {
-            this.vid = vid;
-            this.pid = pid;
-            try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
-                vendorName = usbIdsReader.lines()
-                        .filter(l -> l.matches(vid + ".+"))//фильтруем строки, начинающиеся с VendorID
-                        .map(s -> s.split(" {2}")[1])   // делитель - два пробела, т.о.:
-                        // [0] - vid
-                        // [1] - vendor name (имя производителя)
-                        .findFirst().orElse("");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            if (this.vid.isEmpty()) {
-                productName="";
-                return this;
-            }
-            //парсинг файла usb.ids на наличие человеческого имени устройства и PID
-            //код лажа, но работает. Желательно переделать его на более читаемый вариант.
-//            boolean nameFound = false;
-            try (Scanner scanner = new Scanner(Paths.get(USBDevice.usbIds))) {
-                boolean vendorFound = false;
-                //в цикле читаются строки из файла usb.ids для поиска Product name. Очевидно. :)
-                while (scanner.hasNextLine()) {
-                    String currStr = scanner.nextLine();
-                    if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
-                        vendorFound = true;
-                        continue;
-                    }
-                    if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
-                        productName = currStr.split(" {2}")[1];
-                        break;
-                    }
-                    if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
-                        productName = "";
-                        break;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return this;
-        }
-
-        public Builder withSerial(String serial){
-            this.serial = serial;
-            isSerialOSGenerated = serial.charAt(1) == '&';
-            return this;
-        }
-
         public USBDevice build() {
             return new USBDevice(this);
         }
 
         /**
-         * @deprecated Рефлексия в данном случае = выстрел в ногу.
          * @param fieldName
          * @param value
+         * @deprecated Рефлексия в данном случае = выстрел в ногу.
          */
         @Deprecated(forRemoval = true)
         public void setField(String fieldName, Object value) {
@@ -203,6 +132,68 @@ public class USBDevice extends Device {
                     illegalAccessException.printStackTrace();
                 }
             }
+        }
+
+        public Builder withCompatibleIDs(String compatibleIDs) {
+            this.compatibleIDs = compatibleIDs;
+            return this;
+        }
+
+        public Builder withDeviceDesc(String deviceDesc) {
+            this.deviceDesc = deviceDesc;
+            return this;
+        }
+
+        public Builder withFriendlyName(String friendlyName) {
+            this.friendlyName = friendlyName;
+            return this;
+        }
+
+        public Builder withHardwareId(String hardwareID) {
+            this.hardwareID = hardwareID;
+            return this;
+        }
+
+        public Builder withSerial(String serial) {
+            this.serial = serial;
+            isSerialOSGenerated = serial.charAt(1) == '&';
+            return this;
+        }
+
+        //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
+        // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
+        public Builder withVidPid(String vid, String pid) {
+            this.vid = vid;
+            this.pid = pid;
+            try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
+                String currStr = "";
+                boolean vendorFound = false;
+                //TODO код лажа - переписать на нормальный.
+                while (currStr != null) {
+                    if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
+                        vendorName = currStr.split(" {2}")[1];// делитель - два пробела, т.о.:
+                        // [0] - vid
+                        // [1] - vendor name (имя производителя)
+                        vendorFound = true;
+                        currStr = usbIdsReader.readLine();
+                        continue;
+                    }
+                    if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
+                        productName = currStr.split(" {2}")[1];
+                        break;
+                    }
+                    if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
+                        productName = "";
+                        break;
+                    }
+                    currStr = usbIdsReader.readLine();
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return this;
         }
     }
 }
