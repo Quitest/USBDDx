@@ -1,13 +1,13 @@
 package ru.pel.usbddc.utility;
 
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import ru.pel.usbddc.entity.USBDevice;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.math.BigInteger;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Предназначен для сбора информации о USB устройствах из рестра ОС Windows.
@@ -16,6 +16,11 @@ public class RegistryAnalizer {
     private final static String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
     private final static String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
 
+    /**
+     * Получить список USB устройств когда-либо подключенных к АРМ.
+     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
+     * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
+     */
     public static List<USBDevice> getUSBDevices() {
 //        String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<USBDevice> usbDevices = new ArrayList<>();
@@ -58,14 +63,26 @@ public class RegistryAnalizer {
     }
 
     /**
-     * Метод собирает сведения о смонтированных разделах.
-     * @return
+     * Метод собирает сведения о смонтированных устройствах.
+     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
+     *
+     * @return мапу точек монтирования
      */
     public static Map<String, String> getMountedDevices() {
-        return WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
-//        for (Map.Entry<String,String> entry : mountedDevicesList.entrySet()){
-//            System.out.println();
-//        }
+        Map<String,String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
+        Base64.Decoder decoder = Base64.getDecoder();
+        for (Map.Entry<String,String> entry : mountedDevices.entrySet()){
+            String value = entry.getValue();
+            String[] val = value.split("(?<=\\G..)"); // разбиваем строку на парные числа - байты
+            String collect = Arrays.stream(val)
+                    .filter(str->!str.equals("00"))
+                    .map(b -> Integer.parseInt(b, 16))
+                    .map(Character::toString)
+                    .collect(Collectors.joining());
+//            System.out.println(collect);
+            entry.setValue(collect);
+        }
+        return mountedDevices;
     }
 
     public static List<USBDevice> getUSBDevicesWithAutoFilling() {
