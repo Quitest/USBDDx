@@ -1,9 +1,7 @@
 package ru.pel.usbddc.utility;
 
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import ru.pel.usbddc.entity.USBDevice;
 
-import java.math.BigInteger;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,43 +17,37 @@ public class RegistryAnalizer {
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
+     *
      * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
      */
     public static List<USBDevice> getUSBDevices() {
-//        String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<USBDevice> usbDevices = new ArrayList<>();
         USBDevice.setUsbIds("usb.ids");
         List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
         for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
-                /*if (serialKey.contains("9000938F29B1F646"))*/
-                {
-                    String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
-                    String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
-                    String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
-                    String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
-                    String[] tmpArr = serialKey.split("\\\\");
-                    String serial = tmpArr[tmpArr.length - 1];
-                    String service = WinRegReader.getValue(serialKey, "Service").orElse("");
-                    String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
+                String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
+                String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
+                String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
+                String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
+                String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
+                String[] tmpArr = serialKey.split("\\\\");
+                String serial = tmpArr[tmpArr.length - 1];
+//                String service = WinRegReader.getValue(serialKey, "Service").orElse("");
 
-                    USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
-
-                    Map<String, String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
-                    for (Map.Entry<String, String> entry : currValues.entrySet()) {
-                        currUsbDev.setField(entry.getKey(), entry.getValue());
-                    }
-
-                    currUsbDev
-                            .withCompatibleIDs(compatibleIDs)
-                            .withHardwareId(hardwareID)
-                            .withFriendlyName(friendlyName)
-                            .withSerial(serial)
-                            .withVidPid(vid, pid);
-
-                    usbDevices.add(currUsbDev.build());
-                }
+                USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
+                currUsbDev
+                        .withCompatibleIDs(compatibleIDs)
+                        .withHardwareId(hardwareID)
+                        .withFriendlyName(friendlyName)
+                        .withSerial(serial)
+                        .withVidPid(vid, pid);
+//                Map<String, String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
+//                for (Map.Entry<String, String> entry : currValues.entrySet()) {
+//                    currUsbDev.setField(entry.getKey(), entry.getValue());
+//                }
+                usbDevices.add(currUsbDev.build());
             }
         }
 
@@ -66,27 +58,27 @@ public class RegistryAnalizer {
      * Метод собирает сведения о смонтированных устройствах.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
      *
-     * @return мапу точек монтирования
+     * @return мапу смонтированных устройств
      */
     public static Map<String, String> getMountedDevices() {
-        Map<String,String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
-        Base64.Decoder decoder = Base64.getDecoder();
-        for (Map.Entry<String,String> entry : mountedDevices.entrySet()){
-            String value = entry.getValue();
-            String[] val = value.split("(?<=\\G..)"); // разбиваем строку на парные числа - байты
-            String collect = Arrays.stream(val)
-                    .filter(str->!str.equals("00"))
-                    .map(b -> Integer.parseInt(b, 16))
-                    .map(Character::toString)
+        Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
+        for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
+            String encodedValue = entry.getValue();
+            String decodedValue = Arrays.stream(encodedValue.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
+                    .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
+                    .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
                     .collect(Collectors.joining());
-//            System.out.println(collect);
-            entry.setValue(collect);
+            entry.setValue(decodedValue);
         }
         return mountedDevices;
     }
 
+    /**
+     * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
+     * автоматически из полей реестра имеющих такие же наименования.
+     * @return
+     */
     public static List<USBDevice> getUSBDevicesWithAutoFilling() {
-//        String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
         List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
         USBDevice.setUsbIds("usb.ids");
         List<USBDevice> usbDevices = new ArrayList<>();

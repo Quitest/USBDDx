@@ -23,14 +23,14 @@ public class Main {
 //        System.out.println(new ru.pel.usbddc.utility.OSInfoCollector().toString());
 //        System.out.println("\nTESTING ru.pel.usbddc.utility.RegistryAnalizer.getUSBDevices()");
 //        writer.println("\nTESTING ru.pel.usbddc.utility.RegistryAnalizer.getUSBDevices()");
-//        List<USBDevice> usbDevices = RegistryAnalizer.getUSBDevices();
-//        usbDevices.stream()
-//                .forEach(System.out::println);
-//        usbDevices.forEach(writer::println);
+        List<USBDevice> usbDevices = RegistryAnalizer.getUSBDevices();
+        usbDevices.stream()
+                .forEach(System.out::println);
+        usbDevices.forEach(writer::println);
 
-        RegistryAnalizer.getMountedDevices().forEach(
-                (k,v) -> System.out.println(k+" = "+v)
-        );
+//        RegistryAnalizer.getMountedDevices().forEach(
+//                (k,v) -> System.out.println(k+" = "+v)
+//        );
 
         writer.close();
     }
