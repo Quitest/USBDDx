@@ -32,26 +32,39 @@ import java.util.List;
 
 @Getter
 @EqualsAndHashCode
-public class USBDevice extends Device {
+public class USBDevice /*extends Device*/ {
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
     private static String usbIds;
-    private String NOT_DEFINE = "not defined";
+    //    private String NOT_DEFINE = "not defined";
     private String friendlyName;
-    private String vid;
     private String pid;
+    private String productName;
+    private String serial;
+    private String vendorName;
+    private String vid;
+    private String volumeName;
+    private String revision;
+    private boolean isSerialOSGenerated;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
 
-    private USBDevice(Builder builder) {
-        super();
-        this.friendlyName = builder.friendlyName;
-        this.vid = builder.vid;
-        this.pid = builder.pid;
-        this.vendorName = builder.vendorName;
-        this.productName = builder.productName;
-        this.serial = builder.serial;
-        this.isSerialOSGenerated = builder.isSerialOSGenerated;
+//    private USBDevice(Builder builder) {
+//        super();
+//        this.friendlyName = builder.friendlyName;
+//        this.vid = builder.vid;
+//        this.pid = builder.pid;
+//        this.vendorName = builder.vendorName;
+//        this.productName = builder.productName;
+//        this.serial = builder.serial;
+//        this.isSerialOSGenerated = builder.isSerialOSGenerated;
+//    }
+
+    private USBDevice() {
+    }
+
+    public static Builder getBuilder() {
+        return new Builder();
     }
 
     @Override
@@ -85,24 +98,24 @@ public class USBDevice extends Device {
     }
 
     public static class Builder {
-        private String compatibleIDs;
-        private String deviceDesc;
-        private String hardwareID;
-        private String vendorName;
-        private String productName;
-        private String friendlyName;
-        private String vid;
-        private String pid;
-        private String serial;
-        private boolean isSerialOSGenerated;
+        //        private String compatibleIDs;
+//        private String deviceDesc;
+//        private String hardwareID;
+//        private String vendorName;
+//        private String productName;
+//        private String friendlyName;
+//        private String vid;
+//        private String pid;
+//        private String serial;
+//        private boolean isSerialOSGenerated;
+        private USBDevice newUsbDevice;
 
-
-        public static Builder builder() {
-            return new Builder();
+        private Builder() {
+            newUsbDevice = new USBDevice();
         }
 
         public USBDevice build() {
-            return new USBDevice(this);
+            return newUsbDevice;
         }
 
         /**
@@ -134,44 +147,29 @@ public class USBDevice extends Device {
             }
         }
 
-        public Builder withCompatibleIDs(String compatibleIDs) {
-            this.compatibleIDs = compatibleIDs;
-            return this;
-        }
-
-        public Builder withDeviceDesc(String deviceDesc) {
-            this.deviceDesc = deviceDesc;
-            return this;
-        }
-
         public Builder withFriendlyName(String friendlyName) {
-            this.friendlyName = friendlyName;
-            return this;
-        }
-
-        public Builder withHardwareId(String hardwareID) {
-            this.hardwareID = hardwareID;
+            newUsbDevice.friendlyName = friendlyName;
             return this;
         }
 
         public Builder withSerial(String serial) {
-            this.serial = serial;
-            isSerialOSGenerated = serial.charAt(1) == '&';
+            newUsbDevice.serial = serial;
+            newUsbDevice.isSerialOSGenerated = serial.charAt(1) == '&';
             return this;
         }
 
         //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
         // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
         public Builder withVidPid(String vid, String pid) {
-            this.vid = vid;
-            this.pid = pid;
+            newUsbDevice.vid = vid;
+            newUsbDevice.pid = pid;
             try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
                 String currStr = "";
                 boolean vendorFound = false;
                 //TODO код лажа - переписать на нормальный.
                 while (currStr != null) {
                     if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
-                        vendorName = currStr.split(" {2}")[1];// делитель - два пробела, т.о.:
+                        newUsbDevice.vendorName = currStr.split(" {2}")[1];// делитель - два пробела, т.о.:
                         // [0] - vid
                         // [1] - vendor name (имя производителя)
                         vendorFound = true;
@@ -179,11 +177,11 @@ public class USBDevice extends Device {
                         continue;
                     }
                     if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
-                        productName = currStr.split(" {2}")[1];
+                        newUsbDevice.productName = currStr.split(" {2}")[1];
                         break;
                     }
                     if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
-                        productName = "";
+                        newUsbDevice.productName = "";
                         break;
                     }
                     currStr = usbIdsReader.readLine();
@@ -193,6 +191,11 @@ public class USBDevice extends Device {
                 e.printStackTrace();
             }
 
+            return this;
+        }
+
+        public Builder withVolumeName(String volumeName) {
+            newUsbDevice.volumeName = volumeName;
             return this;
         }
     }

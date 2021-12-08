@@ -11,9 +11,10 @@ import java.util.stream.Collectors;
  * Предназначен для сбора информации о USB устройствах из рестра ОС Windows.
  */
 public class RegistryAnalizer {
-    private final static String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
-    private final static String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
+    private static final String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
+    private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
 
+    private RegistryAnalizer(){}
 
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
@@ -28,27 +29,31 @@ public class RegistryAnalizer {
         for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
-                String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
-                String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
-                String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
+//                String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
+//                String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
+//                String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
                 String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
                 String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
                 String[] tmpArr = serialKey.split("\\\\");
                 String serial = tmpArr[tmpArr.length - 1];
 //                String service = WinRegReader.getValue(serialKey, "Service").orElse("");
 
-                USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
-                currUsbDev
-                        .withCompatibleIDs(compatibleIDs)
-                        .withHardwareId(hardwareID)
-                        .withFriendlyName(friendlyName)
+                USBDevice currUsbDev = USBDevice.getBuilder()
                         .withSerial(serial)
-                        .withVidPid(vid, pid);
+                        .withVidPid(vid, pid)
+                        .build();
+
+//                USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
+//                currUsbDev
+//                        .withFriendlyName(friendlyName)
+//                        .withSerial(serial)
+//                        .withVidPid(vid, pid);
+
 //                Map<String, String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
 //                for (Map.Entry<String, String> entry : currValues.entrySet()) {
 //                    currUsbDev.setField(entry.getKey(), entry.getValue());
 //                }
-                usbDevices.add(currUsbDev.build());
+                usbDevices.add(currUsbDev);
             }
         }
 
@@ -76,15 +81,17 @@ public class RegistryAnalizer {
 
     /**
      * Получить точки монтирования ТЕКУЩЕГО пользователя
+     *
      * @return список всех когда-либо существовавших точек монтирования
      */
-    public static List<String> getMountPoints2(){
+    public static List<String> getMountPoints2() {
         return WinRegReader.getSubkeys("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2");
     }
 
     /**
      * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
      * автоматически из полей реестра имеющих такие же наименования.
+     *
      * @return
      */
     public static List<USBDevice> getUSBDevicesWithAutoFilling() {
@@ -95,7 +102,8 @@ public class RegistryAnalizer {
             List<String> serials = WinRegReader.getSubkeys(pidvid);
             for (String serial : serials) {
                 Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).get();
-                USBDevice.Builder currDevice = USBDevice.Builder.builder();
+//                USBDevice.Builder currDevice = USBDevice.Builder.builder();
+                USBDevice.Builder currDevice = USBDevice.getBuilder();
                 valueList.forEach(currDevice::setField);
                 usbDevices.add(currDevice.build());
             }

@@ -3,18 +3,11 @@ package ru.pel.usbddc;
  * USBDDC - USB devices data collector
  */
 
-import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.utility.RegistryAnalizer;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -23,14 +16,14 @@ public class Main {
 //        System.out.println(new ru.pel.usbddc.utility.OSInfoCollector().toString());
 //        System.out.println("\nTESTING ru.pel.usbddc.utility.RegistryAnalizer.getUSBDevices()");
 //        writer.println("\nTESTING ru.pel.usbddc.utility.RegistryAnalizer.getUSBDevices()");
-        List<USBDevice> usbDevices = RegistryAnalizer.getUSBDevices();
-        usbDevices.stream()
-                .forEach(System.out::println);
-        usbDevices.forEach(writer::println);
+//        List<USBDevice> usbDevices = RegistryAnalizer.getUSBDevices();
+//        usbDevices.stream()
+//                .forEach(System.out::println);
+//        usbDevices.forEach(writer::println);
 
-//        RegistryAnalizer.getMountedDevices().forEach(
-//                (k,v) -> System.out.println(k+" = "+v)
-//        );
+        RegistryAnalizer.getMountedDevices().forEach(
+                (k, v) -> System.out.println(k + " = " + v)
+        );
 
         writer.close();
     }
