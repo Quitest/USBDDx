@@ -14,6 +14,7 @@ public class RegistryAnalizer {
     private final static String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
     private final static String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
 
+
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
@@ -71,6 +72,14 @@ public class RegistryAnalizer {
             entry.setValue(decodedValue);
         }
         return mountedDevices;
+    }
+
+    /**
+     * Получить точки монтирования ТЕКУЩЕГО пользователя
+     * @return список всех когда-либо существовавших точек монтирования
+     */
+    public static List<String> getMountPoints2(){
+        return WinRegReader.getSubkeys("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2");
     }
 
     /**
