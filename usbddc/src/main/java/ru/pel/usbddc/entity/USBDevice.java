@@ -50,6 +50,16 @@ public class USBDevice{
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
 
     private USBDevice() {
+        friendlyName = "";
+        pid = "";
+        productName = "";
+        serial = "";
+        vendorName = "";
+        vid = "";
+        volumeName = "";
+        revision = "";
+        isSerialOSGenerated = true;
+        userAccountsList = new ArrayList<>();
     }
 
     public static Builder getBuilder() {
@@ -67,10 +77,10 @@ public class USBDevice{
         StringBuilder sb = new StringBuilder();
         try {
             Field[] fieldsThis = USBDevice.class.getDeclaredFields();
-            Field[] fieldsSuper = Device.class.getDeclaredFields();
+//            Field[] fieldsSuper = Device.class.getDeclaredFields();
             List<Field> fields = new ArrayList<>();
             fields.addAll(Arrays.asList(fieldsThis));
-            fields.addAll(Arrays.asList(fieldsSuper));
+//            fields.addAll(Arrays.asList(fieldsSuper));
             fields.sort(Comparator.comparing(Field::getName));
 
             for (Field field : fields) {
@@ -160,7 +170,7 @@ public class USBDevice{
             newUsbDevice.productName = "";
             newUsbDevice.vendorName = "";
             String regexVidPid = "[0-9a-fA-F]{4}";
-            if (!vid.matches(regexVidPid) || pid.matches(regexVidPid)){
+            if (!vid.matches(regexVidPid) || !pid.matches(regexVidPid)){
                 return this;
             }
 
