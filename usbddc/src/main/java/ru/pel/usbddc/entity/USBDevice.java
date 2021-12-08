@@ -32,12 +32,11 @@ import java.util.List;
 
 @Getter
 @EqualsAndHashCode
-public class USBDevice /*extends Device*/ {
+public class USBDevice{
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
     private static String usbIds;
-    //    private String NOT_DEFINE = "not defined";
     private String friendlyName;
     private String pid;
     private String productName;
@@ -47,18 +46,8 @@ public class USBDevice /*extends Device*/ {
     private String volumeName;
     private String revision;
     private boolean isSerialOSGenerated;
+    private List<String> userAccountsList;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
-
-//    private USBDevice(Builder builder) {
-//        super();
-//        this.friendlyName = builder.friendlyName;
-//        this.vid = builder.vid;
-//        this.pid = builder.pid;
-//        this.vendorName = builder.vendorName;
-//        this.productName = builder.productName;
-//        this.serial = builder.serial;
-//        this.isSerialOSGenerated = builder.isSerialOSGenerated;
-//    }
 
     private USBDevice() {
     }
@@ -98,16 +87,6 @@ public class USBDevice /*extends Device*/ {
     }
 
     public static class Builder {
-        //        private String compatibleIDs;
-//        private String deviceDesc;
-//        private String hardwareID;
-//        private String vendorName;
-//        private String productName;
-//        private String friendlyName;
-//        private String vid;
-//        private String pid;
-//        private String serial;
-//        private boolean isSerialOSGenerated;
         private USBDevice newUsbDevice;
 
         private Builder() {
@@ -152,6 +131,14 @@ public class USBDevice /*extends Device*/ {
             return this;
         }
 
+        /**
+         * Устанавливает значение serial (серийный номер), а также isSerialOSGenerated в значение false, если второй
+         * символ & (признак того что значение сгенерировано ОС и оно уникально только в рамках текущей ОС), true - в
+         * противном случае.
+         *
+         * @param serial серийный номер устройства
+         * @return
+         */
         public Builder withSerial(String serial) {
             newUsbDevice.serial = serial;
             newUsbDevice.isSerialOSGenerated = serial.charAt(1) == '&';
@@ -160,9 +147,23 @@ public class USBDevice /*extends Device*/ {
 
         //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
         // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
+
+        /**
+         * Устанавливает значения VID/PID. При наличии файла usb.ids автоматически заполняет vendorName и productName
+         * @param vid Vendor ID
+         * @param pid Product ID
+         * @return
+         */
         public Builder withVidPid(String vid, String pid) {
             newUsbDevice.vid = vid;
             newUsbDevice.pid = pid;
+            newUsbDevice.productName = "";
+            newUsbDevice.vendorName = "";
+            String regexVidPid = "[0-9a-fA-F]{4}";
+            if (!vid.matches(regexVidPid) || pid.matches(regexVidPid)){
+                return this;
+            }
+
             try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
                 String currStr = "";
                 boolean vendorFound = false;
@@ -188,7 +189,10 @@ public class USBDevice /*extends Device*/ {
                 }
 
             } catch (IOException e) {
+                //TODO сделать запись в лог
                 e.printStackTrace();
+                newUsbDevice.productName = "";
+                newUsbDevice.vendorName = "";
             }
 
             return this;
@@ -196,6 +200,11 @@ public class USBDevice /*extends Device*/ {
 
         public Builder withVolumeName(String volumeName) {
             newUsbDevice.volumeName = volumeName;
+            return this;
+        }
+
+        public Builder withRevision(String rev){
+            newUsbDevice.revision = rev;
             return this;
         }
     }
