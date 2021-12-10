@@ -2,7 +2,7 @@ package ru.pel.usbddc.entity;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import ru.pel.usbddc.utility.RegistryAnalizer;
+import ru.pel.usbddc.utility.RegistryAnalyzer;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ class USBDeviceTest {
 
     @BeforeAll
     static void beforeAll() {
-        usbDeviceList = RegistryAnalizer.getUSBDevices();
+        usbDeviceList = RegistryAnalyzer.getUSBDevices();
     }
 
     @Test

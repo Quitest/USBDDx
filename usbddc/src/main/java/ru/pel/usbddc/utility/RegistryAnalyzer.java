@@ -1,7 +1,9 @@
 package ru.pel.usbddc.utility;
 
 import ru.pel.usbddc.entity.USBDevice;
+import ru.pel.usbddc.entity.UserProfile;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,11 +12,13 @@ import java.util.stream.Collectors;
 /**
  * Предназначен для сбора информации о USB устройствах из рестра ОС Windows.
  */
-public class RegistryAnalizer {
+public class RegistryAnalyzer {
     private static final String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
+    private static final String REG_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
 
-    private RegistryAnalizer(){}
+    private RegistryAnalyzer() {
+    }
 
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
@@ -29,30 +33,15 @@ public class RegistryAnalizer {
         for (String pidvid : pidVidList) {
             List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
             for (String serialKey : listSerialKeys) {
-//                String compatibleIDs = WinRegReader.getValue(serialKey, "CompatibleIDs").orElse("");
-//                String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("");
-//                String hardwareID = WinRegReader.getValue(serialKey, "HardwareID").orElse("");
                 String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
                 String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
                 String[] tmpArr = serialKey.split("\\\\");
                 String serial = tmpArr[tmpArr.length - 1];
-//                String service = WinRegReader.getValue(serialKey, "Service").orElse("");
 
                 USBDevice currUsbDev = USBDevice.getBuilder()
                         .withSerial(serial)
                         .withVidPid(vid, pid)
                         .build();
-
-//                USBDevice.Builder currUsbDev = USBDevice.Builder.builder();
-//                currUsbDev
-//                        .withFriendlyName(friendlyName)
-//                        .withSerial(serial)
-//                        .withVidPid(vid, pid);
-
-//                Map<String, String> currValues = WinRegReader.getAllValuesInKey(serialKey).get();
-//                for (Map.Entry<String, String> entry : currValues.entrySet()) {
-//                    currUsbDev.setField(entry.getKey(), entry.getValue());
-//                }
                 usbDevices.add(currUsbDev);
             }
         }
@@ -89,6 +78,35 @@ public class RegistryAnalizer {
     }
 
     /**
+     * <p>Читает пути к профилям пользователей из HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList.
+     * По указанному пути будут соответствующие записи только если пользователь хотя бы раз логинился. Этого вполне достаточно,
+     * т.к. если пользователь ниразу не логинился в системе, то он не мог использовать USB устройства.</p>
+     *
+     * <p>В качестве альтернативного решения задачи определения имени пользователя по SID может служить команда
+     * <code>wmic useraccount where sid="" get name</code>. Подробности можно найти, например,
+     * по <a href="https://www.lifewire.com/how-to-find-a-users-security-identifier-sid-in-windows-2625149">ссылке</a></p>
+     *
+     * @return список созданных профилей пользователей
+     */
+    public static List<UserProfile> getUserProfileList() {
+        List<String> profileRegKeys = WinRegReader.getSubkeys(REG_PROFILE_LIST);
+        return profileRegKeys.stream()
+                .map(profile -> {
+                    String profileImagePath = WinRegReader.getValue(profile, "ProfileImagePath").orElseThrow();
+                    String username = profileImagePath.substring(profileImagePath.lastIndexOf("\\") + 1);
+                    String sid = profile.substring(profile.lastIndexOf("\\") + 1);
+
+                    UserProfile.Builder builder = UserProfile.getBuilder();
+                    return builder
+                            .withProfileImagePath(Path.of(profileImagePath))
+                            .withSecurityId(sid)
+                            .withUsername(username)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
      * автоматически из полей реестра имеющих такие же наименования.
      *
@@ -101,8 +119,7 @@ public class RegistryAnalizer {
         for (String pidvid : subkeys) {
             List<String> serials = WinRegReader.getSubkeys(pidvid);
             for (String serial : serials) {
-                Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).get();
-//                USBDevice.Builder currDevice = USBDevice.Builder.builder();
+                Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
                 USBDevice.Builder currDevice = USBDevice.getBuilder();
                 valueList.forEach(currDevice::setField);
                 usbDevices.add(currDevice.build());

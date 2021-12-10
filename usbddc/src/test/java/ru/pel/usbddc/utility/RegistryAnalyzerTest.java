@@ -4,12 +4,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
+import ru.pel.usbddc.entity.UserProfile;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class RegistryAnalizerTest {
+class RegistryAnalyzerTest {
     private static List<USBDevice> usbDevices;
     //Вариант 1
     String expectedPid = "312b";
@@ -33,19 +34,19 @@ class RegistryAnalizerTest {
 
     @BeforeAll
     static void beforeAll() {
-        usbDevices = RegistryAnalizer.getUSBDevices();
+        usbDevices = RegistryAnalyzer.getUSBDevices();
     }
 
     @Test
     void getMountPoints2() {
-        List<String> mountPoints2 = RegistryAnalizer.getMountPoints2();
+        List<String> mountPoints2 = RegistryAnalyzer.getMountPoints2();
         assertTrue(mountPoints2.stream().anyMatch(mp -> mp.contains(expectedMountPoints2)));
     }
 
     @Test
     @DisplayName("Сбор смонтированных устройств")
     void getMountedDevices() {
-        String actual = RegistryAnalizer.getMountedDevices().get(mountedDeviceKey);
+        String actual = RegistryAnalyzer.getMountedDevices().get(mountedDeviceKey);
         assertEquals(expectedMountedDeviceValue, actual, "Возможно, тест запущен на другом АРМ?");
     }
 
@@ -55,6 +56,16 @@ class RegistryAnalizerTest {
         assertTrue(usbDevices.stream().anyMatch(d -> d.getVid().equalsIgnoreCase(expectedVid)));
         assertTrue(usbDevices.stream().anyMatch(d -> d.getPid().equalsIgnoreCase(expectedPid)));
         assertTrue(usbDevices.stream().anyMatch(d -> d.getSerial().equalsIgnoreCase(expectedSerial)));
+    }
+
+    @Test
+    void getUserProfileList() {
+        List<UserProfile> userProfileList = RegistryAnalyzer.getUserProfileList();
+
+        assertTrue(userProfileList.stream().anyMatch(u -> u.getUsername().matches("[\\w\\d]+")));
+        assertTrue(userProfileList.stream().allMatch(p -> p.getSecurityId().matches("S[-\\d]+")));
+        assertTrue(userProfileList.stream().allMatch(p -> p.getProfileImagePath().toString().matches("[\\w\\d\\\\%:]+")));
+
     }
 
     @Test
