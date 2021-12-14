@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,8 +26,8 @@ class RegistryAnalyzerTest {
     //Вариант 2
 //    String expectedPid = "6387";
 //    String expectedVid = "058f";
-//    String expectedVendorName = "";
-//    String expectedProductName = "";
+//    String expectedVendorName = "Alcor Micro Corp.";
+//    String expectedProductName = "Flash Drive";
 //    String expectedSerial = "EFF732B1";
 //    String mountedDeviceKey = "\\??\\Volume{92e41808-1e77-11e7-8268-d86126b14266}";
 //    String expectedMountedDeviceValue = "\\??\\USBSTOR#CdRom&Ven_ASUS&Prod_Device_CD-ROM&Rev_0310#7&1f412d32&0&FCAZCY04R051&0#{53f5630d-b6bf-11d0-94f2-00a0c91efb8b}";
@@ -35,6 +36,18 @@ class RegistryAnalyzerTest {
     @BeforeAll
     static void beforeAll() {
         usbDevices = RegistryAnalyzer.getUSBDevices();
+    }
+
+    @Test
+    void testGetUserProfileList() {
+        String expectedUsername = "lenovo";
+        Path expectedProfileImagePath = Path.of("C:\\Users\\lenovo");
+        List<UserProfile> userProfileList = RegistryAnalyzer.getUserProfileList();
+
+        assertTrue(userProfileList.stream()
+                .anyMatch(userProfile -> userProfile.getUsername().equalsIgnoreCase(expectedUsername)));
+        assertTrue(userProfileList.stream()
+                .anyMatch(userProfile -> userProfile.getProfileImagePath().equals(expectedProfileImagePath)));
     }
 
     @Test
