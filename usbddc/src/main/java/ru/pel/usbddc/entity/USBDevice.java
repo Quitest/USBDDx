@@ -31,6 +31,7 @@ import java.util.List;
  * */
 
 @Getter
+@Setter
 @EqualsAndHashCode
 public class USBDevice{
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
@@ -38,6 +39,7 @@ public class USBDevice{
     @Setter
     private static String usbIds;
     private String friendlyName;
+    private String guid;
     private String pid;
     private String productName;
     private String serial;
@@ -215,6 +217,11 @@ public class USBDevice{
 
         public Builder withRevision(String rev){
             newUsbDevice.revision = rev;
+            return this;
+        }
+
+        public Builder withGuid(String guid){
+            newUsbDevice.guid = guid;
             return this;
         }
     }

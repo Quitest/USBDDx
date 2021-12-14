@@ -17,7 +17,70 @@ public class RegistryAnalyzer {
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
     private static final String REG_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
 
-    private RegistryAnalyzer() {
+    private final List<USBDevice> usbDeviceList;
+
+    public RegistryAnalyzer() {
+        this.usbDeviceList = new ArrayList<>();
+    }
+
+    /**
+     * Получить точки монтирования ТЕКУЩЕГО пользователя
+     *
+     * @return список всех когда-либо существовавших точек монтирования
+     */
+    public List<String> getMountPoints2OfCurrentUser() {
+        String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
+
+        return WinRegReader.getSubkeys(mountPoints2).stream()
+                .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
+                .map(e -> e.substring(e.lastIndexOf("{")))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Метод собирает сведения о смонтированных устройствах.
+     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
+     *
+     * @return мапу смонтированных устройств
+     */
+    public Map<String, String> getMountedDevices() {
+        Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
+        for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
+            String encodedValue = entry.getValue();
+            String decodedValue = Arrays.stream(encodedValue.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
+                    .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
+                    .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
+                    .collect(Collectors.joining());
+            entry.setValue(decodedValue);
+
+            String key = entry.getKey();
+            String deviceGuid = Arrays.stream(key.split(""))
+                    .dropWhile(ch -> !ch.equals("{"))
+                    .collect(Collectors.joining());
+
+//            try {
+//                String deviceSerialNo = decodedValue.split("#")[2];
+//                deviceSerialNo = deviceSerialNo.substring(0, deviceSerialNo.lastIndexOf("&") - 1);
+//
+//
+//                for (USBDevice usbDevice : usbDeviceList) {
+//                    if (usbDevice.getSerial().equals(deviceSerialNo)) {
+//                        usbDevice.setGuid(deviceGuid);
+//                    }
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+
+//            String guid;
+//            int index = key.lastIndexOf("{");
+//            if (index != -1) {
+//                guid = key.substring(key.lastIndexOf("{"));
+//            } else {
+//                guid = "";
+//            }
+        }
+        return mountedDevices;
     }
 
     /**
@@ -26,8 +89,7 @@ public class RegistryAnalyzer {
      *
      * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
      */
-    public static List<USBDevice> getUSBDevices() {
-        List<USBDevice> usbDevices = new ArrayList<>();
+    public List<USBDevice> getUSBDevices() {
         USBDevice.setUsbIds("usb.ids");
         List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
         for (String pidvid : pidVidList) {
@@ -42,39 +104,39 @@ public class RegistryAnalyzer {
                         .withSerial(serial)
                         .withVidPid(vid, pid)
                         .build();
-                usbDevices.add(currUsbDev);
+                usbDeviceList.add(currUsbDev);
             }
         }
 
+        return usbDeviceList;
+    }
+
+    /**
+     * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
+     * автоматически из полей реестра имеющих такие же наименования.
+     *
+     * @return
+     */
+    public List<USBDevice> getUSBDevicesWithAutoFilling() {
+        List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
+        USBDevice.setUsbIds("usb.ids");
+        List<USBDevice> usbDevices = new ArrayList<>();
+        for (String pidvid : subkeys) {
+            List<String> serials = WinRegReader.getSubkeys(pidvid);
+            for (String serial : serials) {
+                Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
+                USBDevice.Builder currDevice = USBDevice.getBuilder();
+                valueList.forEach(currDevice::setField);
+                usbDevices.add(currDevice.build());
+            }
+        }
         return usbDevices;
     }
 
-    /**
-     * Метод собирает сведения о смонтированных устройствах.
-     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
-     *
-     * @return мапу смонтированных устройств
-     */
-    public static Map<String, String> getMountedDevices() {
-        Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
-        for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
-            String encodedValue = entry.getValue();
-            String decodedValue = Arrays.stream(encodedValue.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
-                    .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
-                    .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
-                    .collect(Collectors.joining());
-            entry.setValue(decodedValue);
-        }
-        return mountedDevices;
-    }
-
-    /**
-     * Получить точки монтирования ТЕКУЩЕГО пользователя
-     *
-     * @return список всех когда-либо существовавших точек монтирования
-     */
-    public static List<String> getMountPoints2() {
-        return WinRegReader.getSubkeys("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2");
+    public List<USBDevice> getUsbDeviceList() {
+        getUSBDevices();
+        getMountedDevices();
+        return usbDeviceList;
     }
 
     /**
@@ -88,7 +150,7 @@ public class RegistryAnalyzer {
      *
      * @return список созданных профилей пользователей
      */
-    public static List<UserProfile> getUserProfileList() {
+    public List<UserProfile> getUserProfileList() {
         List<String> profileRegKeys = WinRegReader.getSubkeys(REG_PROFILE_LIST);
         return profileRegKeys.stream()
                 .map(profile -> {
@@ -107,42 +169,20 @@ public class RegistryAnalyzer {
     }
 
     /**
-     * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
-     * автоматически из полей реестра имеющих такие же наименования.
-     *
-     * @return
+     * @param pidvid строка, содержащая в себе подстроку вида {@code pid_VVVV&PID_PPPP}
+     * @return значение PID (ProductID)
      */
-    public static List<USBDevice> getUSBDevicesWithAutoFilling() {
-        List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
-        USBDevice.setUsbIds("usb.ids");
-        List<USBDevice> usbDevices = new ArrayList<>();
-        for (String pidvid : subkeys) {
-            List<String> serials = WinRegReader.getSubkeys(pidvid);
-            for (String serial : serials) {
-                Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
-                USBDevice.Builder currDevice = USBDevice.getBuilder();
-                valueList.forEach(currDevice::setField);
-                usbDevices.add(currDevice.build());
-            }
-        }
-        return usbDevices;
+    private Optional<String> parsePid(String pidvid) {
+        Matcher matcher = Pattern.compile("pid_(.{4})").matcher(pidvid);
+        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
     /**
      * @param pidvid строка, содержащая в себе подстроку вида {@code vid_VVVV&PID_PPPP}
      * @return значение VID (VendorID)
      */
-    private static Optional<String> parseVid(String pidvid) {
+    private Optional<String> parseVid(String pidvid) {
         Matcher matcher = Pattern.compile("vid_(.{4})").matcher(pidvid);
-        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
-    }
-
-    /**
-     * @param pidvid строка, содержащая в себе подстроку вида {@code pid_VVVV&PID_PPPP}
-     * @return значение PID (ProductID)
-     */
-    private static Optional<String> parsePid(String pidvid) {
-        Matcher matcher = Pattern.compile("pid_(.{4})").matcher(pidvid);
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 }
