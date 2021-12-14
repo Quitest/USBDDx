@@ -18,9 +18,11 @@ public class RegistryAnalyzer {
     private static final String REG_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
 
     private final List<USBDevice> usbDeviceList;
+    private final Map<String, USBDevice> usbDeviceMap;
 
     public RegistryAnalyzer() {
         this.usbDeviceList = new ArrayList<>();
+        this.usbDeviceMap = new HashMap<>();
     }
 
     /**
@@ -37,6 +39,13 @@ public class RegistryAnalyzer {
                 .collect(Collectors.toList());
     }
 
+    private String decodeHexToString(String hexStr){
+        return Arrays.stream(hexStr.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
+                .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
+                .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
+                .collect(Collectors.joining());
+    }
+
     /**
      * Метод собирает сведения о смонтированных устройствах.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
@@ -45,12 +54,23 @@ public class RegistryAnalyzer {
      */
     public Map<String, String> getMountedDevices() {
         Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
+
+//        mountedDevices.entrySet().stream()
+//                .filter(entry-> decodeHexToString(entry.getValue()).matches("(.+#){2,4}"))
+//                .map(entry-> {entry.setValue(entry.getValue()).split("#").})
+
         for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
             String encodedValue = entry.getValue();
             String decodedValue = Arrays.stream(encodedValue.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
                     .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
                     .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
                     .collect(Collectors.joining());
+//            String serial = decodedValue.split("#")[2];
+            String serial = Arrays.stream(decodedValue.split("#"))
+//                    .filter(value -> value.matches(".&.+|.+&."))
+                    .skip(2)
+                    .map(s -> s.substring(0,s.length()-2)) //в серийном номере отбрасываем последние два символа - это, как правило, &0 или &1 - какие-то системные суффиксы
+                    .findFirst().orElse(decodedValue);
             entry.setValue(decodedValue);
 
             String key = entry.getKey();
@@ -58,6 +78,17 @@ public class RegistryAnalyzer {
                     .dropWhile(ch -> !ch.equals("{"))
                     .collect(Collectors.joining());
 
+            USBDevice mountedUSBDevice = USBDevice.getBuilder()
+                    .withSerial(serial)
+                    .withGuid(deviceGuid)
+                    .build();
+
+            usbDeviceMap.merge(serial,
+                    mountedUSBDevice,
+                    (oldDevice, newDevice) -> {
+                        oldDevice.setGuid(deviceGuid);
+                        return oldDevice;
+                    });
 //            try {
 //                String deviceSerialNo = decodedValue.split("#")[2];
 //                deviceSerialNo = deviceSerialNo.substring(0, deviceSerialNo.lastIndexOf("&") - 1);
@@ -105,6 +136,7 @@ public class RegistryAnalyzer {
                         .withVidPid(vid, pid)
                         .build();
                 usbDeviceList.add(currUsbDev);
+                usbDeviceMap.put(serial, currUsbDev);
             }
         }
 
@@ -137,6 +169,12 @@ public class RegistryAnalyzer {
         getUSBDevices();
         getMountedDevices();
         return usbDeviceList;
+    }
+
+    public Map<String, USBDevice> getUsbDeviceMap() {
+        getUSBDevices();
+        getMountedDevices();
+        return usbDeviceMap;
     }
 
     /**

@@ -6,11 +6,13 @@ import ru.pel.usbddc.utility.RegistryAnalyzer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class USBDeviceTest {
     private static List<USBDevice> usbDeviceList;
+    private static Map<String,USBDevice> usbDeviceMap;
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
@@ -26,6 +28,7 @@ class USBDeviceTest {
     @BeforeAll
     static void beforeAll() {
         usbDeviceList = new RegistryAnalyzer().getUsbDeviceList();
+        usbDeviceMap = new RegistryAnalyzer().getUsbDeviceMap();
     }
 
     @Test

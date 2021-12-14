@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,6 +61,14 @@ class RegistryAnalyzerTest {
                 .filter(d->d.getSerial().equals(expectedSerial))
                 .findFirst().orElse(USBDevice.getBuilder().build());
         assertEquals(expectedMountPoints2, usbDevice.getGuid(), testFailedMsg);
+    }
+
+    @Test
+    void getUSBDeviceMap(){
+        Map<String, USBDevice> usbDeviceMap = new RegistryAnalyzer().getUsbDeviceMap();
+        usbDeviceMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e-> System.out.println(e.getValue().printSomeInfo()));
     }
 
     @Test

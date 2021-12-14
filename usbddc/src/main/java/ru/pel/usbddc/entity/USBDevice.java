@@ -33,7 +33,7 @@ import java.util.List;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class USBDevice{
+public class USBDevice {
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
@@ -66,6 +66,16 @@ public class USBDevice{
 
     public static Builder getBuilder() {
         return new Builder();
+    }
+
+    /**
+     * Метод введен временно для ручной настройки выводимых полей. Позже будет удален.
+     *
+     * @return
+     */
+    @Deprecated(forRemoval = true)
+    public String printSomeInfo() {
+        return String.format("%-35s | %-30s",serial,guid);
     }
 
     @Override
@@ -143,6 +153,19 @@ public class USBDevice{
             return this;
         }
 
+        public Builder withGuid(String guid) {
+            newUsbDevice.guid = guid;
+            return this;
+        }
+
+        //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
+        // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
+
+        public Builder withRevision(String rev) {
+            newUsbDevice.revision = rev;
+            return this;
+        }
+
         /**
          * Устанавливает значение serial (серийный номер), а также isSerialOSGenerated в значение false, если второй
          * символ & (признак того что значение сгенерировано ОС и оно уникально только в рамках текущей ОС), true - в
@@ -157,11 +180,9 @@ public class USBDevice{
             return this;
         }
 
-        //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
-        // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
-
         /**
          * Устанавливает значения VID/PID. При наличии файла usb.ids автоматически заполняет vendorName и productName
+         *
          * @param vid Vendor ID
          * @param pid Product ID
          * @return
@@ -172,7 +193,7 @@ public class USBDevice{
             newUsbDevice.productName = "";
             newUsbDevice.vendorName = "";
             String regexVidPid = "[0-9a-fA-F]{4}";
-            if (!vid.matches(regexVidPid) || !pid.matches(regexVidPid)){
+            if (!vid.matches(regexVidPid) || !pid.matches(regexVidPid)) {
                 return this;
             }
 
@@ -212,16 +233,6 @@ public class USBDevice{
 
         public Builder withVolumeName(String volumeName) {
             newUsbDevice.volumeName = volumeName;
-            return this;
-        }
-
-        public Builder withRevision(String rev){
-            newUsbDevice.revision = rev;
-            return this;
-        }
-
-        public Builder withGuid(String guid){
-            newUsbDevice.guid = guid;
             return this;
         }
     }
