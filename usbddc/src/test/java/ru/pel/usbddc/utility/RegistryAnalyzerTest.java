@@ -6,40 +6,38 @@ import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RegistryAnalyzerTest {
-    private static List<USBDevice> usbDevices;
+    private static Map<String, USBDevice> usbDeviceMap;
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
-    String expectedPid = "312b";
-    String expectedProductName = "Superior S102 Pro";
-    String expectedVid = "125f";
-    String expectedVendorName = "A-DATA Technology Co., Ltd.";
-    String expectedSerial = "1492710242260098";
-    String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
-    String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
-    String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
+//   private final String expectedPid = "312b";
+//   private final String expectedProductName = "Superior S102 Pro";
+//   private final String expectedVid = "125f";
+//   private final String expectedVendorName = "A-DATA Technology Co., Ltd.";
+//   private final String expectedSerial = "1492710242260098";
+//   private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
+//   private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
+//   private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
+//   private final String expectedGuid = expectedMountPoints2;
 
     //Вариант 2
-//    String expectedPid = "6387";
-//    String expectedVid = "058f";
-//    String expectedVendorName = "Alcor Micro Corp.";
-//    String expectedProductName = "Flash Drive";
-//    String expectedSerial = "EFF732B1";
-//    String mountedDeviceKey = "\\??\\Volume{92e41808-1e77-11e7-8268-d86126b14266}";
-//    String expectedMountedDeviceValue = "\\??\\USBSTOR#CdRom&Ven_ASUS&Prod_Device_CD-ROM&Rev_0310#7&1f412d32&0&FCAZCY04R051&0#{53f5630d-b6bf-11d0-94f2-00a0c91efb8b}";
-//    String expectedMountPoints2 = "";
+    private final String expectedPid = "6387";
+    private final String expectedVid = "058f";
+    private final String expectedSerial = "EFF732B1";
+    private final String mountedDeviceKey = "\\??\\Volume{92e41808-1e77-11e7-8268-d86126b14266}";
+    private final String expectedMountedDeviceValue = "\\??\\USBSTOR#CdRom&Ven_ASUS&Prod_Device_CD-ROM&Rev_0310#7&1f412d32&0&FCAZCY04R051&0#{53f5630d-b6bf-11d0-94f2-00a0c91efb8b}";
+    private final String expectedMountPoints2 = "{2b3985d3-70cc-11e5-8259-18cf5e52a036}";
+    private final String expectedGuid = expectedMountPoints2;
 
     @BeforeAll
     static void beforeAll() {
-//        usbDevices = RegistryAnalyzer.getUSBDevices();
-        usbDevices = new RegistryAnalyzer().getUsbDeviceList();
+        usbDeviceMap = new RegistryAnalyzer().getUsbDeviceMap();
     }
 
     @Test
@@ -54,29 +52,26 @@ class RegistryAnalyzerTest {
         String actual = new RegistryAnalyzer().getMountedDevices().get(mountedDeviceKey);
         assertEquals(expectedMountedDeviceValue, actual, testFailedMsg);
     }
+
     @Test
     @DisplayName("Тест на заполнение GUID'ов")
     void getMountedDevices2() {
-        USBDevice usbDevice = new RegistryAnalyzer().getUsbDeviceList().stream()
-                .filter(d->d.getSerial().equals(expectedSerial))
+        USBDevice usbDevice = usbDeviceMap.entrySet().stream()
+                .filter(entry -> entry.getKey().equals(expectedSerial))
+                .map(Map.Entry::getValue)
                 .findFirst().orElse(USBDevice.getBuilder().build());
-        assertEquals(expectedMountPoints2, usbDevice.getGuid(), testFailedMsg);
-    }
 
-    @Test
-    void getUSBDeviceMap(){
-        Map<String, USBDevice> usbDeviceMap = new RegistryAnalyzer().getUsbDeviceMap();
-        usbDeviceMap.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(e-> System.out.println(e.getValue().printSomeInfo()));
+        assertEquals(expectedGuid, usbDevice.getGuid(), testFailedMsg);
+
     }
 
     @Test
     @DisplayName("Хотя бы одно устройство находится?")
     void getUSBDevices() {
-        assertTrue(usbDevices.stream().anyMatch(d -> d.getVid().equalsIgnoreCase(expectedVid)), testFailedMsg);
-        assertTrue(usbDevices.stream().anyMatch(d -> d.getPid().equalsIgnoreCase(expectedPid)), testFailedMsg);
-        assertTrue(usbDevices.stream().anyMatch(d -> d.getSerial().equalsIgnoreCase(expectedSerial)), testFailedMsg);
+        assertAll("Поиск устройства по серийному номеру",
+                () -> assertTrue(usbDeviceMap.containsKey(expectedSerial)),
+                () -> assertEquals(expectedVid, usbDeviceMap.get(expectedSerial).getVid()),
+                () -> assertEquals(expectedPid, usbDeviceMap.get(expectedSerial).getPid()));
     }
 
     @Test
@@ -89,15 +84,4 @@ class RegistryAnalyzerTest {
         assertTrue(userProfileList.stream().allMatch(p -> p.getProfileImagePath().toString().matches("[\\w\\d\\\\%:]+")), testFailedMsg);
 
     }
-
-    @Test
-    @DisplayName("Тест заполнения vendorName и productName на основе VID/PID")
-    void setVendorProductName() {
-        assertNotEquals("", expectedVendorName, testFailedMsg);
-        assertNotEquals("", expectedProductName, testFailedMsg);
-
-        assertTrue(usbDevices.stream().anyMatch(d -> d.getVendorName().equalsIgnoreCase(expectedVendorName)), testFailedMsg);
-        assertTrue(usbDevices.stream().anyMatch(d -> d.getProductName().equalsIgnoreCase(expectedProductName)), testFailedMsg);
-    }
-
 }

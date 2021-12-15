@@ -62,6 +62,7 @@ public class USBDevice {
         revision = "";
         isSerialOSGenerated = true;
         userAccountsList = new ArrayList<>();
+        usbIds = "usb.ids";
     }
 
     public static Builder getBuilder() {
@@ -75,7 +76,7 @@ public class USBDevice {
      */
     @Deprecated(forRemoval = true)
     public String printSomeInfo() {
-        return String.format("%-35s | %-30s",serial,guid);
+        return String.format("%-35s | %-30s", serial, guid);
     }
 
     @Override
@@ -172,11 +173,17 @@ public class USBDevice {
          * противном случае.
          *
          * @param serial серийный номер устройства
-         * @return
+         * @return возвращает билдер
          */
         public Builder withSerial(String serial) {
             newUsbDevice.serial = serial;
-            newUsbDevice.isSerialOSGenerated = serial.charAt(1) == '&';
+            //бывает что серийника нет вообще или при чтении данных серийником выступает набор бит, что бы корректно
+            // найти и сравнить символ '&' введена проверка.
+            if (newUsbDevice.serial.isBlank()) {
+                newUsbDevice.isSerialOSGenerated = false;
+            } else {
+                newUsbDevice.isSerialOSGenerated = serial.charAt(1) == '&';
+            }
             return this;
         }
 

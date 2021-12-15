@@ -17,12 +17,23 @@ public class RegistryAnalyzer {
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
     private static final String REG_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
 
-    private final List<USBDevice> usbDeviceList;
     private final Map<String, USBDevice> usbDeviceMap;
 
     public RegistryAnalyzer() {
-        this.usbDeviceList = new ArrayList<>();
         this.usbDeviceMap = new HashMap<>();
+    }
+
+    /**
+     * Декодирование строки текста из HEX-представления в читаемый формат.
+     *
+     * @param hexStr декодируемая строка
+     * @return строка в текстовом читаемом виде.
+     */
+    private String decodeHexToString(String hexStr) {
+        return Arrays.stream(hexStr.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
+                .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
+                .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
+                .collect(Collectors.joining());
     }
 
     /**
@@ -39,13 +50,6 @@ public class RegistryAnalyzer {
                 .collect(Collectors.toList());
     }
 
-    private String decodeHexToString(String hexStr){
-        return Arrays.stream(hexStr.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
-                .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
-                .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
-                .collect(Collectors.joining());
-    }
-
     /**
      * Метод собирает сведения о смонтированных устройствах.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
@@ -55,21 +59,13 @@ public class RegistryAnalyzer {
     public Map<String, String> getMountedDevices() {
         Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
 
-//        mountedDevices.entrySet().stream()
-//                .filter(entry-> decodeHexToString(entry.getValue()).matches("(.+#){2,4}"))
-//                .map(entry-> {entry.setValue(entry.getValue()).split("#").})
-
         for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
             String encodedValue = entry.getValue();
-            String decodedValue = Arrays.stream(encodedValue.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
-                    .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
-                    .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
-                    .collect(Collectors.joining());
-//            String serial = decodedValue.split("#")[2];
+            String decodedValue = decodeHexToString(encodedValue);
+
             String serial = Arrays.stream(decodedValue.split("#"))
-//                    .filter(value -> value.matches(".&.+|.+&."))
                     .skip(2)
-                    .map(s -> s.substring(0,s.length()-2)) //в серийном номере отбрасываем последние два символа - это, как правило, &0 или &1 - какие-то системные суффиксы
+                    .map(s -> s.substring(0, s.length() - 2)) //в серийном номере отбрасываем последние два символа - это, как правило, &0 или &1 - какие-то системные суффиксы
                     .findFirst().orElse(decodedValue);
             entry.setValue(decodedValue);
 
@@ -89,66 +85,18 @@ public class RegistryAnalyzer {
                         oldDevice.setGuid(deviceGuid);
                         return oldDevice;
                     });
-//            try {
-//                String deviceSerialNo = decodedValue.split("#")[2];
-//                deviceSerialNo = deviceSerialNo.substring(0, deviceSerialNo.lastIndexOf("&") - 1);
-//
-//
-//                for (USBDevice usbDevice : usbDeviceList) {
-//                    if (usbDevice.getSerial().equals(deviceSerialNo)) {
-//                        usbDevice.setGuid(deviceGuid);
-//                    }
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-
-//            String guid;
-//            int index = key.lastIndexOf("{");
-//            if (index != -1) {
-//                guid = key.substring(key.lastIndexOf("{"));
-//            } else {
-//                guid = "";
-//            }
         }
         return mountedDevices;
-    }
-
-    /**
-     * Получить список USB устройств когда-либо подключенных к АРМ.
-     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
-     *
-     * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
-     */
-    public List<USBDevice> getUSBDevices() {
-        USBDevice.setUsbIds("usb.ids");
-        List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
-        for (String pidvid : pidVidList) {
-            List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
-            for (String serialKey : listSerialKeys) {
-                String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
-                String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
-                String[] tmpArr = serialKey.split("\\\\");
-                String serial = tmpArr[tmpArr.length - 1];
-
-                USBDevice currUsbDev = USBDevice.getBuilder()
-                        .withSerial(serial)
-                        .withVidPid(vid, pid)
-                        .build();
-                usbDeviceList.add(currUsbDev);
-                usbDeviceMap.put(serial, currUsbDev);
-            }
-        }
-
-        return usbDeviceList;
     }
 
     /**
      * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
      * автоматически из полей реестра имеющих такие же наименования.
      *
-     * @return
+     * @return Список USBDevice с полями заполненными из ветки реестра HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
+     * @deprecated использует рефлексию. Тесты на корректность работы не проходил.
      */
+    @Deprecated(forRemoval = true)
     public List<USBDevice> getUSBDevicesWithAutoFilling() {
         List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
         USBDevice.setUsbIds("usb.ids");
@@ -165,15 +113,45 @@ public class RegistryAnalyzer {
         return usbDevices;
     }
 
-    public List<USBDevice> getUsbDeviceList() {
-        getUSBDevices();
+    public Map<String, USBDevice> getUsbDeviceMap() {
+        getUsbDevices();
         getMountedDevices();
-        return usbDeviceList;
+        return usbDeviceMap;
     }
 
-    public Map<String, USBDevice> getUsbDeviceMap() {
-        getUSBDevices();
-        getMountedDevices();
+    /**
+     * Получить список USB устройств когда-либо подключенных к АРМ.
+     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
+     *
+     * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
+     */
+    public Map<String, USBDevice> getUsbDevices() {
+        USBDevice.setUsbIds("usb.ids");
+        List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
+        for (String pidvid : pidVidList) {
+            List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
+            for (String serialKey : listSerialKeys) {
+                String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
+                String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
+                String[] tmpArr = serialKey.split("\\\\");
+                String serial = tmpArr[tmpArr.length - 1];
+
+                USBDevice currUsbDev = USBDevice.getBuilder()
+                        .withSerial(serial)
+                        .withVidPid(vid, pid)
+                        .build();
+
+                //FIXME сделать слияние, а не замену.
+                usbDeviceMap.put(serial, currUsbDev);
+
+//                usbDeviceMap.merge(serial,
+//                        currUsbDev,
+//                        (oldDevice, newDevice) -> {
+//                            oldDevice.;
+//                            return oldDevice;
+//                        });
+            }
+        }
         return usbDeviceMap;
     }
 

@@ -1,49 +1,32 @@
 package ru.pel.usbddc.entity;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import ru.pel.usbddc.utility.RegistryAnalyzer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class USBDeviceTest {
-    private static List<USBDevice> usbDeviceList;
-    private static Map<String,USBDevice> usbDeviceMap;
-    private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
-
-    //Вариант 1
-    private final String SERIAL = "1492710242260098";
-    private final String EXPECTED_PRODUCT_NAME = "Superior S102 Pro";
-    private final String EXPECTED_VENDOR_NAME = "A-DATA Technology Co., Ltd.";
-
-    //Вариант 2
-//    private final String SERIAL = "09FTZ683GCLP0HVS";
-//    private final String EXPECTED_PRODUCT_NAME = "JetFlash";
-//    private final String EXPECTED_VENDOR_NAME = "Transcend Information, Inc.";
+    private final static String SERIAL = "EFF732B1";
+    private final static String VID = "058f";
+    private final static String PID = "6387";
+    private final static String EXPECTED_PRODUCT_NAME = "Flash Drive";
+    private final static String EXPECTED_VENDOR_NAME = "Alcor Micro Corp.";
+    private static USBDevice testUsbDevice;
 
     @BeforeAll
     static void beforeAll() {
-        usbDeviceList = new RegistryAnalyzer().getUsbDeviceList();
-        usbDeviceMap = new RegistryAnalyzer().getUsbDeviceMap();
+        testUsbDevice = USBDevice.getBuilder()
+                .withSerial(SERIAL)
+                .withVidPid(VID, PID).build();
     }
 
     @Test
-    void determineProductName() {
-        USBDevice device = usbDeviceList.stream()
-                .filter(d -> d.getSerial().equals(SERIAL))
-                .findAny().orElse(USBDevice.getBuilder().build());
-        assertEquals(EXPECTED_PRODUCT_NAME, device.getProductName(), testFailedMsg);
-    }
-
-    @Test
-    void determineVendorName() {
-        USBDevice device = usbDeviceList.stream()
-                .filter(d -> d.getSerial().equals(SERIAL))
-                .findAny().orElse(USBDevice.getBuilder().build());
-        assertEquals(EXPECTED_VENDOR_NAME, device.getVendorName(), testFailedMsg);
+    @DisplayName("Определение названий по VID/PID")
+    void determineVendorNameAndProductName() {
+        assertAll("Определение имен производителя и продукта по vid/pid",
+                () -> assertEquals(EXPECTED_VENDOR_NAME, testUsbDevice.getVendorName()),
+                () -> assertEquals(EXPECTED_PRODUCT_NAME, testUsbDevice.getProductName()));
     }
 }
