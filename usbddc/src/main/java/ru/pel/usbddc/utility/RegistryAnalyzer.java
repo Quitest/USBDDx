@@ -37,11 +37,13 @@ public class RegistryAnalyzer {
     }
 
     /**
-     * Получить точки монтирования ТЕКУЩЕГО пользователя
+     * Получить GUID устройств, которые использовались ТЕКУЩИМ пользователем.
      *
      * @return список всех когда-либо существовавших точек монтирования
      */
     public List<String> getMountPoints2OfCurrentUser() {
+        //TODO рассмотреть возможность получения информации из ветки
+        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
         String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
 
         return WinRegReader.getSubkeys(mountPoints2).stream()
