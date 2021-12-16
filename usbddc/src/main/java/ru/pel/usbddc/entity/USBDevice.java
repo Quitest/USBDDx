@@ -1,6 +1,5 @@
 package ru.pel.usbddc.entity;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -29,12 +28,17 @@ import java.util.*;
 
 @Getter
 @Setter
-@EqualsAndHashCode
+//@EqualsAndHashCode
 public class USBDevice {
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
     private static String usbIds;
+
+    static {
+        usbIds = "usb.ids";
+    }
+
     private String friendlyName;
     private String guid;
     private String pid;
@@ -47,10 +51,7 @@ public class USBDevice {
     private boolean isSerialOSGenerated;
     private List<String> userAccountsList;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
-
-    static {
-        usbIds = "usb.ids";
-    }
+    private List<UserProfile> userAccountsList;
 
     private USBDevice() {
         friendlyName = "";
@@ -81,6 +82,25 @@ public class USBDevice {
                 Objects.equals(vendorName, usbDevice.vendorName) &&
                 Objects.equals(vid, usbDevice.vid) &&
                 Objects.equals(revision, usbDevice.revision);
+    }
+
+    /**
+     * Выполняет копирование значений полей из src в объект. Копируются не null'евые значения.
+     *
+     * @param src Устройство, свойства которого необходимо скопировать.
+     */
+    public void fillFieldsFrom(USBDevice src) {
+        this.friendlyName = src.getFriendlyName();
+        this.guid = src.getGuid();
+        this.pid = src.getPid();
+        this.productName = src.getProductName();
+        this.serial = src.getSerial();
+        this.vendorName = src.getVendorName();
+        this.vid = src.getVid();
+        this.volumeName = src.getVolumeName();
+        this.revision = src.getRevision();
+        this.isSerialOSGenerated = src.isSerialOSGenerated();
+        this.userAccountsList = new ArrayList<>(src.getUserAccountsList());
     }
 
     @Override
@@ -202,6 +222,11 @@ public class USBDevice {
             } else {
                 newUsbDevice.isSerialOSGenerated = serial.charAt(1) == '&';
             }
+            return this;
+        }
+
+        public Builder withUserProfileList(List<UserProfile> userProfileList) {
+            newUsbDevice.userAccountsList = new ArrayList<>(userProfileList);
             return this;
         }
 
