@@ -10,10 +10,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Класс предназначен для описания USB устройства.
@@ -51,6 +48,10 @@ public class USBDevice {
     private List<String> userAccountsList;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
 
+    static {
+        usbIds = "usb.ids";
+    }
+
     private USBDevice() {
         friendlyName = "";
         pid = "";
@@ -62,17 +63,36 @@ public class USBDevice {
         revision = "";
         isSerialOSGenerated = true;
         userAccountsList = new ArrayList<>();
-        usbIds = "usb.ids";
     }
 
     public static Builder getBuilder() {
         return new Builder();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        USBDevice usbDevice = (USBDevice) o;
+        return isSerialOSGenerated == usbDevice.isSerialOSGenerated &&
+                Objects.equals(pid, usbDevice.pid) &&
+                Objects.equals(productName, usbDevice.productName) &&
+                Objects.equals(serial, usbDevice.serial) &&
+                Objects.equals(vendorName, usbDevice.vendorName) &&
+                Objects.equals(vid, usbDevice.vid) &&
+                Objects.equals(revision, usbDevice.revision);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pid, productName, serial, vendorName, vid, revision, isSerialOSGenerated);
+    }
+
     /**
      * Метод введен временно для ручной настройки выводимых полей. Позже будет удален.
      *
      * @return
+     * @deprecated Вводился для наглядного вывода собранной информации.
      */
     @Deprecated(forRemoval = true)
     public String printSomeInfo() {
@@ -90,10 +110,8 @@ public class USBDevice {
         StringBuilder sb = new StringBuilder();
         try {
             Field[] fieldsThis = USBDevice.class.getDeclaredFields();
-//            Field[] fieldsSuper = Device.class.getDeclaredFields();
             List<Field> fields = new ArrayList<>();
             fields.addAll(Arrays.asList(fieldsThis));
-//            fields.addAll(Arrays.asList(fieldsSuper));
             fields.sort(Comparator.comparing(Field::getName));
 
             for (Field field : fields) {
@@ -221,7 +239,7 @@ public class USBDevice {
                         newUsbDevice.productName = currStr.split(" {2}")[1];
                         break;
                     }
-                    if (vendorFound && currStr.matches("^\\w{4}.+?")) { //начался блок следующего вендора?
+                    if (vendorFound && currStr.matches("\\[0-9a-fA-F]{4}\\s+.+")) { //начался блок следующего вендора?
                         newUsbDevice.productName = "";
                         break;
                     }
