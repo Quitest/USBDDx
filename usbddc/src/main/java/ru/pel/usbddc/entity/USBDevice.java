@@ -4,11 +4,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.utility.IgnoreNullBeanUtilsBean;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -49,7 +51,7 @@ public class USBDevice {
     private String volumeName;
     private String revision;
     private boolean isSerialOSGenerated;
-    private List<String> userAccountsList;
+//    private List<String> userAccountsList;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
     private List<UserProfile> userAccountsList;
 
@@ -85,22 +87,13 @@ public class USBDevice {
     }
 
     /**
-     * Выполняет копирование значений полей из src в объект. Копируются не null'евые значения.
+     * Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
+     * текущем объекте свойство остается неизменным.
      *
      * @param src Устройство, свойства которого необходимо скопировать.
      */
-    public void fillFieldsFrom(USBDevice src) {
-        this.friendlyName = src.getFriendlyName();
-        this.guid = src.getGuid();
-        this.pid = src.getPid();
-        this.productName = src.getProductName();
-        this.serial = src.getSerial();
-        this.vendorName = src.getVendorName();
-        this.vid = src.getVid();
-        this.volumeName = src.getVolumeName();
-        this.revision = src.getRevision();
-        this.isSerialOSGenerated = src.isSerialOSGenerated();
-        this.userAccountsList = new ArrayList<>(src.getUserAccountsList());
+    public void copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
+        new IgnoreNullBeanUtilsBean().copyProperties(this,src);
     }
 
     @Override
@@ -235,7 +228,7 @@ public class USBDevice {
          *
          * @param vid Vendor ID
          * @param pid Product ID
-         * @return
+         * @return возвращает билдер.
          */
         public Builder withVidPid(String vid, String pid) {
             newUsbDevice.vid = vid;
