@@ -1,15 +1,16 @@
 package ru.pel.usbddc.entity;
 
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.utility.IgnoreNullBeanUtilsBean;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -29,12 +30,17 @@ import java.util.*;
 
 @Getter
 @Setter
-@EqualsAndHashCode
+//@EqualsAndHashCode
 public class USBDevice {
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
     private static String usbIds;
+
+    static {
+        usbIds = "usb.ids";
+    }
+
     private String friendlyName;
     private String guid;
     private String pid;
@@ -45,12 +51,9 @@ public class USBDevice {
     private String volumeName;
     private String revision;
     private boolean isSerialOSGenerated;
-    private List<String> userAccountsList;
+//    private List<String> userAccountsList;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
-
-    static {
-        usbIds = "usb.ids";
-    }
+    private List<UserProfile> userAccountsList;
 
     private USBDevice() {
         friendlyName = "";
@@ -74,18 +77,22 @@ public class USBDevice {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         USBDevice usbDevice = (USBDevice) o;
-        return isSerialOSGenerated == usbDevice.isSerialOSGenerated &&
-                Objects.equals(pid, usbDevice.pid) &&
-                Objects.equals(productName, usbDevice.productName) &&
-                Objects.equals(serial, usbDevice.serial) &&
-                Objects.equals(vendorName, usbDevice.vendorName) &&
-                Objects.equals(vid, usbDevice.vid) &&
-                Objects.equals(revision, usbDevice.revision);
+        return isSerialOSGenerated == usbDevice.isSerialOSGenerated && Objects.equals(friendlyName, usbDevice.friendlyName) && Objects.equals(guid, usbDevice.guid) && Objects.equals(pid, usbDevice.pid) && Objects.equals(productName, usbDevice.productName) && Objects.equals(serial, usbDevice.serial) && Objects.equals(vendorName, usbDevice.vendorName) && Objects.equals(vid, usbDevice.vid) && Objects.equals(volumeName, usbDevice.volumeName) && Objects.equals(revision, usbDevice.revision) && Objects.equals(userAccountsList, usbDevice.userAccountsList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pid, productName, serial, vendorName, vid, revision, isSerialOSGenerated);
+        return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeName, revision, isSerialOSGenerated, userAccountsList);
+    }
+
+    /**
+     * Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
+     * текущем объекте свойство остается неизменным.
+     *
+     * @param src Устройство, свойства которого необходимо скопировать.
+     */
+    public void copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
+        new IgnoreNullBeanUtilsBean().copyProperties(this,src);
     }
 
     /**
@@ -205,12 +212,17 @@ public class USBDevice {
             return this;
         }
 
+        public Builder withUserProfileList(List<UserProfile> userProfileList) {
+            newUsbDevice.userAccountsList = new ArrayList<>(userProfileList);
+            return this;
+        }
+
         /**
          * Устанавливает значения VID/PID. При наличии файла usb.ids автоматически заполняет vendorName и productName
          *
          * @param vid Vendor ID
          * @param pid Product ID
-         * @return
+         * @return возвращает билдер.
          */
         public Builder withVidPid(String vid, String pid) {
             newUsbDevice.vid = vid;
