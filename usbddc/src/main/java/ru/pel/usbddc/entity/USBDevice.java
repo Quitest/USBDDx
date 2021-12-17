@@ -77,13 +77,12 @@ public class USBDevice {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         USBDevice usbDevice = (USBDevice) o;
-        return isSerialOSGenerated == usbDevice.isSerialOSGenerated &&
-                Objects.equals(pid, usbDevice.pid) &&
-                Objects.equals(productName, usbDevice.productName) &&
-                Objects.equals(serial, usbDevice.serial) &&
-                Objects.equals(vendorName, usbDevice.vendorName) &&
-                Objects.equals(vid, usbDevice.vid) &&
-                Objects.equals(revision, usbDevice.revision);
+        return isSerialOSGenerated == usbDevice.isSerialOSGenerated && Objects.equals(friendlyName, usbDevice.friendlyName) && Objects.equals(guid, usbDevice.guid) && Objects.equals(pid, usbDevice.pid) && Objects.equals(productName, usbDevice.productName) && Objects.equals(serial, usbDevice.serial) && Objects.equals(vendorName, usbDevice.vendorName) && Objects.equals(vid, usbDevice.vid) && Objects.equals(volumeName, usbDevice.volumeName) && Objects.equals(revision, usbDevice.revision) && Objects.equals(userAccountsList, usbDevice.userAccountsList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeName, revision, isSerialOSGenerated, userAccountsList);
     }
 
     /**
@@ -94,11 +93,6 @@ public class USBDevice {
      */
     public void copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
         new IgnoreNullBeanUtilsBean().copyProperties(this,src);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(pid, productName, serial, vendorName, vid, revision, isSerialOSGenerated);
     }
 
     /**
