@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.pel.usbddc.utility.IgnoreNullBeanUtilsBean;
+import ru.pel.usbddc.service.IgnoreNullBeanUtilsBean;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

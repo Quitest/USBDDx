@@ -1,4 +1,4 @@
-package ru.pel.usbddc.utility;
+package ru.pel.usbddc.service;
 
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
