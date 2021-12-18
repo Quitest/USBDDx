@@ -51,7 +51,6 @@ public class USBDevice {
     private String volumeName;
     private String revision;
     private boolean isSerialOSGenerated;
-//    private List<String> userAccountsList;
 //    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
     private List<UserProfile> userAccountsList;
 
@@ -90,9 +89,11 @@ public class USBDevice {
      * текущем объекте свойство остается неизменным.
      *
      * @param src Устройство, свойства которого необходимо скопировать.
+     * @return текущее устройство со свойствами, обновленными из src.
      */
-    public void copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
+    public USBDevice copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
         new IgnoreNullBeanUtilsBean().copyProperties(this,src);
+        return this;
     }
 
     /**

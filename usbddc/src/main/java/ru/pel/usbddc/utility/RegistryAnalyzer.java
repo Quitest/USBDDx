@@ -3,6 +3,7 @@ package ru.pel.usbddc.utility;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -53,10 +54,14 @@ public class RegistryAnalyzer {
     }
 
     /**
-     * Метод собирает сведения о смонтированных устройствах.
-     * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices
+     * <p>Метод собирает сведения о смонтированных устройствах. Основная задача - установить соответствие между GUID и
+     * серийными номерами устройств.</p>
+     * <p>Если устройство с серийным номером уже имеется, то сведения о нем обновляются. Если устройства с серийным
+     * номером нет, то оно запоминается.</p>
+     * <p>Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\MountedDevices</p>
      *
-     * @return мапу смонтированных устройств
+     * @return мапу смонтированных устройств. Key - серийный номер, value - устройство со всеми известными сведениями о
+     * нем на текущий момент.
      */
     public Map<String, String> getMountedDevices() {
         Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
@@ -76,19 +81,47 @@ public class RegistryAnalyzer {
                     .dropWhile(ch -> !ch.equals("{"))
                     .collect(Collectors.joining());
 
-            USBDevice mountedUSBDevice = USBDevice.getBuilder()
-                    .withSerial(serial)
-                    .withGuid(deviceGuid)
-                    .build();
+//            USBDevice mountedUSBDevice = USBDevice.getBuilder()
+//                    .withSerial(serial)
+//                    .withGuid(deviceGuid)
+//                    .build();
 
-            usbDeviceMap.merge(serial,
-                    mountedUSBDevice,
-                    (oldDevice, newDevice) -> {
-                        oldDevice.setGuid(deviceGuid);
-                        return oldDevice;
-                    });
+//            usbDeviceMap.merge(serial,
+//                    mountedUSBDevice,
+//                    (oldDevice, newDevice) -> {
+//                        oldDevice.setGuid(deviceGuid);
+//                        return oldDevice;
+//                    });
+
+            USBDevice tmp = usbDeviceMap.get(serial);
+            if (tmp == null){
+                usbDeviceMap.put(serial, USBDevice.getBuilder().withSerial(serial).withGuid(deviceGuid).build());
+            }else {
+                tmp.setGuid(deviceGuid);
+                usbDeviceMap.put(serial,tmp);
+            }
         }
         return mountedDevices;
+    }
+
+    /**
+     * Получить результат анализа реестра. Результат содержит в себе все данные, которые удалось получить путем чтения
+     * реестра.
+     *
+     * @param doNewAnalysis true - собирает все данные об устройствах из реестра заново, false - возвращает ранее полученные
+     *                      данные
+     * @return
+     */
+    public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
+        if (doNewAnalysis) {
+            try {
+                getUsbDevices();
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            getMountedDevices();
+        }
+        return usbDeviceMap;
     }
 
     /**
@@ -115,19 +148,13 @@ public class RegistryAnalyzer {
         return usbDevices;
     }
 
-    public Map<String, USBDevice> getUsbDeviceMap() {
-        getUsbDevices();
-        getMountedDevices();
-        return usbDeviceMap;
-    }
-
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
      *
      * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
      */
-    public Map<String, USBDevice> getUsbDevices() {
+    public Map<String, USBDevice> getUsbDevices() throws InvocationTargetException, IllegalAccessException {
         USBDevice.setUsbIds("usb.ids");
         List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
         for (String pidvid : pidVidList) {
@@ -143,15 +170,14 @@ public class RegistryAnalyzer {
                         .withVidPid(vid, pid)
                         .build();
 
-                //FIXME сделать слияние, а не замену.
-                usbDeviceMap.put(serial, currUsbDev);
-
-//                usbDeviceMap.merge(serial,
-//                        currUsbDev,
-//                        (oldDevice, newDevice) -> {
-//                            oldDevice.;
-//                            return oldDevice;
-//                        });
+                //WTF Реализация процесса обновления устройства так себе... Может, как-то красивее можно переписать?
+                USBDevice updatedUSBDevice = usbDeviceMap.get(serial);
+                if (updatedUSBDevice == null) {                         //если в мапу ранее не записывали устройства с таким же серийником
+                    usbDeviceMap.put(serial, currUsbDev);               //то просто заносим новое устройство,
+                } else {                                                //иначе
+                    updatedUSBDevice.copyNonNullProperties(currUsbDev); //копируем новые свойства в свойства существующего устройства
+                    usbDeviceMap.put(serial, updatedUSBDevice);         //и записываем, т.е., по сути, обновляем.
+                }
             }
         }
         return usbDeviceMap;
