@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 
@@ -16,13 +17,13 @@ class RegistryAnalyzerTest {
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
-   private final String expectedPid = "312b";
-   private final String expectedVid = "125f";
-   private final String expectedSerial = "1492710242260098";
-   private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
-   private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
-   private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
-   private final String expectedGuid = expectedMountPoints2;
+    private final String expectedPid = "312b";
+    private final String expectedVid = "125f";
+    private final String expectedSerial = "1492710242260098";
+    private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
+    private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
+    private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
+    private final String expectedGuid = expectedMountPoints2;
 
     //Вариант 2
 //    private final String expectedPid = "6387";
@@ -35,7 +36,7 @@ class RegistryAnalyzerTest {
 
     @BeforeAll
     static void beforeAll() {
-        usbDeviceMap = new RegistryAnalyzer().getUsbDeviceMap();
+        usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
     }
 
     @Test
@@ -46,14 +47,14 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Сбор смонтированных устройств")
-    void getMountedDevices() {
+    void getMountedDevicesTest1() {
         String actual = new RegistryAnalyzer().getMountedDevices().get(mountedDeviceKey);
         assertEquals(expectedMountedDeviceValue, actual, testFailedMsg);
     }
 
     @Test
     @DisplayName("Тест на заполнение GUID'ов")
-    void getMountedDevices2() {
+    void getMountedDevicesTest2() {
         USBDevice usbDevice = usbDeviceMap.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
@@ -65,11 +66,27 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Хотя бы одно устройство находится?")
-    void getUSBDevices() {
+    void getUSBDevicesTest1() {
         assertAll("Поиск устройства по серийному номеру",
                 () -> assertTrue(usbDeviceMap.containsKey(expectedSerial)),
                 () -> assertEquals(expectedVid, usbDeviceMap.get(expectedSerial).getVid()),
                 () -> assertEquals(expectedPid, usbDeviceMap.get(expectedSerial).getPid()));
+    }
+
+    @Test
+    @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
+    void orderInvokingRegistryAnalysisMethod() throws InvocationTargetException, IllegalAccessException {
+        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
+        registryAnalyzer1.getUsbDevices();
+        registryAnalyzer1.getMountedDevices();
+        Map<String,USBDevice> map1 = registryAnalyzer1.getRegistryAnalysis(false);
+
+        RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
+        registryAnalyzer2.getMountedDevices();
+        registryAnalyzer2.getUsbDevices();
+        Map<String,USBDevice> map2 = registryAnalyzer2.getRegistryAnalysis(false);
+
+        assertEquals(map1,map2);
     }
 
     @Test
