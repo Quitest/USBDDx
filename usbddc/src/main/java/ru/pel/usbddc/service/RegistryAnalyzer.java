@@ -37,6 +37,23 @@ public class RegistryAnalyzer {
                 .collect(Collectors.joining());
     }
 
+    public long determineDeviceUsers() {
+        List<UserProfile> userProfileList = getUserProfileList();
+        List<String> userDevices = getMountPoints2OfCurrentUser();
+        Path homeDir = new OSInfoCollector().getHomedir();
+        UserProfile userProfile = userProfileList.stream()
+                .filter(profile -> profile.getProfileImagePath().equals(homeDir))
+                .findFirst().orElseThrow();
+
+        return usbDeviceMap.values().stream()
+                .filter(usbDevice -> userDevices.contains(usbDevice.getGuid()))
+                .map(usbDevice -> {
+                    usbDevice.addUserProfile(userProfile);
+                    return usbDevice;
+                }).count();
+
+    }
+
     /**
      * Получить GUID устройств, которые использовались ТЕКУЩИМ пользователем.
      *
@@ -94,11 +111,11 @@ public class RegistryAnalyzer {
 //                    });
 
             USBDevice tmp = usbDeviceMap.get(serial);
-            if (tmp == null){
+            if (tmp == null) {
                 usbDeviceMap.put(serial, USBDevice.getBuilder().withSerial(serial).withGuid(deviceGuid).build());
-            }else {
+            } else {
                 tmp.setGuid(deviceGuid);
-                usbDeviceMap.put(serial,tmp);
+                usbDeviceMap.put(serial, tmp);
             }
         }
         return mountedDevices;
@@ -120,6 +137,7 @@ public class RegistryAnalyzer {
                 e.printStackTrace();
             }
             getMountedDevices();
+            determineDeviceUsers();
         }
         return usbDeviceMap;
     }

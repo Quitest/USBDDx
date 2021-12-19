@@ -7,6 +7,7 @@ import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,18 @@ class RegistryAnalyzerTest {
     @BeforeAll
     static void beforeAll() {
         usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
+    }
+
+    @Test
+    @DisplayName("Определение устройств, подключенных текущим пользователем")
+    void determineDeviceUsers() {
+        List<UserProfile> userAccountsList = usbDeviceMap.get(expectedSerial).getUserAccountsList();
+        Path currentUserHomedir = new OSInfoCollector().getHomedir();
+        UserProfile user = userAccountsList.stream()
+                .filter(userProfile -> userProfile.getProfileImagePath().equals(currentUserHomedir))
+                .findFirst().orElseThrow();
+
+        assertTrue(userAccountsList.contains(user));
     }
 
     @Test
@@ -74,22 +87,6 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
-    void orderInvokingRegistryAnalysisMethod() throws InvocationTargetException, IllegalAccessException {
-        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
-        registryAnalyzer1.getUsbDevices();
-        registryAnalyzer1.getMountedDevices();
-        Map<String,USBDevice> map1 = registryAnalyzer1.getRegistryAnalysis(false);
-
-        RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
-        registryAnalyzer2.getMountedDevices();
-        registryAnalyzer2.getUsbDevices();
-        Map<String,USBDevice> map2 = registryAnalyzer2.getRegistryAnalysis(false);
-
-        assertEquals(map1,map2);
-    }
-
-    @Test
     @DisplayName("Сбор профилей пользователей")
     void getUserProfileList() {
         List<UserProfile> userProfileList = new RegistryAnalyzer().getUserProfileList();
@@ -98,5 +95,21 @@ class RegistryAnalyzerTest {
         assertTrue(userProfileList.stream().allMatch(p -> p.getSecurityId().matches("S[-\\d]+")), testFailedMsg);
         assertTrue(userProfileList.stream().allMatch(p -> p.getProfileImagePath().toString().matches("[\\w\\d\\\\%:]+")), testFailedMsg);
 
+    }
+
+    @Test
+    @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
+    void orderInvokingRegistryAnalysisMethod() throws InvocationTargetException, IllegalAccessException {
+        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
+        registryAnalyzer1.getUsbDevices();
+        registryAnalyzer1.getMountedDevices();
+        Map<String, USBDevice> map1 = registryAnalyzer1.getRegistryAnalysis(false);
+
+        RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
+        registryAnalyzer2.getMountedDevices();
+        registryAnalyzer2.getUsbDevices();
+        Map<String, USBDevice> map2 = registryAnalyzer2.getRegistryAnalysis(false);
+
+        assertEquals(map1, map2);
     }
 }

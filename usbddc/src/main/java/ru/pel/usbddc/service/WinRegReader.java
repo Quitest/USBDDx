@@ -12,6 +12,10 @@ import java.util.stream.Collectors;
  * </p>
  */
 public class WinRegReader {
+    private WinRegReader() {
+        //все методы статические - нет необходимости создавать объект.
+    }
+
     /**
      * Возвращает список подразделов (подключей) указанного раздела (ключа) реестра
      *
@@ -21,7 +25,7 @@ public class WinRegReader {
     public static List<String> getSubkeys(String key) {
         List<String> result = new ArrayList<>();
         try {
-            Process process = Runtime.getRuntime().exec("reg query \"" + key + "\"");
+            /*Process process = Runtime.getRuntime().exec("reg query \"" + key + "\"");
             StreamReader reader = new StreamReader(process.getInputStream());
             reader.start();
             process.waitFor();
@@ -31,7 +35,8 @@ public class WinRegReader {
             //<key>\subkey1 - первая строка, в моем случае вседга пустая.
             //<key>\subkey2
             //<key>\subkeyN
-            String output = reader.getResult();
+            String output = reader.getResult();*/
+            String output = execCommand("reg query \"" + key + "\"");
 
             result = Arrays.stream(output.split(System.lineSeparator()))
                     .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
@@ -54,13 +59,15 @@ public class WinRegReader {
      */
     public static Optional<Map<String, String>> getAllValuesInKey(String key) {
         try {
-            Process process = Runtime.getRuntime().exec("reg query \"" + key + "\"");
+            /*Process process = Runtime.getRuntime().exec("reg query \"" + key + "\"");
             StreamReader reader = new StreamReader(process.getInputStream());
 
             reader.start();
             process.waitFor();
             reader.join();
-            String output = reader.getResult();
+            String output = reader.getResult();*/
+            String output = execCommand("reg query \"" + key + "\"");
+
             String cyr = new String(output.getBytes("cp866"), "windows-1251");
 
 //            String cp = new String("фбвс".getBytes(), "866");
@@ -83,7 +90,6 @@ public class WinRegReader {
             e.printStackTrace();
             return Optional.empty();
         }
-
     }
 
     /**
@@ -95,17 +101,19 @@ public class WinRegReader {
      */
     public static Optional<String> getValue(String key, String value) {
         try {
-            Process process = Runtime.getRuntime().exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
+            /*Process process = Runtime.getRuntime().exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
 
             StreamReader reader = new StreamReader(process.getInputStream());
             reader.start();
             process.waitFor();
             reader.join();
-            String output = reader.getResult();
+            String output = reader.getResult();*/
+
+            String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"");
 
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
-            //if( ! output.contains("\t")){ - это оригинальное условие, не пойму его назначения.
+            //не пойму его назначения оригинального условия if(!output.contains("\t")){
             //  В моем случае всегда было true, т.к. output всегда не содержал \t, вместо табуляции в строке было четыре
             //  символа пробела.
             if (output.matches("\\s+")) {
@@ -115,34 +123,57 @@ public class WinRegReader {
             String[] parsed = output.split("\\s{4}"); //в оригинале регулярка была "\t", что давало неверный результат,
             // т.к. в output деление идет четырьмя символами пробела
             return Optional.of(parsed[parsed.length - 1]);
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             return Optional.empty();
         }
 
     }
 
-    /**
-     * Метод-заглушка-напоминание, возможно, в будущем он будет реализован, если потребуется.
-     *
-     * @param key   путь по которому расположен параметр.
-     * @param value имя параметра, тип которого необходимо получить.
-     * @return тип запрашиваемого параметра.
-     */
-    public static String getValueType(String key, String value) {
-        return "";
+    public static String loadHive(String nodeName, String hive) {
+        String command = new StringBuilder()
+                .append("reg load ")
+                .append("\"")
+                .append(nodeName)
+                .append("\" \"")
+                .append(hive)
+                .append("\"").toString();
+
+        String result = "";
+        try {
+            result = execCommand(command);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static String unloadHive(String nodeName) {
+        String result = "";
+        try {
+            result = execCommand("reg unload \"" + nodeName + "\"");
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private static String execCommand(String command) throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(command);
+
+        StreamReader reader = new StreamReader(process.getInputStream());
+        reader.start();
+        process.waitFor();
+        reader.join();
+        return reader.getResult();
     }
 
     //TODO не пойму зачем вынесено в отдельный класс. Может избавиться от него?
     private static class StreamReader extends Thread {
-        //        ORIGINAL CODE
-//        private InputStream is;
         private InputStreamReader isr;
         private StringWriter sw = new StringWriter();
 
         public StreamReader(InputStream is) {
-//            ORIGINAL CODE
-//            this.is = is;
             try {
                 this.isr = new InputStreamReader(is, "866");
             } catch (UnsupportedEncodingException e) {
@@ -156,15 +187,6 @@ public class WinRegReader {
 
         @Override
         public void run() {
-//            ORIGINAL CODE
-//            try {
-//                int c;
-//                while ((c = is.read()) != -1){
-//                    sw.write(c);
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
             try {
                 int c;
                 while ((c = isr.read()) != -1) {
