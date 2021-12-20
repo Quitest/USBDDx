@@ -3,6 +3,8 @@ package ru.pel.usbddc.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class WinRegReaderTest {
@@ -18,5 +20,19 @@ class WinRegReaderTest {
                 () -> WinRegReader.unloadHive(NODE_NAME),
                 () -> assertFalse(WinRegReader.getSubkeys("HKLM").contains(NODE_NAME))
         );
+    }
+
+    @Test
+    @DisplayName("Проверка 1 существования ветки реестра. Ожидается FALSE")
+    void isKeyExistsTrue() throws IOException, InterruptedException {
+        assertFalse(WinRegReader.isKeyExists(NODE_NAME));
+    }
+
+    @Test
+    @DisplayName("Проверка 2 существования ветки реестра. Ожидается TRUE")
+    void isKeyExistsFalse() throws IOException, InterruptedException {
+        WinRegReader.loadHive(NODE_NAME, HIVE);
+        assertTrue(WinRegReader.isKeyExists(NODE_NAME));
+        WinRegReader.unloadHive(NODE_NAME);
     }
 }

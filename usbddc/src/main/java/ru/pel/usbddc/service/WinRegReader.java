@@ -138,12 +138,19 @@ public class WinRegReader {
      */
     public static String unloadHive(String nodeName) {
         String result = "";
+        //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
         try {
             result = execCommand("cmd /c start /wait /I reg.lnk unload " + nodeName);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         return result;
+    }
+
+    public static boolean isKeyExists(String key) throws IOException, InterruptedException {
+//        String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"");
+        String output = execCommand("reg query \"" + key + "\" /ve ");
+        return !output.isEmpty();
     }
 
     /**
