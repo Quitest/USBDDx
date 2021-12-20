@@ -132,11 +132,12 @@ public class WinRegReader {
 
     public static String loadHive(String nodeName, String hive) {
         String command = new StringBuilder()
-                .append("reg load ")
-                .append("\"")
+                .append("cmd /c start \"\" reg.lnk \"load ")
+//                .append("reg load ")
+//                .append("\"")
                 .append(nodeName)
-                .append("\" \"")
-                .append(hive)
+//                .append("\" \"")
+                .append(" " + hive)
                 .append("\"").toString();
 
         String result = "";
