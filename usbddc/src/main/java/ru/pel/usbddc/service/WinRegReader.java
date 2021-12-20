@@ -25,17 +25,10 @@ public class WinRegReader {
     public static List<String> getSubkeys(String key) {
         List<String> result = new ArrayList<>();
         try {
-            /*Process process = Runtime.getRuntime().exec("reg query \"" + key + "\"");
-            StreamReader reader = new StreamReader(process.getInputStream());
-            reader.start();
-            process.waitFor();
-            reader.join();
-
             //Вывод имеет следующий формат
             //<key>\subkey1 - первая строка, в моем случае вседга пустая.
             //<key>\subkey2
             //<key>\subkeyN
-            String output = reader.getResult();*/
             String output = execCommand("reg query \"" + key + "\"");
 
             result = Arrays.stream(output.split(System.lineSeparator()))
@@ -59,13 +52,6 @@ public class WinRegReader {
      */
     public static Optional<Map<String, String>> getAllValuesInKey(String key) {
         try {
-            /*Process process = Runtime.getRuntime().exec("reg query \"" + key + "\"");
-            StreamReader reader = new StreamReader(process.getInputStream());
-
-            reader.start();
-            process.waitFor();
-            reader.join();
-            String output = reader.getResult();*/
             String output = execCommand("reg query \"" + key + "\"");
 
             String cyr = new String(output.getBytes("cp866"), "windows-1251");
@@ -101,14 +87,6 @@ public class WinRegReader {
      */
     public static Optional<String> getValue(String key, String value) {
         try {
-            /*Process process = Runtime.getRuntime().exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
-
-            StreamReader reader = new StreamReader(process.getInputStream());
-            reader.start();
-            process.waitFor();
-            reader.join();
-            String output = reader.getResult();*/
-
             String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"");
 
             // Вывод имеет следующий формат:
@@ -130,16 +108,19 @@ public class WinRegReader {
 
     }
 
+    /**
+     * <p>Загружает в куст реестра для дальнейшей работы с ним.</p>
+     * <u>Внимание!</u> Требует наличие прав администратора!
+     *
+     * @param nodeName Имя подраздела реестра, в который загружается файл куста. Создание нового раздела.
+     * @param hive     Имя файла куста, подлежащего загрузке.
+     * @return
+     */
     public static String loadHive(String nodeName, String hive) {
         String command = new StringBuilder()
-                .append("cmd /c start \"\" reg.lnk \"load ")
-//                .append("reg load ")
-//                .append("\"")
-                .append(nodeName)
-//                .append("\" \"")
-                .append(" " + hive)
-                .append("\"").toString();
-
+                .append("cmd /c start /wait /I reg.lnk load ")
+                .append(nodeName).append(" ").append(hive)
+                .toString();
         String result = "";
         try {
             result = execCommand(command);
@@ -149,16 +130,30 @@ public class WinRegReader {
         return result;
     }
 
+    /**
+     * <p>Выгружает ранее загруженный куст реестра.</p>
+     * <u>Внимание!</u> Требует наличие прав администратора!
+     * @param nodeName выгружаемый куст реестра
+     * @return
+     */
     public static String unloadHive(String nodeName) {
         String result = "";
         try {
-            result = execCommand("reg unload \"" + nodeName + "\"");
+            result = execCommand("cmd /c start /wait /I reg.lnk unload " + nodeName);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         return result;
     }
 
+    /**
+     * Выполняет указанную команду в отдельном процессе, ждет окончания ее работы и возвращает результат.
+     * @param command команда для выполнения
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    //TODO переписать метод так что бы он возвращал дополнительно код (не)успешного завершения.
     private static String execCommand(String command) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command);
 
