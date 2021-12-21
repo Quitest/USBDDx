@@ -23,16 +23,16 @@ class WinRegReaderTest {
     }
 
     @Test
-    @DisplayName("Проверка 1 существования ветки реестра. Ожидается FALSE")
-    void isKeyExistsTrue() throws IOException, InterruptedException {
-        assertFalse(WinRegReader.isKeyExists(NODE_NAME));
-    }
-
-    @Test
-    @DisplayName("Проверка 2 существования ветки реестра. Ожидается TRUE")
+    @DisplayName("Проверка существующей ветки реестра. Ожидается TRUE")
     void isKeyExistsFalse() throws IOException, InterruptedException {
         WinRegReader.loadHive(NODE_NAME, HIVE);
         assertTrue(WinRegReader.isKeyExists(NODE_NAME));
         WinRegReader.unloadHive(NODE_NAME);
+    }
+
+    @Test
+    @DisplayName("Проверка НЕ существующей ветки реестра. Ожидается FALSE")
+    void isKeyExistsTrue() throws IOException, InterruptedException {
+        assertFalse(WinRegReader.isKeyExists(NODE_NAME));
     }
 }

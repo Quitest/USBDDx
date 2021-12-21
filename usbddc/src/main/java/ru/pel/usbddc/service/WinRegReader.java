@@ -1,5 +1,8 @@
 package ru.pel.usbddc.service;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -29,7 +32,7 @@ public class WinRegReader {
             //<key>\subkey1 - первая строка, в моем случае вседга пустая.
             //<key>\subkey2
             //<key>\subkeyN
-            String output = execCommand("reg query \"" + key + "\"");
+            String output = execCommand("reg query \"" + key + "\"").getResult();
 
             result = Arrays.stream(output.split(System.lineSeparator()))
                     .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
@@ -47,14 +50,14 @@ public class WinRegReader {
      * Служит для чтения всех параметров из указанного ключа реестра.
      *
      * @param key ключ (подраздел) реестра параметры которого необходимо получить
-     * @return возвращает Optional пару параметр=значение. Если параметров нет или что-то пошло не так, то возыращается
+     * @return Возвращает Optional пару параметр=значение. Если параметров нет или что-то пошло не так, то возыращается
      * Optional.empty()
      */
     public static Optional<Map<String, String>> getAllValuesInKey(String key) {
         try {
-            String output = execCommand("reg query \"" + key + "\"");
+            String output = execCommand("reg query \"" + key + "\"").getResult();
 
-            String cyr = new String(output.getBytes("cp866"), "windows-1251");
+//            String cyr = new String(output.getBytes("cp866"), "windows-1251");
 
 //            String cp = new String("фбвс".getBytes(), "866");
 //            String utf = new String(cp.getBytes("866"), StandardCharsets.UTF_8);
@@ -87,7 +90,7 @@ public class WinRegReader {
      */
     public static Optional<String> getValue(String key, String value) {
         try {
-            String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"");
+            String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"").getResult();
 
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
@@ -114,67 +117,78 @@ public class WinRegReader {
      *
      * @param nodeName Имя подраздела реестра, в который загружается файл куста. Создание нового раздела.
      * @param hive     Имя файла куста, подлежащего загрузке.
-     * @return
+     * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static String loadHive(String nodeName, String hive) {
-        String command = new StringBuilder()
-                .append("cmd /c start /wait /I reg.lnk load ")
-                .append(nodeName).append(" ").append(hive)
-                .toString();
-        String result = "";
+    public static ExecResult<Integer, String> loadHive(String nodeName, String hive) {
+        String command = "cmd /c start /wait /I reg.lnk load " +
+                nodeName + " " + hive;
+        ExecResult<Integer, String> execResult = new ExecResult<>();
         try {
-            result = execCommand(command);
+            execResult = execCommand(command);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        return result;
+        return execResult;
     }
 
     /**
      * <p>Выгружает ранее загруженный куст реестра.</p>
      * <u>Внимание!</u> Требует наличие прав администратора!
+     *
      * @param nodeName выгружаемый куст реестра
-     * @return
+     * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static String unloadHive(String nodeName) {
-        String result = "";
+    public static ExecResult<Integer, String> unloadHive(String nodeName) {
+        ExecResult<Integer, String> execResult = new ExecResult<>();
         //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
         try {
-            result = execCommand("cmd /c start /wait /I reg.lnk unload " + nodeName);
+            execResult = execCommand("cmd /c start /wait /I reg.lnk unload " + nodeName);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        return result;
+        return execResult;
     }
 
+    /**
+     * Определяет существование раздела реестра путем получения значения по умолчанию. Если значение имеется, то считается, что
+     * раздел существует.
+     *
+     * @param key раздел, существование которого необходимо проверить.
+     * @return true - раздел реестра существует, false - указанного раздела нет.
+     * @throws IOException
+     * @throws InterruptedException
+     */
     public static boolean isKeyExists(String key) throws IOException, InterruptedException {
-//        String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"");
-        String output = execCommand("reg query \"" + key + "\" /ve ");
-        return !output.isEmpty();
+        ExecResult<Integer, String> result = execCommand("reg query \"" + key + "\" /ve ");
+        boolean b = result.exitCode == 0;
+        boolean s = !result.getResult().isEmpty();
+        return b && s;
     }
 
     /**
      * Выполняет указанную команду в отдельном процессе, ждет окончания ее работы и возвращает результат.
+     *
      * @param command команда для выполнения
-     * @return
+     * @return кортеж (пару значений): первое - код, с которым завершилась команда; второе - сам результат выполнения в
+     * виде строки.
      * @throws IOException
      * @throws InterruptedException
      */
-    //TODO переписать метод так что бы он возвращал дополнительно код (не)успешного завершения.
-    private static String execCommand(String command) throws IOException, InterruptedException {
+    private static ExecResult<Integer, String> execCommand(String command) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command);
 
         StreamReader reader = new StreamReader(process.getInputStream());
         reader.start();
-        process.waitFor();
+        int exitCode = process.waitFor();
         reader.join();
-        return reader.getResult();
+        String result = reader.getResult();
+        return new ExecResult<>(exitCode, result);
     }
 
     //TODO не пойму зачем вынесено в отдельный класс. Может избавиться от него?
     private static class StreamReader extends Thread {
         private InputStreamReader isr;
-        private StringWriter sw = new StringWriter();
+        private final StringWriter sw = new StringWriter();
 
         public StreamReader(InputStream is) {
             try {
@@ -199,6 +213,21 @@ public class WinRegReader {
                 e.printStackTrace();
             }
 
+        }
+    }
+
+    @Getter
+    @Setter
+    public static class ExecResult<C, R> {
+        private C exitCode;
+        private R result;
+
+        public ExecResult(C exitCode, R result) {
+            this.exitCode = exitCode;
+            this.result = result;
+        }
+
+        public ExecResult() {
         }
     }
 }
