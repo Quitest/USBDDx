@@ -37,21 +37,71 @@ public class RegistryAnalyzer {
                 .collect(Collectors.joining());
     }
 
+    /**
+     * <p>Определяет под какой учетной записью осуществлялось использование устройства.</p>
+     * <p>Определение происходит путем сопоставления имеющегося GUID и
+     * из куста реестра пользователя \Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
+     * </p>
+     * @return число устройств пользователей которых удалось определить.
+     */
     public long determineDeviceUsers() {
+        //TODO концепция выполнения:
+        // - получить список профилей в системе
+        // - циклично выполнять:
+        //      - загрузить куст реестра очередного профиля
+        //      - получить GUID из ...\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
+        //      - выгрузить куст реестра очередного пользователя
+        //      - связать очередной профиль с устройством
         List<UserProfile> userProfileList = getUserProfileList();
-        List<String> userDevices = getMountPoints2OfCurrentUser();
-        Path homeDir = new OSInfoCollector().getHomedir();
+//        List<String> userDevices = getMountedGUIDsOfCurrentUser();
+
+        long counter=0;
+//        for (UserProfile userProfile : userProfileList)
         UserProfile userProfile = userProfileList.stream()
-                .filter(profile -> profile.getProfileImagePath().equals(homeDir))
-                .findFirst().orElseThrow();
+                .filter(u->u.getProfileImagePath().toString().equals("C:\\Users\\adm")).findFirst().get();
+        {
+            List<String> mountedGUIDsOfUser = getMountedGUIDsOfUser(userProfile);
+            counter+=usbDeviceMap.values().stream()
+                    .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
+                    .map(usbDevice -> {
+                        usbDevice.addUserProfile(userProfile);
+                        return usbDevice;
+                    }).count();
+        }
 
-        return usbDeviceMap.values().stream()
-                .filter(usbDevice -> userDevices.contains(usbDevice.getGuid()))
-                .map(usbDevice -> {
-                    usbDevice.addUserProfile(userProfile);
-                    return usbDevice;
-                }).count();
+//        Path homeDir = new OSInfoCollector().getHomedir();
+//        UserProfile userProfile = userProfileList.stream()
+//                .filter(profile -> profile.getProfileImagePath().equals(homeDir))
+//                .findFirst().orElseThrow();
 
+//        return usbDeviceMap.values().stream()
+//                .filter(usbDevice -> userDevices.contains(usbDevice.getGuid()))
+//                .map(usbDevice -> {
+//                    usbDevice.addUserProfile(userProfile);
+//                    return usbDevice;
+//                }).count();
+        return counter;
+    }
+
+    public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
+        //TODO рассмотреть возможность получения информации из ветки
+        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
+//        String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
+        String username = userProfile.getUsername();
+        String nodeName = "HKEY_LOCAL_MACHINE\\userHive_"+username;
+        String userHive = userProfile.getProfileImagePath().toString()+"\\NTUSER.DAT";
+        WinRegReader.loadHive(nodeName,userHive);
+String sub = nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
+        List<String> subkeys = WinRegReader.getSubkeys(sub);
+
+        List<String> guidList = WinRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
+                .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
+                .map(e -> e.substring(e.lastIndexOf("{")))
+                .collect(Collectors.toList());
+
+        WinRegReader.unloadHive(nodeName);
+
+        return guidList;
     }
 
     /**
@@ -59,7 +109,7 @@ public class RegistryAnalyzer {
      *
      * @return список всех когда-либо существовавших точек монтирования
      */
-    public List<String> getMountPoints2OfCurrentUser() {
+    public List<String> getMountedGUIDsOfCurrentUser() {
         //TODO рассмотреть возможность получения информации из ветки
         // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
         String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";

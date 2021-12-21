@@ -33,6 +33,7 @@ public class WinRegReader {
             //<key>\subkey2
             //<key>\subkeyN
             String output = execCommand("reg query \"" + key + "\"").getResult();
+//            String output = execCommand("cmd /c start /wait /I reg.lnk query \"" + key + "\"").getResult();
 
             result = Arrays.stream(output.split(System.lineSeparator()))
                     .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
