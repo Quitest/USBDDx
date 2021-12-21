@@ -44,6 +44,8 @@ public class RegistryAnalyzer {
      * </p>
      * @return число устройств пользователей которых удалось определить.
      */
+    // FIXME: 21.12.2021 одна учетка заносится несколько раз в userAccountsList. Предполагаю, что количество повторов будет совпадать с
+    // количеством рабочих учетов в системе
     public long determineDeviceUsers() {
         //TODO концепция выполнения:
         // - получить список профилей в системе
@@ -56,9 +58,9 @@ public class RegistryAnalyzer {
 //        List<String> userDevices = getMountedGUIDsOfCurrentUser();
 
         long counter=0;
-//        for (UserProfile userProfile : userProfileList)
-        UserProfile userProfile = userProfileList.stream()
-                .filter(u->u.getProfileImagePath().toString().equals("C:\\Users\\adm")).findFirst().get();
+        for (UserProfile userProfile : userProfileList)
+//        UserProfile userProfile = userProfileList.stream()
+//                .filter(u->u.getProfileImagePath().toString().equals("C:\\Users\\adm")).findFirst().get();
         {
             List<String> mountedGUIDsOfUser = getMountedGUIDsOfUser(userProfile);
             counter+=usbDeviceMap.values().stream()
@@ -91,8 +93,6 @@ public class RegistryAnalyzer {
         String nodeName = "HKEY_LOCAL_MACHINE\\userHive_"+username;
         String userHive = userProfile.getProfileImagePath().toString()+"\\NTUSER.DAT";
         WinRegReader.loadHive(nodeName,userHive);
-String sub = nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
-        List<String> subkeys = WinRegReader.getSubkeys(sub);
 
         List<String> guidList = WinRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
                 .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
