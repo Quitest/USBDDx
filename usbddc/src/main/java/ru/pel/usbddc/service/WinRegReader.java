@@ -25,26 +25,19 @@ public class WinRegReader {
      * @param key раздел (ключ) реестра, подразделы (подключи) которого необходимо получить
      * @return список подразделов (подключей). Если подразделов нет, то возращается список с размером 0.
      */
-    public static List<String> getSubkeys(String key) {
-        List<String> result = new ArrayList<>();
-        try {
-            //Вывод имеет следующий формат
-            //<key>\subkey1 - первая строка, в моем случае вседга пустая.
-            //<key>\subkey2
-            //<key>\subkeyN
-            String output = execCommand("reg query \"" + key + "\"").getResult();
+    public static List<String> getSubkeys(String key) throws IOException, InterruptedException {
+        //Вывод имеет следующий формат
+        //<key>\subkey1 - первая строка, в моем случае вседга пустая.
+        //<key>\subkey2
+        //<key>\subkeyN
+        String output = execCommand("reg query \"" + key + "\"").getResult();
 //            String output = execCommand("cmd /c start /wait /I reg.lnk query \"" + key + "\"").getResult();
 
-            result = Arrays.stream(output.split(System.lineSeparator()))
-                    .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
-                            s.matches("HKEY.+") &&    //строки с параметрами
-                            !s.matches(Pattern.quote(key)))  //отбстроку с именем раздела, в котором ищем подразделы
-                    .collect(Collectors.toList());
-            return result;
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            return result;
-        }
+        return Arrays.stream(output.split(System.lineSeparator()))
+                .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
+                        s.matches("HKEY.+") &&    //строки с параметрами
+                        !s.matches(Pattern.quote(key)))  //отбстроку с именем раздела, в котором ищем подразделы
+                .collect(Collectors.toList());
     }
 
     /**
@@ -120,15 +113,11 @@ public class WinRegReader {
      * @param hive     Имя файла куста, подлежащего загрузке.
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static ExecResult<Integer, String> loadHive(String nodeName, String hive) {
-        String command = "cmd /c start /wait /I reg.lnk load " +
-                nodeName + " " + hive;
+    public static ExecResult<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
+        String command = "cmd /c start /b /wait /I reg.lnk load " + nodeName + " " + hive;
+//        String command = "reg load " + nodeName + " " + hive;
         ExecResult<Integer, String> execResult = new ExecResult<>();
-        try {
-            execResult = execCommand(command);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        execResult = execCommand(command);
         return execResult;
     }
 
@@ -139,14 +128,10 @@ public class WinRegReader {
      * @param nodeName выгружаемый куст реестра
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static ExecResult<Integer, String> unloadHive(String nodeName) {
+    public static ExecResult<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
         ExecResult<Integer, String> execResult = new ExecResult<>();
         //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
-        try {
-            execResult = execCommand("cmd /c start /wait /I reg.lnk unload " + nodeName);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        execResult = execCommand("cmd /c start /b /wait /I reg.lnk unload " + nodeName);
         return execResult;
     }
 
@@ -188,8 +173,8 @@ public class WinRegReader {
 
     //TODO не пойму зачем вынесено в отдельный класс. Может избавиться от него?
     private static class StreamReader extends Thread {
-        private InputStreamReader isr;
         private final StringWriter sw = new StringWriter();
+        private InputStreamReader isr;
 
         public StreamReader(InputStream is) {
             try {

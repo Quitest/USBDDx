@@ -3,6 +3,7 @@ package ru.pel.usbddc.service;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.*;
@@ -42,6 +43,7 @@ public class RegistryAnalyzer {
      * <p>Определение происходит путем сопоставления имеющегося GUID и
      * из куста реестра пользователя \Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
      * </p>
+     *
      * @return число устройств пользователей которых удалось определить.
      */
     // FIXME: 21.12.2021 одна учетка заносится несколько раз в userAccountsList. Предполагаю, что количество повторов будет совпадать с
@@ -55,69 +57,22 @@ public class RegistryAnalyzer {
         //      - выгрузить куст реестра очередного пользователя
         //      - связать очередной профиль с устройством
         List<UserProfile> userProfileList = getUserProfileList();
-//        List<String> userDevices = getMountedGUIDsOfCurrentUser();
+        String currentUserHomeDir = System.getProperty("user.home");
 
-        long counter=0;
+        long counter = 0;
         for (UserProfile userProfile : userProfileList)
-//        UserProfile userProfile = userProfileList.stream()
-//                .filter(u->u.getProfileImagePath().toString().equals("C:\\Users\\adm")).findFirst().get();
         {
-            List<String> mountedGUIDsOfUser = getMountedGUIDsOfUser(userProfile);
-            counter+=usbDeviceMap.values().stream()
+            List<String> mountedGUIDsOfUser =
+                    userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
+                            getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
+            counter += usbDeviceMap.values().stream()
                     .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
                     .map(usbDevice -> {
                         usbDevice.addUserProfile(userProfile);
                         return usbDevice;
                     }).count();
         }
-
-//        Path homeDir = new OSInfoCollector().getHomedir();
-//        UserProfile userProfile = userProfileList.stream()
-//                .filter(profile -> profile.getProfileImagePath().equals(homeDir))
-//                .findFirst().orElseThrow();
-
-//        return usbDeviceMap.values().stream()
-//                .filter(usbDevice -> userDevices.contains(usbDevice.getGuid()))
-//                .map(usbDevice -> {
-//                    usbDevice.addUserProfile(userProfile);
-//                    return usbDevice;
-//                }).count();
         return counter;
-    }
-
-    public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
-        //TODO рассмотреть возможность получения информации из ветки
-        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
-//        String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
-        String username = userProfile.getUsername();
-        String nodeName = "HKEY_LOCAL_MACHINE\\userHive_"+username;
-        String userHive = userProfile.getProfileImagePath().toString()+"\\NTUSER.DAT";
-        WinRegReader.loadHive(nodeName,userHive);
-
-        List<String> guidList = WinRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
-                .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
-                .map(e -> e.substring(e.lastIndexOf("{")))
-                .collect(Collectors.toList());
-
-        WinRegReader.unloadHive(nodeName);
-
-        return guidList;
-    }
-
-    /**
-     * Получить GUID устройств, которые использовались ТЕКУЩИМ пользователем.
-     *
-     * @return список всех когда-либо существовавших точек монтирования
-     */
-    public List<String> getMountedGUIDsOfCurrentUser() {
-        //TODO рассмотреть возможность получения информации из ветки
-        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
-        String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
-
-        return WinRegReader.getSubkeys(mountPoints2).stream()
-                .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
-                .map(e -> e.substring(e.lastIndexOf("{")))
-                .collect(Collectors.toList());
     }
 
     /**
@@ -148,18 +103,6 @@ public class RegistryAnalyzer {
                     .dropWhile(ch -> !ch.equals("{"))
                     .collect(Collectors.joining());
 
-//            USBDevice mountedUSBDevice = USBDevice.getBuilder()
-//                    .withSerial(serial)
-//                    .withGuid(deviceGuid)
-//                    .build();
-
-//            usbDeviceMap.merge(serial,
-//                    mountedUSBDevice,
-//                    (oldDevice, newDevice) -> {
-//                        oldDevice.setGuid(deviceGuid);
-//                        return oldDevice;
-//                    });
-
             USBDevice tmp = usbDeviceMap.get(serial);
             if (tmp == null) {
                 usbDeviceMap.put(serial, USBDevice.getBuilder().withSerial(serial).withGuid(deviceGuid).build());
@@ -169,6 +112,49 @@ public class RegistryAnalyzer {
             }
         }
         return mountedDevices;
+    }
+
+    /**
+     * Получить GUID устройств, которые использовались ТЕКУЩИМ пользователем.
+     *
+     * @return список всех когда-либо существовавших точек монтирования
+     */
+    public List<String> getMountedGUIDsOfCurrentUser() {
+        //TODO рассмотреть возможность получения информации из ветки
+        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
+        String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
+        List<String> result = new ArrayList<>();
+        try {
+            result = WinRegReader.getSubkeys(mountPoints2).stream()
+                    .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
+                    .map(e -> e.substring(e.lastIndexOf("{")))
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
+        //TODO рассмотреть возможность получения информации из ветки
+        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
+        String username = userProfile.getUsername();
+        String nodeName = "HKEY_LOCAL_MACHINE\\userHive_" + username;
+        String userHive = userProfile.getProfileImagePath().toString() + "\\NTUSER.DAT";
+        List<String> guidList = new ArrayList<>();
+        try {
+            WinRegReader.loadHive(nodeName, userHive);
+
+            guidList = WinRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
+                    .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
+                    .map(e -> e.substring(e.lastIndexOf("{")))
+                    .collect(Collectors.toList());
+
+            WinRegReader.unloadHive(nodeName);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return guidList;
     }
 
     /**
@@ -201,17 +187,22 @@ public class RegistryAnalyzer {
      */
     @Deprecated(forRemoval = true)
     public List<USBDevice> getUSBDevicesWithAutoFilling() {
-        List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
-        USBDevice.setUsbIds("usb.ids");
         List<USBDevice> usbDevices = new ArrayList<>();
-        for (String pidvid : subkeys) {
-            List<String> serials = WinRegReader.getSubkeys(pidvid);
-            for (String serial : serials) {
-                Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
-                USBDevice.Builder currDevice = USBDevice.getBuilder();
-                valueList.forEach(currDevice::setField);
-                usbDevices.add(currDevice.build());
+        try {
+            List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
+            USBDevice.setUsbIds("usb.ids");
+
+            for (String pidvid : subkeys) {
+                List<String> serials = WinRegReader.getSubkeys(pidvid);
+                for (String serial : serials) {
+                    Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
+                    USBDevice.Builder currDevice = USBDevice.getBuilder();
+                    valueList.forEach(currDevice::setField);
+                    usbDevices.add(currDevice.build());
+                }
             }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
         return usbDevices;
     }
@@ -224,29 +215,35 @@ public class RegistryAnalyzer {
      */
     public Map<String, USBDevice> getUsbDevices() throws InvocationTargetException, IllegalAccessException {
         USBDevice.setUsbIds("usb.ids");
-        List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
-        for (String pidvid : pidVidList) {
-            List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
-            for (String serialKey : listSerialKeys) {
-                String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
-                String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
-                String[] tmpArr = serialKey.split("\\\\");
-                String serial = tmpArr[tmpArr.length - 1];
+        List<String> pidVidList = null;
+        try {
+            pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
 
-                USBDevice currUsbDev = USBDevice.getBuilder()
-                        .withSerial(serial)
-                        .withVidPid(vid, pid)
-                        .build();
+            for (String pidvid : pidVidList) {
+                List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
+                for (String serialKey : listSerialKeys) {
+                    String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
+                    String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
+                    String[] tmpArr = serialKey.split("\\\\");
+                    String serial = tmpArr[tmpArr.length - 1];
 
-                //WTF Реализация процесса обновления устройства так себе... Может, как-то красивее можно переписать?
-                USBDevice updatedUSBDevice = usbDeviceMap.get(serial);
-                if (updatedUSBDevice == null) {                         //если в мапу ранее не записывали устройства с таким же серийником
-                    usbDeviceMap.put(serial, currUsbDev);               //то просто заносим новое устройство,
-                } else {                                                //иначе
-                    updatedUSBDevice.copyNonNullProperties(currUsbDev); //копируем новые свойства в свойства существующего устройства
-                    usbDeviceMap.put(serial, updatedUSBDevice);         //и записываем, т.е., по сути, обновляем.
+                    USBDevice currUsbDev = USBDevice.getBuilder()
+                            .withSerial(serial)
+                            .withVidPid(vid, pid)
+                            .build();
+
+                    //WTF Реализация процесса обновления устройства так себе... Может, как-то красивее можно переписать?
+                    USBDevice updatedUSBDevice = usbDeviceMap.get(serial);
+                    if (updatedUSBDevice == null) {                         //если в мапу ранее не записывали устройства с таким же серийником
+                        usbDeviceMap.put(serial, currUsbDev);               //то просто заносим новое устройство,
+                    } else {                                                //иначе
+                        updatedUSBDevice.copyNonNullProperties(currUsbDev); //копируем новые свойства в свойства существующего устройства
+                        usbDeviceMap.put(serial, updatedUSBDevice);         //и записываем, т.е., по сути, обновляем.
+                    }
                 }
             }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
         return usbDeviceMap;
     }
@@ -263,21 +260,27 @@ public class RegistryAnalyzer {
      * @return список созданных профилей пользователей
      */
     public List<UserProfile> getUserProfileList() {
-        List<String> profileRegKeys = WinRegReader.getSubkeys(REG_PROFILE_LIST);
-        return profileRegKeys.stream()
-                .map(profile -> {
-                    String profileImagePath = WinRegReader.getValue(profile, "ProfileImagePath").orElseThrow();
-                    String username = profileImagePath.substring(profileImagePath.lastIndexOf("\\") + 1);
-                    String sid = profile.substring(profile.lastIndexOf("\\") + 1);
+        List<UserProfile> userProfileList = new ArrayList<>();
+        try {
+            List<String> profileRegKeys = WinRegReader.getSubkeys(REG_PROFILE_LIST);
+            userProfileList = profileRegKeys.stream()
+                    .map(profile -> {
+                        String profileImagePath = WinRegReader.getValue(profile, "ProfileImagePath").orElseThrow();
+                        String username = profileImagePath.substring(profileImagePath.lastIndexOf("\\") + 1);
+                        String sid = profile.substring(profile.lastIndexOf("\\") + 1);
 
-                    UserProfile.Builder builder = UserProfile.getBuilder();
-                    return builder
-                            .withProfileImagePath(Path.of(profileImagePath))
-                            .withSecurityId(sid)
-                            .withUsername(username)
-                            .build();
-                })
-                .collect(Collectors.toList());
+                        UserProfile.Builder builder = UserProfile.getBuilder();
+                        return builder
+                                .withProfileImagePath(Path.of(profileImagePath))
+                                .withSecurityId(sid)
+                                .withUsername(username)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return userProfileList;
     }
 
     /**
