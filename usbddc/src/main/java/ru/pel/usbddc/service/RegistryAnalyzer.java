@@ -73,7 +73,7 @@ public class RegistryAnalyzer {
      * @return мапу смонтированных устройств. Key - серийный номер, value - устройство со всеми известными сведениями о
      * нем на текущий момент.
      */
-    public Map<String, String> getMountedDevices() {
+    public Map<String, USBDevice> associateSerialToGuid() {
         Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
 
         for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
@@ -91,6 +91,7 @@ public class RegistryAnalyzer {
                     .dropWhile(ch -> !ch.equals("{"))
                     .collect(Collectors.joining());
 
+            //FIXME заменить код на метод копирования_ненулевых_свойств()
             USBDevice tmp = usbDeviceMap.get(serial);
             if (tmp == null) {
                 usbDeviceMap.put(serial, USBDevice.getBuilder().withSerial(serial).withGuid(deviceGuid).build());
@@ -99,18 +100,15 @@ public class RegistryAnalyzer {
                 usbDeviceMap.put(serial, tmp);
             }
         }
-        return mountedDevices;
-//        return usbDeviceMap;
+        return usbDeviceMap;
     }
 
     /**
      * Получить GUID устройств, которые использовались ТЕКУЩИМ пользователем.
      *
-     * @return список всех когда-либо существовавших точек монтирования
+     * @return список GUID всех когда-либо подключенных устройств.
      */
     public List<String> getMountedGUIDsOfCurrentUser() {
-        //TODO рассмотреть возможность получения информации из ветки
-        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
         String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
         List<String> result = new ArrayList<>();
         try {
@@ -124,13 +122,25 @@ public class RegistryAnalyzer {
         return result;
     }
 
+    /**
+     * <p>Получение GUID устройств подключенных указанным пользователем. Данные берутся из загруженного соответствующего
+     * куста NTUSER.DAT.</p>
+     * <p>Если указан профиль текущего пользователя, то вызывается метод {@link #getMountedGUIDsOfCurrentUser() } </p>
+     *
+     * @param userProfile профиль пользователя, из которого необходимо получить GUID'ы.
+     * @return список GUID всех когда-либо подключенных указанным пользователем устройств.
+     */
     public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
-        //TODO рассмотреть возможность получения информации из ветки
-        // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
+        String currentUserHomedir = System.getProperty("user.home");
+        String profileHomedir = userProfile.getProfileImagePath().toString();
+        if (profileHomedir.equals(currentUserHomedir)){
+            return getMountedGUIDsOfCurrentUser();
+        }
+
+        List<String> guidList = new ArrayList<>();
         String username = userProfile.getUsername().replaceAll("[\\s\\.-]+", "");
         String nodeName = "HKEY_LOCAL_MACHINE\\userHive_" + username;
         String userHive = userProfile.getProfileImagePath().toString() + "\\NTUSER.DAT";
-        List<String> guidList = new ArrayList<>();
         try {
             WinRegReader.loadHive(nodeName, userHive);
 
@@ -161,7 +171,7 @@ public class RegistryAnalyzer {
             } catch (InvocationTargetException | IllegalAccessException e) {
                 e.printStackTrace();
             }
-            getMountedDevices();
+            associateSerialToGuid();
             determineDeviceUsers();
         }
         return usbDeviceMap;
@@ -221,7 +231,7 @@ public class RegistryAnalyzer {
                             .withVidPid(vid, pid)
                             .build();
 
-                    //WTF Реализация процесса обновления устройства так себе... Может, как-то красивее можно переписать?
+                    //FIXME заменить методом копировать_ненулевые_свойства()
                     USBDevice updatedUSBDevice = usbDeviceMap.get(serial);
                     if (updatedUSBDevice == null) {                         //если в мапу ранее не записывали устройства с таким же серийником
                         usbDeviceMap.put(serial, currUsbDev);               //то просто заносим новое устройство,
