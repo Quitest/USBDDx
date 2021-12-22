@@ -114,7 +114,8 @@ public class WinRegReader {
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
     public static ExecResult<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
-        String command = "cmd /c start /b /wait /I reg.lnk load " + nodeName + " " + hive;
+//        String command = "cmd /c start /b /wait /I reg.lnk load " + nodeName + " " + hive;
+        String command = "reg load " + nodeName + " \"" + hive+ "\"";
 //        String command = "reg load " + nodeName + " " + hive;
         ExecResult<Integer, String> execResult = new ExecResult<>();
         execResult = execCommand(command);
@@ -131,7 +132,8 @@ public class WinRegReader {
     public static ExecResult<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
         ExecResult<Integer, String> execResult = new ExecResult<>();
         //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
-        execResult = execCommand("cmd /c start /b /wait /I reg.lnk unload " + nodeName);
+//        execResult = execCommand("cmd /c start /b /wait /I reg.lnk unload " + nodeName);
+        execResult = execCommand("reg unload " + nodeName);
         return execResult;
     }
 

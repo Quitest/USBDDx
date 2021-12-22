@@ -44,27 +44,15 @@ public class RegistryAnalyzer {
      * из куста реестра пользователя \Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
      * </p>
      *
-     * @return число устройств пользователей которых удалось определить.
+     * @return число устройств, пользователей которых удалось определить.
      */
-    // FIXME: 21.12.2021 одна учетка заносится несколько раз в userAccountsList. Предполагаю, что количество повторов будет совпадать с
-    // количеством рабочих учетов в системе
     public long determineDeviceUsers() {
-        //TODO концепция выполнения:
-        // - получить список профилей в системе
-        // - циклично выполнять:
-        //      - загрузить куст реестра очередного профиля
-        //      - получить GUID из ...\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
-        //      - выгрузить куст реестра очередного пользователя
-        //      - связать очередной профиль с устройством
         List<UserProfile> userProfileList = getUserProfileList();
         String currentUserHomeDir = System.getProperty("user.home");
-
         long counter = 0;
-        for (UserProfile userProfile : userProfileList)
-        {
-            List<String> mountedGUIDsOfUser =
-                    userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
-                            getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
+        for (UserProfile userProfile : userProfileList) {
+            List<String> mountedGUIDsOfUser = userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
+                    getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
             counter += usbDeviceMap.values().stream()
                     .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
                     .map(usbDevice -> {
@@ -112,6 +100,7 @@ public class RegistryAnalyzer {
             }
         }
         return mountedDevices;
+//        return usbDeviceMap;
     }
 
     /**
@@ -138,7 +127,7 @@ public class RegistryAnalyzer {
     public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
         //TODO рассмотреть возможность получения информации из ветки
         // HKEY_USERS\<User SID>\Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2 - это упростит процесс установления связи
-        String username = userProfile.getUsername();
+        String username = userProfile.getUsername().replaceAll("[\\s\\.-]+", "");
         String nodeName = "HKEY_LOCAL_MACHINE\\userHive_" + username;
         String userHive = userProfile.getProfileImagePath().toString() + "\\NTUSER.DAT";
         List<String> guidList = new ArrayList<>();
