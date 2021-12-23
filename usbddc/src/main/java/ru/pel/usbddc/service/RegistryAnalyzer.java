@@ -26,44 +26,6 @@ public class RegistryAnalyzer {
     }
 
     /**
-     * Декодирование строки текста из HEX-представления в читаемый формат.
-     *
-     * @param hexStr декодируемая строка
-     * @return строка в текстовом читаемом виде.
-     */
-    private String decodeHexToString(String hexStr) {
-        return Arrays.stream(hexStr.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
-                .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
-                .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
-                .collect(Collectors.joining());
-    }
-
-    /**
-     * <p>Определяет под какой учетной записью осуществлялось использование устройства.</p>
-     * <p>Определение происходит путем сопоставления имеющегося GUID и
-     * из куста реестра пользователя \Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
-     * </p>
-     *
-     * @return число устройств, пользователей которых удалось определить.
-     */
-    public long determineDeviceUsers() {
-        List<UserProfile> userProfileList = getUserProfileList();
-        String currentUserHomeDir = System.getProperty("user.home");
-        long counter = 0;
-        for (UserProfile userProfile : userProfileList) {
-            List<String> mountedGUIDsOfUser = userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
-                    getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
-            counter += usbDeviceMap.values().stream()
-                    .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
-                    .map(usbDevice -> {
-                        usbDevice.addUserProfile(userProfile);
-                        return usbDevice;
-                    }).count();
-        }
-        return counter;
-    }
-
-    /**
      * <p>Метод собирает сведения о смонтированных устройствах. Основная задача - установить соответствие между GUID и
      * серийными номерами устройств.</p>
      * <p>Если устройство с серийным номером уже имеется, то сведения о нем обновляются. Если устройства с серийным
@@ -104,6 +66,76 @@ public class RegistryAnalyzer {
     }
 
     /**
+     * Декодирование строки текста из HEX-представления в читаемый формат.
+     *
+     * @param hexStr декодируемая строка
+     * @return строка в текстовом читаемом виде.
+     */
+    private String decodeHexToString(String hexStr) {
+        return Arrays.stream(hexStr.split("(?<=\\G..)"))// разбиваем строку на парные числа - байты
+                .filter(str -> !str.equals("00")) //отбрасываем нулевые байты, что бы в результате не было "пробельных" символов
+                .map(str -> Character.toString(Integer.parseInt(str, 16))) // преобразуем HEX в строковые значения
+                .collect(Collectors.joining());
+    }
+
+    /**
+     * <p>Определяет под какой учетной записью осуществлялось использование устройства.</p>
+     * <p>Определение происходит путем сопоставления имеющегося GUID и
+     * из куста реестра пользователя \Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
+     * </p>
+     *
+     * @return число устройств, пользователей которых удалось определить.
+     */
+    public long determineDeviceUsers() {
+        List<UserProfile> userProfileList = getUserProfileList();
+        String currentUserHomeDir = System.getProperty("user.home");
+        long counter = 0;
+        for (UserProfile userProfile : userProfileList) {
+            List<String> mountedGUIDsOfUser = userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
+                    getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
+            counter += usbDeviceMap.values().stream()
+                    .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
+                    .map(usbDevice -> {
+                        usbDevice.addUserProfile(userProfile);
+                        return usbDevice;
+                    }).count();
+        }
+        return counter;
+    }
+
+    public Map<String, USBDevice> getFriendlyName() {
+        String regKeyUsbstor = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
+        try {
+            List<String> deviceGroupList = WinRegReader.getSubkeys(regKeyUsbstor);
+            for (String deviceGroupKey : deviceGroupList) {
+                String revision = deviceGroupKey.substring(deviceGroupKey.lastIndexOf('_') + 1);
+                List<String> serialList = WinRegReader.getSubkeys(deviceGroupKey);
+                for (String serialKey : serialList) {
+                    int lastIndexOfSlash = serialKey.lastIndexOf('\\') + 1;
+                    String serial = serialKey.charAt(serialKey.length() - 2) == '&' ?       //Имеется ли суффикс по типу "&0" у раздела реестра?
+                            serialKey.substring(lastIndexOfSlash, serialKey.length() - 2) : //Если да - отбрасываем его и префикс в виде пути
+                            serialKey.substring(lastIndexOfSlash);                          //иначе просто отбрасываем префикс в виде пути.
+                    String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
+                    USBDevice tmp = USBDevice.getBuilder()
+                            .withSerial(serial)
+                            .withRevision(revision)
+                            .withFriendlyName(friendlyName).build();
+                    usbDeviceMap.merge(serial, tmp, (usbDevice, src) -> {
+                        usbDevice.setFriendlyName(src.getFriendlyName());
+                        usbDevice.setRevision(src.getRevision());
+                        return usbDevice;
+                    });
+                }
+            }
+        }
+        //FIXME избавиться от этой лапши из эксепшенов
+        catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        return usbDeviceMap;
+    }
+
+    /**
      * Получить GUID устройств, которые использовались ТЕКУЩИМ пользователем.
      *
      * @return список GUID всех когда-либо подключенных устройств.
@@ -133,7 +165,7 @@ public class RegistryAnalyzer {
     public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
         String currentUserHomedir = System.getProperty("user.home");
         String profileHomedir = userProfile.getProfileImagePath().toString();
-        if (profileHomedir.equals(currentUserHomedir)){
+        if (profileHomedir.equals(currentUserHomedir)) {
             return getMountedGUIDsOfCurrentUser();
         }
 
@@ -173,6 +205,7 @@ public class RegistryAnalyzer {
             }
             associateSerialToGuid();
             determineDeviceUsers();
+            getFriendlyName();
         }
         return usbDeviceMap;
     }
@@ -214,9 +247,8 @@ public class RegistryAnalyzer {
      */
     public Map<String, USBDevice> getUsbDevices() throws InvocationTargetException, IllegalAccessException {
         USBDevice.setUsbIds("usb.ids");
-        List<String> pidVidList = null;
         try {
-            pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
+            List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
 
             for (String pidvid : pidVidList) {
                 List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);

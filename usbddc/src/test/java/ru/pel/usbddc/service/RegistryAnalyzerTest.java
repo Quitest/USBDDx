@@ -26,6 +26,7 @@ class RegistryAnalyzerTest {
 //    private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
 //    private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
 //    private final String expectedGuid = expectedMountPoints2;
+//    private final String expectedFriendlyName = "Generic Flash Disk USB Device";
 
     //Вариант 2
     private final String expectedPid = "6387";
@@ -35,6 +36,8 @@ class RegistryAnalyzerTest {
     private final String expectedMountedDeviceValue = "\\??\\USBSTOR#CdRom&Ven_ASUS&Prod_Device_CD-ROM&Rev_0310#7&1f412d32&0&FCAZCY04R051&0#{53f5630d-b6bf-11d0-94f2-00a0c91efb8b}";
     private final String expectedMountPoints2 = "{2b3985d3-70cc-11e5-8259-18cf5e52a036}";
     private final String expectedGuid = expectedMountPoints2;
+    private final String expectedFriendlyName = "Generic Flash Disk USB Device";
+    private final String expectedRevision = "8.07";
 
     @BeforeAll
     static void beforeAll() {
@@ -72,6 +75,13 @@ class RegistryAnalyzerTest {
                 .collect(Collectors.toList());
 
         assertTrue(collect.size() > 0, "В системе есть USB-устройство, использовавшееся несколькими пользователями?");
+    }
+
+    @Test
+    @DisplayName("Определение friendlyName устройства")
+    void getFriendlyNamesTest() {
+        Map<String, USBDevice> friendlyName = new RegistryAnalyzer().getFriendlyName();
+        assertEquals(expectedFriendlyName, friendlyName.get(expectedSerial).getFriendlyName());
     }
 
     @Test
@@ -124,6 +134,31 @@ class RegistryAnalyzerTest {
         String actualGuid = mountPoints2.stream().filter(mp -> mp.equals(expectedMountPoints2)).findFirst().orElse("<NOT FOUND>");
 
         assertEquals(expectedMountPoints2, actualGuid, "Устройства с такими GUID не нашлось.");
+    }
+
+    @Test
+    @DisplayName("Тест на заполненность всех полей")
+    void getRegistryAnalysisTest() {
+        USBDevice usbDevice = usbDeviceMap.get(expectedSerial);
+        assertAll(
+                () -> assertNotEquals("", usbDevice.getSerial()),
+                () -> assertNotEquals("", usbDevice.getPid()),
+                () -> assertNotEquals("", usbDevice.getProductName()),
+                () -> assertNotEquals("", usbDevice.getVendorName()),
+                () -> assertNotEquals("", usbDevice.getVid()),
+                () -> assertNotEquals("", usbDevice.getGuid()),
+                () -> assertNotEquals("", usbDevice.getFriendlyName()),
+                () -> assertNotEquals("", usbDevice.getVolumeName()),
+                () -> assertNotEquals("", usbDevice.getRevision()),
+                () -> assertFalse(usbDevice.getUserAccountsList().isEmpty())
+        );
+    }
+
+    @Test
+    @DisplayName("Определение ревизии устройства")
+    void getRevisionTest() {
+        String actualRevision = new RegistryAnalyzer().getFriendlyName().get(expectedSerial).getRevision();
+        assertEquals(expectedRevision, actualRevision);
     }
 
     @Test
