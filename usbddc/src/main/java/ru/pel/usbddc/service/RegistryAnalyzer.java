@@ -240,6 +240,24 @@ public class RegistryAnalyzer {
     }
 
     /**
+     * Парсит раздел реестра Windows {@code HKLM\SOFTWARE\Microsoft\Windows Portable Devices} на наличие меток
+     * смонтированных разделов (томов) на известных устройствах.
+     *
+     * @return мапу, наполненную серийным номером устройства и списком наименований разделов (томов) на нем.
+     */
+    public Map<String, USBDevice> parseWindowsPortableDevice(){
+        String wpdKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Portable Devices\\Devices";
+        try {
+            List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
+
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return usbDeviceMap;
+    }
+
+    /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
      *

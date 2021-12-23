@@ -48,7 +48,7 @@ public class USBDevice {
     private String serial;
     private String vendorName;
     private String vid;
-    private String volumeName;
+    private List<String> volumeName;
     private String revision;
     private boolean isSerialOSGenerated;
     private List<UserProfile> userAccountsList;
@@ -60,7 +60,7 @@ public class USBDevice {
         serial = "";
         vendorName = "";
         vid = "";
-        volumeName = "";
+        volumeName = new ArrayList<>();
         revision = "";
         isSerialOSGenerated = true;
         userAccountsList = new ArrayList<>();
@@ -272,8 +272,8 @@ public class USBDevice {
             return this;
         }
 
-        public Builder withVolumeName(String volumeName) {
-            newUsbDevice.volumeName = volumeName;
+        public Builder withVolumeName(List<String> volumeNameList) {
+            newUsbDevice.volumeName = volumeNameList;
             return this;
         }
     }

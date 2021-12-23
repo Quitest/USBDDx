@@ -5,6 +5,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,7 +39,7 @@ class USBDeviceTest {
         USBDevice dst = USBDevice.getBuilder()
                 .withSerial("12345")
                 .withGuid(null)
-                .withVolumeName("oldVolumeName").build();
+                .withVolumeName(List.of("oldVolumeName")).build();
         USBDevice src = USBDevice.getBuilder()
                 .withSerial("testSerial")
                 .withGuid("{1}")
