@@ -19,14 +19,15 @@ class RegistryAnalyzerTest {
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
-//    private final String expectedPid = "312b";
-//    private final String expectedVid = "125f";
-//    private final String expectedSerial = "1492710242260098";
-//    private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
-//    private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
-//    private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
-//    private final String expectedGuid = expectedMountPoints2;
-//    private final String expectedFriendlyName = "Generic Flash Disk USB Device";
+    private final String expectedPid = "312b";
+    private final String expectedVid = "125f";
+    private final String expectedSerial = "1492710242260098";
+    private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
+    private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
+    private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
+    private final String expectedGuid = expectedMountPoints2;
+    private final String expectedFriendlyName = "Generic Flash Disk USB Device";
+    private final String expectedRevision = "0.00";
 
     //Вариант 2
     private final String expectedPid = "6387";
@@ -65,6 +66,12 @@ class RegistryAnalyzerTest {
                 .findFirst().orElseThrow();
 
         assertTrue(userAccountsList.contains(user));
+    }
+
+    @Test
+    void parseWindowsPortableDevice() {
+//        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
+        assertEquals("QUITEST", usbDeviceMap.get(expectedSerial).getVolumeName());
     }
 
     @Test
@@ -171,18 +178,6 @@ class RegistryAnalyzerTest {
                 () -> assertTrue(usbDevices.containsKey(expectedSerial)),
                 () -> assertEquals(expectedVid, usbDevices.get(expectedSerial).getVid()),
                 () -> assertEquals(expectedPid, usbDevices.get(expectedSerial).getPid())
-        );
-    }
-
-    @Test
-    @DisplayName("Сбор профилей пользователей")
-    void getUserProfileList() {
-        List<UserProfile> userProfileList = new RegistryAnalyzer().getUserProfileList();
-
-        assertAll(
-                () -> assertTrue(userProfileList.stream().anyMatch(u -> u.getUsername().matches("[\\w\\d]+"))),
-                () -> assertTrue(userProfileList.stream().allMatch(p -> p.getSecurityId().matches("S[-\\d]+"))),
-                () -> assertTrue(userProfileList.stream().allMatch(p -> p.getProfileImagePath().toString().matches("[\\w\\d\\\\ %:\\.-]+")))
         );
     }
 

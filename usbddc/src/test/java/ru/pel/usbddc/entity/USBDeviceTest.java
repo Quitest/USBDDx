@@ -39,7 +39,7 @@ class USBDeviceTest {
         USBDevice dst = USBDevice.getBuilder()
                 .withSerial("12345")
                 .withGuid(null)
-                .withVolumeName(List.of("oldVolumeName")).build();
+                .withVolumeName("oldVolumeName").build();
         USBDevice src = USBDevice.getBuilder()
                 .withSerial("testSerial")
                 .withGuid("{1}")

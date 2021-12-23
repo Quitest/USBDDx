@@ -44,7 +44,8 @@ public class RegistryAnalyzer {
 
             String serial = Arrays.stream(decodedValue.split("#"))
                     .skip(2)
-                    .map(s -> s.substring(0, s.length() - 2)) //в серийном номере отбрасываем последние два символа - это, как правило, &0 или &1 - какие-то системные суффиксы
+                    .map(s -> s.charAt(s.length()-2) == '&' ? // если на предпоследней позиции символ "&", то
+                    s.substring(0, s.length() - 2) : s) //отбрасываем его и последний (например &0), иначе целиком забираем серийник.
                     .findFirst().orElse(decodedValue);
             entry.setValue(decodedValue);
 
@@ -103,6 +104,7 @@ public class RegistryAnalyzer {
         return counter;
     }
 
+    //TODO кроме FriendlyName метод еще и revision заполняет - имя не в полной мере соответствует.
     public Map<String, USBDevice> getFriendlyName() {
         String regKeyUsbstor = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
         try {
@@ -206,6 +208,7 @@ public class RegistryAnalyzer {
             associateSerialToGuid();
             determineDeviceUsers();
             getFriendlyName();
+            parseWindowsPortableDevice();
         }
         return usbDeviceMap;
     }
@@ -249,8 +252,19 @@ public class RegistryAnalyzer {
         String wpdKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Portable Devices\\Devices";
         try {
             List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
+            for (String deviceEntry : deviceList){
+                String key = usbDeviceMap.keySet().stream()
+                        .filter(deviceEntry::contains)
+                        .findFirst().orElseThrow();
+                String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
+                USBDevice tmp = USBDevice.getBuilder()
+                        .withSerial(key)
+                        .withVolumeName(volumeName).build();
 
-        } catch (IOException | InterruptedException e) {
+                usbDeviceMap.get(key).copyNonNullProperties(tmp);
+            }
+            //FIXME избавиться от лапши
+        } catch (IOException | InterruptedException | InvocationTargetException | IllegalAccessException e) {
             e.printStackTrace();
         }
 
