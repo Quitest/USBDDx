@@ -162,7 +162,7 @@ public class RegistryAnalyzer {
      *
      * @param doNewAnalysis true - собирает все данные об устройствах из реестра заново, false - возвращает ранее полученные
      *                      данные
-     * @return
+     * @return результаты предыдущего или нового анализа в зависимости от аргумента.
      */
     public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
