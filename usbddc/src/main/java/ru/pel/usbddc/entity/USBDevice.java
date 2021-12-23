@@ -51,7 +51,6 @@ public class USBDevice {
     private String volumeName;
     private String revision;
     private boolean isSerialOSGenerated;
-//    private final String service; //TODO узнать назначение одноименного параметра в реестре винды
     private List<UserProfile> userAccountsList;
 
     private USBDevice() {
@@ -71,6 +70,22 @@ public class USBDevice {
         return new Builder();
     }
 
+    public void addUserProfile(UserProfile userProfile) {
+        userAccountsList.add(userProfile);
+    }
+
+    /**
+     * Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
+     * текущем объекте свойство остается неизменным.
+     *
+     * @param src Устройство, свойства которого необходимо скопировать.
+     * @return текущее устройство со свойствами, обновленными из src.
+     */
+    public USBDevice copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
+        new IgnoreNullBeanUtilsBean().copyProperties(this, src);
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -82,18 +97,6 @@ public class USBDevice {
     @Override
     public int hashCode() {
         return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeName, revision, isSerialOSGenerated, userAccountsList);
-    }
-
-    /**
-     * Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
-     * текущем объекте свойство остается неизменным.
-     *
-     * @param src Устройство, свойства которого необходимо скопировать.
-     * @return текущее устройство со свойствами, обновленными из src.
-     */
-    public USBDevice copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
-        new IgnoreNullBeanUtilsBean().copyProperties(this,src);
-        return this;
     }
 
     /**
