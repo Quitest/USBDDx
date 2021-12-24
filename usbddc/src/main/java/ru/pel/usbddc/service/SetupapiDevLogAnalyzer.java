@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SetupapiDevLogAnalizer {
+public class SetupapiDevLogAnalyzer {
     @Setter
     private static Path pathToLog;
 
@@ -19,7 +19,7 @@ public class SetupapiDevLogAnalizer {
      * Метод поиска даты и времени первой установки USB устройства.
      *
      * @param serial сигнатура USB устройства, по которой необходимо искать.
-     * @return дату и время первого подключения устройства к системе.
+     * @return дата и время первого подключения устройства к системе.
      */
     public Optional<LocalDateTime> getInstallDateTime(String serial) {
         Optional<LocalDateTime> timeStamp = Optional.empty();
@@ -56,5 +56,9 @@ public class SetupapiDevLogAnalizer {
                 .filter(l -> l.matches(">>>\\s+\\[Device Install.+USB\\\\.+"))
                 .forEach(System.out::println);
     }
+
+    //TODO реализовать метод парсинга лога (точнее списка логов) в один проход. Пока что достаточно такой логики:
+    // за один проход собрать сигнатуру устройства и дату его установки.
+    // Собранную инфу хранить и по мере необходимости обращаться к ней, а не к файлу.
 
 }
