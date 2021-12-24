@@ -3,6 +3,7 @@ package ru.pel.usbddc.entity;
 import lombok.Getter;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 @Getter
 public class UserProfile {
@@ -13,6 +14,19 @@ public class UserProfile {
     // - https://docs.microsoft.com/en-us/windows/security/identity-protection/access-control/security-identifiers
 
     private UserProfile() {
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UserProfile that = (UserProfile) o;
+        return Objects.equals(username, that.username) && Objects.equals(profileImagePath, that.profileImagePath) && Objects.equals(securityId, that.securityId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(username, profileImagePath, securityId);
     }
 
     public static Builder getBuilder() {

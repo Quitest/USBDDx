@@ -44,8 +44,8 @@ public class RegistryAnalyzer {
 
             String serial = Arrays.stream(decodedValue.split("#"))
                     .skip(2)
-                    .map(s -> s.charAt(s.length()-2) == '&' ? // если на предпоследней позиции символ "&", то
-                    s.substring(0, s.length() - 2) : s) //отбрасываем его и последний (например &0), иначе целиком забираем серийник.
+                    .map(s -> s.charAt(s.length() - 2) == '&' ? // если на предпоследней позиции символ "&", то
+                            s.substring(0, s.length() - 2) : s) //отбрасываем его и последний (например &0), иначе целиком забираем серийник.
                     .findFirst().orElse(decodedValue);
             entry.setValue(decodedValue);
 
@@ -119,9 +119,9 @@ public class RegistryAnalyzer {
                             serialKey.substring(lastIndexOfSlash);                          //иначе просто отбрасываем префикс в виде пути.
                     String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
                     USBDevice tmp = USBDevice.getBuilder()
-                            .withSerial(serial)
                             .withRevision(revision)
                             .withFriendlyName(friendlyName).build();
+
                     usbDeviceMap.merge(serial, tmp, (usbDevice, src) -> {
                         usbDevice.setFriendlyName(src.getFriendlyName());
                         usbDevice.setRevision(src.getRevision());
@@ -129,9 +129,7 @@ public class RegistryAnalyzer {
                     });
                 }
             }
-        }
-        //FIXME избавиться от этой лапши из эксепшенов
-        catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         return usbDeviceMap;
@@ -243,35 +241,6 @@ public class RegistryAnalyzer {
     }
 
     /**
-     * Парсит раздел реестра Windows {@code HKLM\SOFTWARE\Microsoft\Windows Portable Devices} на наличие меток
-     * смонтированных разделов (томов) на известных устройствах.
-     *
-     * @return мапу, наполненную серийным номером устройства и списком наименований разделов (томов) на нем.
-     */
-    public Map<String, USBDevice> parseWindowsPortableDevice(){
-        String wpdKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Portable Devices\\Devices";
-        try {
-            List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
-            for (String deviceEntry : deviceList){
-                String key = usbDeviceMap.keySet().stream()
-                        .filter(deviceEntry::contains)
-                        .findFirst().orElseThrow();
-                String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
-                USBDevice tmp = USBDevice.getBuilder()
-                        .withSerial(key)
-                        .withVolumeName(volumeName).build();
-
-                usbDeviceMap.get(key).copyNonNullProperties(tmp);
-            }
-            //FIXME избавиться от лапши
-        } catch (IOException | InterruptedException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-
-        return usbDeviceMap;
-    }
-
-    /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
      *
@@ -295,14 +264,14 @@ public class RegistryAnalyzer {
                             .withVidPid(vid, pid)
                             .build();
 
-                    //FIXME заменить методом копировать_ненулевые_свойства()
-                    USBDevice updatedUSBDevice = usbDeviceMap.get(serial);
-                    if (updatedUSBDevice == null) {                         //если в мапу ранее не записывали устройства с таким же серийником
-                        usbDeviceMap.put(serial, currUsbDev);               //то просто заносим новое устройство,
-                    } else {                                                //иначе
-                        updatedUSBDevice.copyNonNullProperties(currUsbDev); //копируем новые свойства в свойства существующего устройства
-                        usbDeviceMap.put(serial, updatedUSBDevice);         //и записываем, т.е., по сути, обновляем.
-                    }
+                    usbDeviceMap.merge(serial, currUsbDev, (dst, src) -> {
+                        dst.setSerial(src.getSerial());
+                        dst.setPid(src.getPid());
+                        dst.setProductName(src.getProductName());
+                        dst.setVid(src.getVid());
+                        dst.setVendorName(src.getVendorName());
+                        return dst;
+                    });
                 }
             }
         } catch (IOException | InterruptedException e) {
@@ -362,5 +331,38 @@ public class RegistryAnalyzer {
     private Optional<String> parseVid(String pidvid) {
         Matcher matcher = Pattern.compile("vid_(.{4})").matcher(pidvid);
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    /**
+     * Парсит раздел реестра Windows {@code HKLM\SOFTWARE\Microsoft\Windows Portable Devices} на наличие меток
+     * смонтированных разделов (томов) на известных устройствах.
+     *
+     * @return мапу, наполненную серийным номером устройства и списком наименований разделов (томов) на нем.
+     */
+    public Map<String, USBDevice> parseWindowsPortableDevice() {
+        String wpdKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Portable Devices\\Devices";
+        try {
+            List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
+            for (String deviceEntry : deviceList) {
+                Optional<String> serial = usbDeviceMap.keySet().stream()
+                        .filter(s -> deviceEntry.contains("#" + s)) //что бы уменьшить количество ложно-положительных совпадений
+                        //вводится неуникальный признак начала серийника - #.
+                        .findFirst();
+                if (serial.isPresent()) {
+                    String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
+                    USBDevice tmp = USBDevice.getBuilder()
+                            .withVolumeName(volumeName).build();
+
+                    usbDeviceMap.merge(serial.get(), tmp, (dst, src) -> {
+                        dst.setVolumeName(src.getVolumeName());
+                        return dst;
+                    });
+                }
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return usbDeviceMap;
     }
 }

@@ -19,15 +19,16 @@ class RegistryAnalyzerTest {
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
-    private final String expectedPid = "312b";
-    private final String expectedVid = "125f";
-    private final String expectedSerial = "1492710242260098";
-    private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
-    private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
-    private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
-    private final String expectedGuid = expectedMountPoints2;
-    private final String expectedFriendlyName = "Generic Flash Disk USB Device";
-    private final String expectedRevision = "0.00";
+//    private final String expectedPid = "312b";
+//    private final String expectedVid = "125f";
+//    private final String expectedSerial = "1492710242260098";
+//    private final String mountedDeviceKey = "\\??\\Volume{5405623b-31de-11e5-8295-54a0503930d0}";
+//    private final String expectedMountedDeviceValue = "_??_USBSTOR#Disk&Ven_ADATA&Prod_USB_Flash_Drive&Rev_0.00#1492710242260098&0#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}";
+//    private final String expectedMountPoints2 = "{5405623b-31de-11e5-8295-54a0503930d0}";
+//    private final String expectedGuid = expectedMountPoints2;
+//    private final String expectedFriendlyName = "Generic Flash Disk USB Device";
+//    private final String expectedRevision = "0.00";
+//    private final String expectedVolumeName = "";
 
     //Вариант 2
     private final String expectedPid = "6387";
@@ -39,6 +40,7 @@ class RegistryAnalyzerTest {
     private final String expectedGuid = expectedMountPoints2;
     private final String expectedFriendlyName = "Generic Flash Disk USB Device";
     private final String expectedRevision = "8.07";
+    private final String expectedVolumeName = "USB0005";
 
     @BeforeAll
     static void beforeAll() {
@@ -66,12 +68,6 @@ class RegistryAnalyzerTest {
                 .findFirst().orElseThrow();
 
         assertTrue(userAccountsList.contains(user));
-    }
-
-    @Test
-    void parseWindowsPortableDevice() {
-//        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
-        assertEquals("QUITEST", usbDeviceMap.get(expectedSerial).getVolumeName());
     }
 
     @Test
@@ -144,7 +140,7 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    @DisplayName("Тест на заполненность всех полей")
+    @DisplayName("Заполненность всех полей")
     void getRegistryAnalysisTest() {
         USBDevice usbDevice = usbDeviceMap.get(expectedSerial);
         assertAll(
@@ -183,17 +179,73 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
-    void orderInvokingRegistryAnalysisMethod() throws InvocationTargetException, IllegalAccessException {
-        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
-        registryAnalyzer1.getUsbDevices();
-        registryAnalyzer1.associateSerialToGuid();
-        Map<String, USBDevice> map1 = registryAnalyzer1.getRegistryAnalysis(false);
+    void orderInvokingRegistryAnalysisMethod() {
+        //Вариант
+        RegistryAnalyzer registryAnalyzer = new RegistryAnalyzer();
+        try {
+            registryAnalyzer.getUsbDevices();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        registryAnalyzer.associateSerialToGuid();
+        registryAnalyzer.getFriendlyName();
+        registryAnalyzer.determineDeviceUsers();
+        registryAnalyzer.parseWindowsPortableDevice();
+        Map<String, USBDevice> registryAnalysis = registryAnalyzer.getRegistryAnalysis(false);
 
+        //Вариант1
+        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
+        registryAnalyzer1.associateSerialToGuid();
+        try {
+            registryAnalyzer1.getUsbDevices();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        registryAnalyzer1.determineDeviceUsers();
+        registryAnalyzer1.getFriendlyName();
+        registryAnalyzer1.parseWindowsPortableDevice();
+        Map<String, USBDevice> registryAnalysis1 = registryAnalyzer1.getRegistryAnalysis(false);
+
+        //Вариант2
         RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
         registryAnalyzer2.associateSerialToGuid();
-        registryAnalyzer2.getUsbDevices();
-        Map<String, USBDevice> map2 = registryAnalyzer2.getRegistryAnalysis(false);
+        try {
+            registryAnalyzer2.getUsbDevices();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        registryAnalyzer2.determineDeviceUsers();
+        registryAnalyzer2.getFriendlyName();
+        registryAnalyzer2.parseWindowsPortableDevice();
+        Map<String, USBDevice> registryAnalysis2 = registryAnalyzer2.getRegistryAnalysis(false);
 
-        assertEquals(map1, map2);
+        //Вариант2
+        RegistryAnalyzer registryAnalyzer3 = new RegistryAnalyzer();
+        registryAnalyzer3.associateSerialToGuid();
+        try {
+            registryAnalyzer3.getUsbDevices();
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        registryAnalyzer3.parseWindowsPortableDevice();
+        registryAnalyzer3.getFriendlyName();
+        registryAnalyzer3.determineDeviceUsers();
+        Map<String, USBDevice> registryAnalysis3 = registryAnalyzer3.getRegistryAnalysis(false);
+
+        assertAll(
+                () -> assertEquals(usbDeviceMap, registryAnalysis),
+                () -> assertEquals(usbDeviceMap, registryAnalysis1),
+                () -> assertEquals(usbDeviceMap, registryAnalysis2),
+                () -> assertEquals(usbDeviceMap, registryAnalysis3)
+        );
+    }
+
+    @Test
+    void parseWindowsPortableDevice() {
+//        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
+        List<USBDevice> collect = usbDeviceMap.values().stream()
+                .filter(val -> !val.getVolumeName().isEmpty())
+                .collect(Collectors.toList());
+        assertEquals(expectedVolumeName, usbDeviceMap.get(expectedSerial).getVolumeName());
     }
 }
