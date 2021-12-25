@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -50,6 +51,7 @@ public class USBDevice {
     private String vid;
     private String volumeName;
     private String revision;
+    private LocalDateTime dateTimeFirstInstall;
     private boolean isSerialOSGenerated;
     private List<UserProfile> userAccountsList;
 
@@ -64,6 +66,7 @@ public class USBDevice {
         revision = "";
         isSerialOSGenerated = true;
         userAccountsList = new ArrayList<>();
+        dateTimeFirstInstall = LocalDateTime.MIN;
     }
 
     public static Builder getBuilder() {
@@ -185,6 +188,11 @@ public class USBDevice {
 
         public Builder withGuid(String guid) {
             newUsbDevice.guid = guid;
+            return this;
+        }
+
+        public Builder withDateTimeFirstInstall(LocalDateTime dateTime){
+            newUsbDevice.dateTimeFirstInstall = dateTime;
             return this;
         }
 
