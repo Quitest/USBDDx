@@ -62,7 +62,11 @@ public class SetupapiDevLogAnalyzer {
         return timeStamp;
     }
 
-    //TODO реализовать парсинг списка файлов переменной длины
+    /**
+     * Парсит все доступные setupapi.dev.log'и на наличие устройств и дат их установки. Даты установки и серийники записывает
+     * в usbDeviceMap, переданную конструктору. Если мапа не пустая, то выполняет слияние данных, опираясь на серийники.
+     * @throws IOException
+     */
     public void parse() throws IOException {
         String systemroot = new OSInfoCollector().getSystemroot().toString();
         Path logPath = Paths.get(systemroot, "\\inf");
@@ -75,7 +79,7 @@ public class SetupapiDevLogAnalyzer {
                 while (currStr != null) {
                     if (currStr.matches(">>>\\s+\\[Device Install \\(Hardware initiated\\).+]")) {
                         String serial = parseSerial(currStr);
-                        if ("<SERIAL IS NOT PARSED IN LOG>".equals(serial)) {
+                        if (NOT_PARSED.equals(serial)) {
                             currStr = reader.readLine();
                             continue;
                         }
@@ -127,9 +131,4 @@ public class SetupapiDevLogAnalyzer {
         }
         return serial;
     }
-
-    //TODO реализовать метод парсинга лога (точнее списка логов) в один проход. Пока что достаточно такой логики:
-    // за один проход собрать сигнатуру устройства и дату его установки.
-    // Собранную инфу хранить и по мере необходимости обращаться к ней, а не к файлу.
-
 }

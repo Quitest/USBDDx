@@ -6,6 +6,7 @@ import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,10 +24,8 @@ class SetupapiDevLogAnalyzerTest {
 
     @BeforeAll
     static void beforeAll() {
-//        Path pathToSetupapiDevLog = new OSInfoCollector().getPathToSetupapiDevLog();
-        usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
-//        SetupapiDevLogAnalyzer.setPathToLog(pathToSetupapiDevLog);
-//        SetupapiDevLogAnalyzer.setPathToLog(Path.of("C:\\Windows\\Inf\\setupapi.dev.20200401_103934.log"));
+//        usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
+        usbDeviceMap = new HashMap<>();
     }
 
     @Test
