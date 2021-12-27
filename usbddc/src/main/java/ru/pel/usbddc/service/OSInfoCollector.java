@@ -53,7 +53,7 @@ public class OSInfoCollector {
      *
      * @return {@code List<Path>}, содержащий пути к каждому setupapi.dev.log
      */
-    public List<Path> getListSetupapiDevLogs() {
+    public List<Path> getSetupapiDevLogList() {
         //поток каталогов из книги. См. заметку на странице 124
         List<Path> listLogs = new ArrayList<>();
         try (Stream<Path> pathStream = Files.find(getPathToSetupapiDevLog(),
@@ -89,8 +89,8 @@ public class OSInfoCollector {
         if (osVersion >= 6.1) { // 6.1 - версия Windows 7 в линейке Windows NT
             logPath = systemroot + "\\inf";
         }
-        //FIXME выкинуть имя файла из return'а
-        return Paths.get(logPath + "\\setupapi.dev.log");
+
+        return Paths.get(logPath);
     }
 
     /**

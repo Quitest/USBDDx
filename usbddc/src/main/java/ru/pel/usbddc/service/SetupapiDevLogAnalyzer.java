@@ -5,34 +5,76 @@ import lombok.Setter;
 import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Getter
 @Setter
 public class SetupapiDevLogAnalyzer {
+    private static final String NOT_PARSED = "<SERIAL IS NOT PARSED IN LOG>";
     @Setter
     private static Path pathToLog;
-    private static final String NOT_PARSED = "<SERIAL IS NOT PARSED IN LOG>";
-    private List<USBDevice> usbDeviceList;
+    private List<Path> setupapiDevLogList;
     private Map<String, USBDevice> usbDeviceMap;
 
+    /**
+     * Позволяет существующую мапу насытить (дополнить) новыми данными, содержащими результаты анализа лог файлов.
+     *
+     * @param usbDeviceMap мапа, которую надо насытить (дополнить).
+     */
     public SetupapiDevLogAnalyzer(Map<String, USBDevice> usbDeviceMap) {
-        usbDeviceList = new ArrayList<>();
+        this(usbDeviceMap, new OSInfoCollector().getSetupapiDevLogList());
+    }
+
+    public SetupapiDevLogAnalyzer(List<Path> setupapiDevLogList) {
+        this(new HashMap<>(), setupapiDevLogList);
+    }
+
+    public SetupapiDevLogAnalyzer(Map<String, USBDevice> usbDeviceMap, List<Path> setupapiDevLogList) {
         this.usbDeviceMap = usbDeviceMap;
+        this.setupapiDevLogList = setupapiDevLogList;
     }
 
     /**
-     * Метод поиска даты и времени первой установки USB устройства.
+     * Создается новая мапа, в последствии заполняется результатом анализа (парсинга) лог файлов.
+     */
+    public SetupapiDevLogAnalyzer() {
+        usbDeviceMap = new HashMap<>();
+        setupapiDevLogList = new OSInfoCollector().getSetupapiDevLogList();
+    }
+
+    /**
+     * Получение результатов анализа всех файлов setupapi.dev*.log на наличие записей об установке устройств. Анализируются
+     * строки, начинающиеся на "{@code >>>  [Device Install (Hardware initiated)}" и следующая за ней - содержит дату
+     * и время установки.
+     *
+     * @param doNewAnalysis true - выполняет анализ файла заново, старый безвозвратно теряется, false - возвращает результаты
+     *                      предыдущего анализа.
+     * @return мапу, содержащую результат в виде пары значений {@code серийный номер - объект типа USBDevice}.
+     * @throws IOException              If an I/O error occurs.
+     * @throws FileNotFoundException    - if the named file does not exist, is a directory rather than a regular file, or
+     *                                  for some other reason cannot be opened for reading.
+     * @throws IllegalArgumentException - if the maxDepth parameter is negative
+     * @throws SecurityException        - If the security manager denies access to the starting file. In the case of the
+     *                                  default provider, the checkRead method is invoked to check read access to the directory.
+     */
+    public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) throws IOException {
+        if (doNewAnalysis) {
+            usbDeviceMap = new HashMap<>();
+            parseAllSetupapiDevLogs();
+        }
+        return usbDeviceMap;
+    }
+
+    /**
+     * Метод поиска даты и времени первой установки USB устройства с заданным серийным номером.
      *
      * @param serial сигнатура USB устройства, по которой необходимо искать.
      * @return дата и время первого подключения устройства к системе.
@@ -65,14 +107,16 @@ public class SetupapiDevLogAnalyzer {
     /**
      * Парсит все доступные setupapi.dev.log'и на наличие устройств и дат их установки. Даты установки и серийники записывает
      * в usbDeviceMap, переданную конструктору. Если мапа не пустая, то выполняет слияние данных, опираясь на серийники.
-     * @throws IOException
+     *
+     * @throws IOException              If an I/O error occurs.
+     * @throws FileNotFoundException    - if the named file does not exist, is a directory rather than a regular file, or
+     *                                  for some other reason cannot be opened for reading.
+     * @throws IllegalArgumentException - if the maxDepth parameter is negative
+     * @throws SecurityException        - If the security manager denies access to the starting file. In the case of the
+     *                                  default provider, the checkRead method is invoked to check read access to the directory.
      */
-    public void parse() throws IOException {
-        String systemroot = new OSInfoCollector().getSystemroot().toString();
-        Path logPath = Paths.get(systemroot, "\\inf");
-        List<Path> devLogList = Files.find(logPath, 1,
-                        (path, fileAttributes) -> path.getFileName().toString().matches("setupapi\\.dev[.\\d_]*\\.log"))
-                .collect(Collectors.toList());
+    public Map<String, USBDevice> parseAllSetupapiDevLogs() throws IOException {
+        List<Path> devLogList = new OSInfoCollector().getSetupapiDevLogList();
         for (Path devLog : devLogList) {
             try (BufferedReader reader = new BufferedReader(new FileReader(devLog.toString()))) {
                 String currStr = reader.readLine();
@@ -106,12 +150,13 @@ public class SetupapiDevLogAnalyzer {
                 }
             }
         }
+        return usbDeviceMap;
     }
 
     /**
      * Парсит строку на предмет серийника
      *
-     * @param str
+     * @param str строка, в которой производится поиск серийного номера или нечто похожего на него.
      * @return серийный номер или {@code <SERIAL IS NOT PARSED IN LOG>}, если подходящего серийника нет.
      */
     private String parseSerial(String str) {
@@ -121,7 +166,8 @@ public class SetupapiDevLogAnalyzer {
                 .map(s -> s.charAt(s.length() - 2) == '&' ?       //Имеется ли суффикс по типу "&0"?
                         s.substring(0, s.length() - 2) : s)
                 .findFirst().orElse(NOT_PARSED);
-
+// FIXME: 27.12.2021 в некоторых случаях последним элементом является нечто похожее на GUID.
+//  Необходимо обработать этот момент - GUID не должен попадать в серийники.
         if (NOT_PARSED.equals(serial)) {
             serial = Arrays.stream(str.split("\\\\"))
                     .reduce((prev, next) -> next).orElse(NOT_PARSED);
