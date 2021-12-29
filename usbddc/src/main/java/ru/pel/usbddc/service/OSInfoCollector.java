@@ -4,7 +4,6 @@ import lombok.Getter;
 import ru.pel.usbddc.entity.OSInfo;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.file.Files;
@@ -96,12 +95,35 @@ public class OSInfoCollector {
         String logPath = WinRegReader
                 .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
                 .orElse(getSystemRoot().toString());
-
-        if (getOsVersion() >= 6.1) { // 6.1 - версия Windows 7 в линейке Windows NT
-            logPath = getSystemRoot() + "\\inf";
-        }
-
-        return Paths.get(logPath);
+        /*
+        +----------------------------+------------------+
+        | Operating system	         | Version number   |
+        +----------------------------+------------------+
+        | Windows 11                 | 10.0*            |
+        | Windows 10                 | 10.0*            |
+        | Windows Server 2022        | 10.0*            |
+        | Windows Server 2019        | 10.0*            |
+        | Windows Server 2016        | 10.0*            |
+        | Windows 8.1                | 6.3*             |
+        | Windows Server 2012 R2     | 6.3*             |
+        | Windows 8                  | 6.2              |
+        | Windows Server 2012        | 6.2              |
+        | Windows 7	                 | 6.1              |
+        | Windows Server 2008 R2     | 6.1              |
+        | Windows Server 2008	     | 6.0              |
+        | Windows Vista	             | 6.0              |
+        | Windows Server 2003 R2 	 | 5.2              |
+        | Windows Server 2003	     | 5.2              |
+        | Windows XP 64-Bit Edition  | 5.2              |
+        | Windows XP	             | 5.1              |
+        | Windows 2000	             | 5.0              |
+        +----------------------------+------------------+
+        * */
+        return getOsVersion()>=6.0 ? Path.of(logPath,"\\inf") : Path.of(logPath);
+//        if (getOsVersion() >= 6.0) {
+//            logPath = getSystemRoot() + "\\inf";
+//        }
+//        return Paths.get(logPath);
     }
 
     /**
