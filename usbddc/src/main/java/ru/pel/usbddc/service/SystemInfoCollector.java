@@ -9,6 +9,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Сборщик всей необходимой и доступной информации о системе - идентификационные данные системы, подключаемые
+ * устройства и т.д.
+ */
 @Getter
 @Setter
 public class SystemInfoCollector {
