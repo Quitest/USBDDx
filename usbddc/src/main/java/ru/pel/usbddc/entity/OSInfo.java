@@ -3,7 +3,6 @@ package ru.pel.usbddc.entity;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.net.NetworkInterface;
 import java.nio.file.Path;
 import java.util.List;
 

@@ -1,6 +1,7 @@
 package ru.pel.usbddc.service;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import ru.pel.usbddc.entity.USBDevice;
 
@@ -37,7 +38,7 @@ public class SetupapiDevLogAnalyzer {
         this(new HashMap<>(), setupapiDevLogList);
     }
 
-    public SetupapiDevLogAnalyzer(Map<String, USBDevice> usbDeviceMap, List<Path> setupapiDevLogList) {
+    public SetupapiDevLogAnalyzer(@NonNull Map<String, USBDevice> usbDeviceMap, List<Path> setupapiDevLogList) {
         this.usbDeviceMap = usbDeviceMap;
         this.setupapiDevLogList = setupapiDevLogList;
     }
@@ -55,8 +56,9 @@ public class SetupapiDevLogAnalyzer {
      * строки, начинающиеся на "{@code >>>  [Device Install (Hardware initiated)}" и следующая за ней - содержит дату
      * и время установки.
      *
-     * @param doNewAnalysis true - выполняет анализ файла заново, старый безвозвратно теряется, false - возвращает результаты
-     *                      предыдущего анализа.
+     * @param doNewAnalysis {@code true} - выполняет анализ файла заново, данные полученные предыдущим вызовом теряются,
+     *                      при этом если исходная мапа непустая, то она дополняется данными; если пустая, то создается новая.
+     *                      {@code false} - возвращает результаты предыдущего анализа.
      * @return мапу, содержащую результат в виде пары значений {@code серийный номер - объект типа USBDevice}.
      * @throws IOException              If an I/O error occurs.
      * @throws FileNotFoundException    - if the named file does not exist, is a directory rather than a regular file, or
@@ -67,7 +69,10 @@ public class SetupapiDevLogAnalyzer {
      */
     public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) throws IOException {
         if (doNewAnalysis) {
-            usbDeviceMap = new HashMap<>();
+            if (usbDeviceMap.isEmpty()) {
+                usbDeviceMap = new HashMap<>();
+            }
+//            usbDeviceMap = new HashMap<>();
             parseAllSetupapiDevLogs();
         }
         return usbDeviceMap;

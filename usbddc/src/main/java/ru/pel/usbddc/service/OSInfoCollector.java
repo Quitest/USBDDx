@@ -22,20 +22,24 @@ import java.util.stream.Stream;
 public class OSInfoCollector {
     private OSInfo osInfo;
 
+    public OSInfoCollector() {
+        osInfo = new OSInfo();
+    }
+
     public OSInfo collectInfo() {
         try {
-            osInfo.setTmpdir(Paths.get(System.getProperty("java.io.tmpdir")));
-            osInfo.setOsName(System.getProperty("os.name"));
-            osInfo.setOsArch(System.getProperty("os.arch"));
-            osInfo.setOsVersion(Double.parseDouble(System.getProperty("os.version")));
-            osInfo.setUsername(System.getProperty("user.name"));
-            osInfo.setHomeDir(Paths.get(System.getProperty("user.home")));
-            osInfo.setCurrentDir(Paths.get(System.getProperty("user.dir")));
+            osInfo.setTmpdir(getTmpDir());
+            osInfo.setOsName(getOsName());
+            osInfo.setOsArch(getOsArch());
+            osInfo.setOsVersion(getOsVersion());
+            osInfo.setUsername(getUsername());
+            osInfo.setHomeDir(getHomeDir());
+            osInfo.setCurrentDir(getCurrentDir());
 
-            osInfo.setSystemRoot(Paths.get(System.getenv("systemroot")));
-            osInfo.setComputerName(System.getenv("computername"));
+            osInfo.setSystemRoot(getSystemRoot());
+            osInfo.setComputerName(getComputerName());
 
-            osInfo.setNetworkInterfaceList(NetworkInterface.networkInterfaces().collect(Collectors.toList()));
+            osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
         } catch (SecurityException e) {
             System.err.println("Возможно, Вам поможет документация на метод System.getProperties() или " +
                     "java.util.Properties.getProperties()");
@@ -60,8 +64,36 @@ public class OSInfoCollector {
         return Paths.get(System.getProperty("user.home"));
     }
 
-    public List<NetworkInterface> getNetworkInterfaceList() throws SocketException {
-        return NetworkInterface.networkInterfaces().collect(Collectors.toList());
+    /**
+     * Собирает минимальный объем информации о сетевых интерфейсах: имена интерфейсов, сетевые адреса и соответствующие сетевые имена
+     *
+     * @return самописный более примитивный аналог java.net.NetworkInterface, содержащий только интересующую информацию.
+     * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface
+     */
+    public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException {
+        List<ru.pel.usbddc.entity.NetworkInterface> interfaces = new ArrayList<>();
+        List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
+        for (NetworkInterface networkInterface : networkInterfaceList) {
+            ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
+            //для каждого сетевого интерфейса определяем имена...
+            eth.setDisplayName(networkInterface.getDisplayName());
+            eth.setName(networkInterface.getName());
+            //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
+            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
+                    .map(inetAddress -> {
+                        ru.pel.usbddc.entity.NetworkInterface.InetAddress addr =
+                                new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
+                        addr.setHostAddress(inetAddress.getHostAddress());
+                        addr.setHostName(inetAddress.getHostName());
+                        addr.setCanonicalName(inetAddress.getCanonicalHostName());
+                        return addr;
+                    }).collect(Collectors.toList());
+            eth.setInetAddressList(inetAddressList);
+
+            interfaces.add(eth);
+        }
+        return interfaces;
+//        return NetworkInterface.networkInterfaces().collect(Collectors.toList());
     }
 
     public String getOsArch() {
@@ -119,7 +151,7 @@ public class OSInfoCollector {
         | Windows 2000	             | 5.0              |
         +----------------------------+------------------+
         * */
-        return getOsVersion()>=6.0 ? Path.of(logPath,"\\inf") : Path.of(logPath);
+        return getOsVersion() >= 6.0 ? Path.of(logPath, "\\inf") : Path.of(logPath);
 //        if (getOsVersion() >= 6.0) {
 //            logPath = getSystemRoot() + "\\inf";
 //        }
