@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.Getter;
 import lombok.Setter;
-import ru.pel.usbddc.entity.OSInfo;
+import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.IOException;
@@ -20,21 +20,35 @@ import java.util.Map;
 @Getter
 @Setter
 public class SystemInfoCollector {
-    private Map<String, USBDevice> usbDeviceMap;
-    private OSInfo osInfo;
+    private SystemInfo systemInfo;
+
+    public SystemInfoCollector() {
+        systemInfo = new SystemInfo();
+    }
 
     public SystemInfoCollector collectSystemInfo() throws IOException {
-        osInfo = new OSInfoCollector().collectInfo();
-        usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
+        systemInfo.setOsInfo(new OSInfoCollector().collectInfo());
+
+        Map<String, USBDevice> registryAnalysis = new RegistryAnalyzer().getRegistryAnalysis(true);
+
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
-        usbDeviceMap = new SetupapiDevLogAnalyzer(usbDeviceMap, logList)
-                .getAnalysis(true);
+        Map<String, USBDevice> logAnalysis = new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
+
+        systemInfo
+                .mergeUsbDeviceInfo(registryAnalysis)
+                .mergeUsbDeviceInfo(logAnalysis);
 
         return this;
     }
 
-    public String toJSON() throws JsonProcessingException {
+    /**
+     * Конвертирует SystemInfo в JSON представление.
+     *
+     * @return
+     * @throws JsonProcessingException
+     */
+    public String systemInfoToJSON() throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().findAndRegisterModules().writer().withDefaultPrettyPrinter();
-        return ow.writeValueAsString(this);
+        return ow.writeValueAsString(systemInfo);
     }
 }

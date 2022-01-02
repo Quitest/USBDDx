@@ -82,10 +82,15 @@ public class USBDevice {
      * текущем объекте свойство остается неизменным.
      *
      * @param src Устройство, свойства которого необходимо скопировать.
-     * @return текущее устройство со свойствами, обновленными из src.
+     * @return текущее устройство со свойствами, обновленными из src, если не произошло ошибок, иначе возвращает объект
+     * в исходном состоянии.
      */
-    public USBDevice copyNonNullProperties(USBDevice src) throws InvocationTargetException, IllegalAccessException {
-        new IgnoreNullBeanUtilsBean().copyProperties(this, src);
+    public USBDevice copyNonBlankProperties(USBDevice src) {
+        try {
+            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
         return this;
     }
 

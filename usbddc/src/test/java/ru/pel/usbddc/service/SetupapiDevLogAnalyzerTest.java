@@ -14,12 +14,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SetupapiDevLogAnalyzerTest {
     //Вариант 1
-//    private final String SERIAL = "1492710242260098";
-//    private final LocalDateTime expectedDateTimeInstall = LocalDateTime.of(2021, 8, 7, 16, 27, 36);
+    private final String SERIAL = "1492710242260098";
+    private final LocalDateTime expectedDateTimeInstall = LocalDateTime.of(2021, 8, 7, 16, 27, 36);
 
     //Вариант 2
-    private final String SERIAL = "EFF732B1";
-    private final LocalDateTime expectedDateTimeInstall = LocalDateTime.of(2016, 11, 24, 9, 22, 15);
+//    private final String SERIAL = "EFF732B1";
+//    private final LocalDateTime expectedDateTimeInstall = LocalDateTime.of(2016, 11, 24, 9, 22, 15);
 
     @Test
     @DisplayName("Выполнение нового анализа")

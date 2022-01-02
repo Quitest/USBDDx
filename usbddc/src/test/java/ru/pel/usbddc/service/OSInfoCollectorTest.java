@@ -12,25 +12,19 @@ import static org.hamcrest.Matchers.*;
 class OSInfoCollectorTest {
 
     @Test
-    void getAllInfo() throws SocketException {
-        new OSInfoCollector().getNetworkInterfaceList();
-    }
-
-    @Test
     void getPathToSetupapiDevLog() {
+        String pathToSetupapiDevLog = new OSInfoCollector().getPathToSetupapiDevLog().toString();
+        assertThat(pathToSetupapiDevLog, anyOf(
+                equalToIgnoringCase("C:\\WINDOWS\\inf"),
+                equalToIgnoringCase("C:\\WINDOWS")));
     }
 
     @Test
     void getSetupapiDevLogList() {
         List<Path> setupapiDevLogList = new OSInfoCollector().getSetupapiDevLogList();
 
-        assertThat(setupapiDevLogList, anyOf(
-                containsInAnyOrder(
-                        Path.of("C:\\WINDOWS\\inf\\setupapi.dev.20200401_103934.log"),
-                        Path.of("C:\\WINDOWS\\inf\\setupapi.dev.log")),
-                contains(
-                        Path.of("C:\\WINDOWS\\inf\\setupapi.dev.log")
-                )));
+        assertThat(setupapiDevLogList, hasItem(Path.of("C:\\WINDOWS\\inf\\setupapi.dev.log")));
+        assertThat(setupapiDevLogList.size(), greaterThanOrEqualTo(1));
 
     }
 }
