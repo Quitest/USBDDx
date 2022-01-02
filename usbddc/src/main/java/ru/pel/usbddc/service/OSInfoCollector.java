@@ -1,15 +1,16 @@
 package ru.pel.usbddc.service;
 
 import lombok.Getter;
+import ru.pel.usbddc.entity.OSInfo;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,52 +20,92 @@ import java.util.stream.Stream;
  */
 @Getter
 public class OSInfoCollector {
-    private String osName;
-    private double osVersion;
-    private String osArch;
-    private Path tmpdir;
-    private String username;
-    private Path homedir;
-    private Path currentdir;
-    private Path systemroot;
-    //TODO надо получить имя ПК
-    //TODO надо получить сетевые настройки для идентификации ПК в сети
+    private OSInfo osInfo;
 
     public OSInfoCollector() {
+        osInfo = new OSInfo();
+    }
+
+    public OSInfo collectInfo() {
         try {
-            Properties props = System.getProperties();
-            tmpdir = Paths.get(props.getProperty("java.io.tmpdir"));
-            osName = props.getProperty("os.name");
-            osArch = props.getProperty("os.arch");
-            osVersion = Double.parseDouble(props.getProperty("os.version"));
-            username = props.getProperty("user.name");
-            homedir = Paths.get(props.getProperty("user.home"));
-            currentdir = Paths.get(props.getProperty("user.dir"));
-            systemroot = Paths.get(System.getenv("systemroot"));
+            osInfo.setTmpdir(getTmpDir());
+            osInfo.setOsName(getOsName());
+            osInfo.setOsArch(getOsArch());
+            osInfo.setOsVersion(getOsVersion());
+            osInfo.setUsername(getUsername());
+            osInfo.setHomeDir(getHomeDir());
+            osInfo.setCurrentDir(getCurrentDir());
+
+            osInfo.setSystemRoot(getSystemRoot());
+            osInfo.setComputerName(getComputerName());
+
+            osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
         } catch (SecurityException e) {
             System.err.println("Возможно, Вам поможет документация на метод System.getProperties() или " +
                     "java.util.Properties.getProperties()");
             e.printStackTrace();
+        } catch (SocketException e) {
+            System.err.println("Не удалось собрать информацию о сетевых интерфейсах");
+            e.printStackTrace();
         }
+
+        return osInfo;
+    }
+
+    public String getComputerName() {
+        return System.getenv("computername");
+    }
+
+    public Path getCurrentDir() {
+        return Paths.get(System.getProperty("user.dir"));
+    }
+
+    public Path getHomeDir() {
+        return Paths.get(System.getProperty("user.home"));
     }
 
     /**
-     * Выдает список всех файлов, в том числе архивных, setupapi.dev.log
+     * Собирает минимальный объем информации о сетевых интерфейсах: имена интерфейсов, сетевые адреса и соответствующие сетевые имена
      *
-     * @return {@code List<Path>}, содержащий пути к каждому setupapi.dev.log
+     * @return самописный более примитивный аналог java.net.NetworkInterface, содержащий только интересующую информацию.
+     * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface
      */
-    public List<Path> getSetupapiDevLogList() {
-        //поток каталогов из книги. См. заметку на странице 124
-        List<Path> listLogs = new ArrayList<>();
-        try (Stream<Path> pathStream = Files.find(getPathToSetupapiDevLog(),
-                1,
-                (p, bfa) -> p.getFileName().toString().matches("setupapi\\.dev[0-9_.]*\\.log"))) {
-            listLogs = pathStream.collect(Collectors.toList());
-        } catch (IOException e) {
-            System.err.println("Косяк при работе ru.pel.usbddc.utility.OSInfoCollector.getListSetupapiDevLogs()");
-            e.printStackTrace();
+    public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException {
+        List<ru.pel.usbddc.entity.NetworkInterface> interfaces = new ArrayList<>();
+        List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
+        for (NetworkInterface networkInterface : networkInterfaceList) {
+            ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
+            //для каждого сетевого интерфейса определяем имена...
+            eth.setDisplayName(networkInterface.getDisplayName());
+            eth.setName(networkInterface.getName());
+            //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
+            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
+                    .map(inetAddress -> {
+                        ru.pel.usbddc.entity.NetworkInterface.InetAddress addr =
+                                new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
+                        addr.setHostAddress(inetAddress.getHostAddress());
+                        addr.setHostName(inetAddress.getHostName());
+                        addr.setCanonicalName(inetAddress.getCanonicalHostName());
+                        return addr;
+                    }).collect(Collectors.toList());
+            eth.setInetAddressList(inetAddressList);
+
+            interfaces.add(eth);
         }
-        return listLogs;
+        return interfaces;
+//        return NetworkInterface.networkInterfaces().collect(Collectors.toList());
+    }
+
+    public String getOsArch() {
+        return System.getProperty("os.arch");
+    }
+
+    public String getOsName() {
+        return System.getProperty("os.name");
+    }
+
+    public double getOsVersion() {
+        return Double.parseDouble(System.getProperty("os.version"));
     }
 
     /**
@@ -81,43 +122,99 @@ public class OSInfoCollector {
      */
     //TODO уточнить путь к Setupapi.dev.log в ОС версии 6.0
     //Подробности о месте расположения логов см. https://docs.microsoft.com/ru-ru/windows-hardware/drivers/install/setting-the-directory-path-of-the-text-logs
+    //FIXME приблизить к типовому интерфейсу - переименовать в getPathToLogs.
     public Path getPathToSetupapiDevLog() {
         String logPath = WinRegReader
                 .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
-                .orElse(systemroot.toString());
-
-        if (osVersion >= 6.1) { // 6.1 - версия Windows 7 в линейке Windows NT
-            logPath = systemroot + "\\inf";
-        }
-
-        return Paths.get(logPath);
+                .orElse(getSystemRoot().toString());
+        /*
+        +----------------------------+------------------+
+        | Operating system	         | Version number   |
+        +----------------------------+------------------+
+        | Windows 11                 | 10.0*            |
+        | Windows 10                 | 10.0*            |
+        | Windows Server 2022        | 10.0*            |
+        | Windows Server 2019        | 10.0*            |
+        | Windows Server 2016        | 10.0*            |
+        | Windows 8.1                | 6.3*             |
+        | Windows Server 2012 R2     | 6.3*             |
+        | Windows 8                  | 6.2              |
+        | Windows Server 2012        | 6.2              |
+        | Windows 7	                 | 6.1              |
+        | Windows Server 2008 R2     | 6.1              |
+        | Windows Server 2008	     | 6.0              |
+        | Windows Vista	             | 6.0              |
+        | Windows Server 2003 R2 	 | 5.2              |
+        | Windows Server 2003	     | 5.2              |
+        | Windows XP 64-Bit Edition  | 5.2              |
+        | Windows XP	             | 5.1              |
+        | Windows 2000	             | 5.0              |
+        +----------------------------+------------------+
+        * */
+        return getOsVersion() >= 6.0 ? Path.of(logPath, "\\inf") : Path.of(logPath);
+//        if (getOsVersion() >= 6.0) {
+//            logPath = getSystemRoot() + "\\inf";
+//        }
+//        return Paths.get(logPath);
     }
 
     /**
-     * Выводит значения всех полей экземпляра.
+     * Выдает список всех файлов, в том числе архивных, setupapi.dev.log
      *
-     * @return строку, содержащую все поля класса и их значения в формате {@code <имяПоля> = <значение>}
+     * @return {@code List<Path>}, содержащий пути к каждому setupapi.dev.log
      */
-    @Override
-    public String toString() {
-        //получение всех полей экземпляра и вывод их реализован при помощи методов reflection.
-        //Почему? Да просто захотелось попробовать эту рефлексию. Плюс количество полей класса может меняться, и что бы
-        //не лазить в метод лишний раз, решено автоматизировать немного.
-        final String NEW_LINE = System.lineSeparator();
-        StringBuilder sb = new StringBuilder();
-        try {
-            Field[] fields = OSInfoCollector.class.getDeclaredFields();
-
-            for (Field field : fields) {
-
-                sb.append(field.getName())
-                        .append(" = ")
-                        .append(field.get(this))
-                        .append(NEW_LINE);
-            }
-        } catch (IllegalAccessException e) {
+    //FIXME приблизить к типовому интерфейсу - переименовать в getLogList
+    public List<Path> getSetupapiDevLogList() {
+        //поток каталогов из книги. См. заметку на странице 124
+        List<Path> listLogs = new ArrayList<>();
+        try (Stream<Path> pathStream = Files.find(getPathToSetupapiDevLog(),
+                1,
+                (p, bfa) -> p.getFileName().toString().matches("setupapi\\.dev[0-9_.]*\\.log"))) {
+            listLogs = pathStream.collect(Collectors.toList());
+        } catch (IOException e) {
+            System.err.println("Косяк при работе ru.pel.usbddc.utility.OSInfoCollector.getListSetupapiDevLogs()");
             e.printStackTrace();
         }
-        return sb.toString();
+        return listLogs;
     }
+
+    public Path getSystemRoot() {
+        return Paths.get(System.getenv("systemroot"));
+    }
+
+    public Path getTmpDir() {
+        return Paths.get(System.getProperty("java.io.tmpdir"));
+    }
+
+    public String getUsername() {
+        return System.getProperty("user.name");
+    }
+
+//    /**
+//     * Выводит значения всех полей экземпляра.
+//     *
+//     * @return строку, содержащую все поля класса и их значения в формате {@code <имяПоля> = <значение>}
+//     */
+//    @Override
+//    public String toString() {
+//        //получение всех полей экземпляра и вывод их реализован при помощи методов reflection.
+//        //Почему? Да просто захотелось попробовать эту рефлексию. Плюс количество полей класса может меняться, и что бы
+//        //не лазить в метод лишний раз, решено автоматизировать немного.
+//        final String NEW_LINE = System.lineSeparator();
+//        StringBuilder sb = new StringBuilder();
+//        try {
+//            Field[] fields = OSInfoCollector.class.getDeclaredFields();
+//
+//            for (Field field : fields) {
+//
+//                sb.append(field.getName())
+//                        .append(" = ")
+//                        .append(field.get(this))
+//                        .append(NEW_LINE);
+//            }
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();
+//        }
+//        return sb.toString();
+//    }
 }

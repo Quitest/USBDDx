@@ -8,7 +8,7 @@ public class IgnoreNullBeanUtilsBean extends BeanUtilsBean {
     @Override
     public void copyProperty(Object dest, String name, Object value)
             throws IllegalAccessException, InvocationTargetException {
-        if (value == null) return;
+        if (value == null || value.equals("")) return;
         super.copyProperty(dest, name, value);
     }
 }

@@ -4,10 +4,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class USBDeviceTest {
@@ -46,8 +42,7 @@ class USBDeviceTest {
                 .withVolumeName(null)
                 .build();
 
-        try {
-            dst.copyNonNullProperties(src);
+            dst.copyNonBlankProperties(src);
 
             assertAll(                                                              //проверяем качество заполнения полей:
                     () -> assertEquals(dst.getSerial(), src.getSerial()),              //явный null и
@@ -57,9 +52,6 @@ class USBDeviceTest {
                     () -> assertEquals("{2}", dst.getGuid()),                  //не влияет
                     () -> assertNotEquals("{2}", src.getGuid())             //на состояние другого.
             );
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
     }
 
     @Test
