@@ -26,6 +26,11 @@ public class SystemInfoCollector {
         systemInfo = new SystemInfo();
     }
 
+    /**
+     * Собирает всю необходимую информацию о системе, анализируя все доступные источники (логи, реестр, журналы и т.д.)
+     * @return текущий объект, наполненный информацией об устройствах и ОС.
+     * @throws IOException
+     */
     public SystemInfoCollector collectSystemInfo() throws IOException {
         systemInfo.setOsInfo(new OSInfoCollector().collectInfo());
 
@@ -43,8 +48,7 @@ public class SystemInfoCollector {
 
     /**
      * Конвертирует SystemInfo в JSON представление.
-     *
-     * @return
+     * @return строку формата JSON, содержащую собранные данные
      * @throws JsonProcessingException
      */
     public String systemInfoToJSON() throws JsonProcessingException {
