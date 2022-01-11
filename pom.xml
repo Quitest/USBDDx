@@ -5,7 +5,8 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>usbddc</module>
-	</modules>
+        <module>usbdda</module>
+    </modules>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
