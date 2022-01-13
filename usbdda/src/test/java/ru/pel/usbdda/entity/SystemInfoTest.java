@@ -1,5 +1,11 @@
 package ru.pel.usbdda.entity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+
 class SystemInfoTest {
     private final String JSON_SOURCE = """
             {
@@ -78,4 +84,29 @@ class SystemInfoTest {
                 }
               }
             }""";
+
+    @Test
+    void test(){
+        try {
+            JsonNode jsonNode = new ObjectMapper()
+                    .readerFor(SystemInfo.class)
+                    .readTree(JSON_SOURCE);
+            JsonNode jsonNode1 = jsonNode.get("usbDeviceMap");
+            jsonNode1.get(0);
+            System.out.println();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    void test1(){
+        try {
+//            SystemInfo systemInfo = new ObjectMapper().readValue(JSON_SOURCE, SystemInfo.class);
+            SystemInfo systemInfo = new ObjectMapper().readValue(JSON_SOURCE, SystemInfo.class);
+            System.out.println(systemInfo.toString());
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+    }
 }
