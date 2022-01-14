@@ -1,4 +1,4 @@
-package ru.pel.usbdda.entity;
+package ru.pel.usbdda.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -10,6 +10,9 @@ import java.util.List;
 @Getter
 @Setter
 public class OSInfo {
+    @JsonProperty("osId")
+    private String osId;
+
     @JsonProperty("osName")
     private String osName;
 

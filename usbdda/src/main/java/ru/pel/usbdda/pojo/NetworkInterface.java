@@ -1,12 +1,10 @@
-package ru.pel.usbdda.entity;
+package ru.pel.usbdda.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -18,23 +16,19 @@ public class NetworkInterface {
     @JsonProperty("displayName")
     private String displayName;
 
-    //    @JsonProperty("inetAddressList")
-    private List<InetAddress> inetAddressList;
-
     @JsonProperty("inetAddressList")
-    private void unpackInetAddresses(Map<String, String> inetAddresses) {
-        if (inetAddressList == null) {
-            inetAddressList = new ArrayList<>();
-        }
-        InetAddress inetAddress = new InetAddress();
-
-    }
+    private List<InetAddress> inetAddressList;
 
     @Getter
     @Setter
     public static class InetAddress {
+        @JsonProperty("hostAddress")
         private String hostAddress;
+
+        @JsonProperty("hostName")
         private String hostName;
+
+        @JsonProperty("canonicalName")
         private String canonicalName;
     }
 }

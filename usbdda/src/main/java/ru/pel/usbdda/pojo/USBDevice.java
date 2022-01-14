@@ -1,4 +1,4 @@
-package ru.pel.usbdda.entity;
+package ru.pel.usbdda.pojo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
