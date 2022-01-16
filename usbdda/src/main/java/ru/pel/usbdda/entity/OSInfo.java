@@ -1,15 +1,22 @@
-package ru.pel.usbdda.pojo;
+package ru.pel.usbdda.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.nio.file.Path;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.List;
 
 @Getter
 @Setter
+@Entity
 public class OSInfo {
+    @Id
+    @Column(name = "id", nullable = false)
+    private Long id;
+
     @JsonProperty("osId")
     private String osId;
 
@@ -23,19 +30,19 @@ public class OSInfo {
     private String osArch;
 
     @JsonProperty("tmpdir")
-    private Path tmpdir;
+    private String tmpdir;
 
     @JsonProperty("username")
     private String username;
 
     @JsonProperty("homeDir")
-    private Path homeDir;
+    private String homeDir;
 
     @JsonProperty("currentDir")
-    private Path currentDir;
+    private String currentDir;
 
     @JsonProperty("systemRoot")
-    private Path systemRoot;
+    private String systemRoot;
 
     @JsonProperty("computerName")
     private String computerName;

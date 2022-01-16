@@ -2,7 +2,7 @@ package ru.pel.usbdda.config;
 
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-public class Mydispatcher extends AbstractAnnotationConfigDispatcherServletInitializer {
+public class DispatcherConfigurator extends AbstractAnnotationConfigDispatcherServletInitializer {
     @Override
     protected Class<?>[] getRootConfigClasses() {
         return new Class[0];

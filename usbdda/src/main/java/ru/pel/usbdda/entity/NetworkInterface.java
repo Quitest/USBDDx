@@ -1,14 +1,21 @@
-package ru.pel.usbdda.pojo;
+package ru.pel.usbdda.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.util.List;
 
 @Getter
 @Setter
+@Entity
 public class NetworkInterface {
+    @Id
+    @Column(name = "id", nullable = false)
+    private Long id;
 
     @JsonProperty("name")
     private String name;
@@ -18,17 +25,4 @@ public class NetworkInterface {
 
     @JsonProperty("inetAddressList")
     private List<InetAddress> inetAddressList;
-
-    @Getter
-    @Setter
-    public static class InetAddress {
-        @JsonProperty("hostAddress")
-        private String hostAddress;
-
-        @JsonProperty("hostName")
-        private String hostName;
-
-        @JsonProperty("canonicalName")
-        private String canonicalName;
-    }
 }
