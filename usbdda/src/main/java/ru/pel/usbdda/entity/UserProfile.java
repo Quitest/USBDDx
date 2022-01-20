@@ -1,12 +1,10 @@
 package ru.pel.usbdda.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,13 +13,13 @@ public class UserProfile {
     @Id
     @Column(name = "id", nullable = false)
     private Long id;
-
-    @JsonProperty("username")
     private String username;
-
-    @JsonProperty("profileImagePath")
     private String profileImagePath;
-
-    @JsonProperty("securityId")
     private String securityId;
+
+    @ManyToMany
+    @JoinTable(name = "userProfile_usbDevice",
+            joinColumns = @JoinColumn(name = "user_profile_id",referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "usb_device_id",referencedColumnName = "id"))
+    private List<USBDevice> usbDeviceList;
 }

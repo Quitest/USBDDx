@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Getter
 @Setter
@@ -15,13 +13,10 @@ public class InetAddress {
     @Id
     @Column(name = "id", nullable = false)
     private Long id;
-
-    @JsonProperty("hostAddress")
     private String hostAddress;
-
-    @JsonProperty("hostName")
     private String hostName;
-
-    @JsonProperty("canonicalName")
     private String canonicalName;
+    @ManyToOne
+    @JoinColumn(name = "network_interface_id")
+    private NetworkInterface networkInterface;
 }

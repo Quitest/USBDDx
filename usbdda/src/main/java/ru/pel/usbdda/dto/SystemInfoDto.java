@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -13,5 +14,5 @@ public class SystemInfoDto {
     private OSInfoDto osInfoDto;
 
     @JsonProperty("usbDeviceMap")
-    private Map<String, USBDeviceDto> usbDeviceMap;
+    private List<USBDeviceDto> usbDeviceList;
 }
