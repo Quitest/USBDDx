@@ -9,7 +9,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class USBDevice {
+public class USBDeviceDto {
 
     @JsonProperty("vid")
     private String vid;
@@ -33,7 +33,7 @@ public class USBDevice {
     private String pid;
 
     @JsonProperty("userAccountsList")
-    private List<UserProfile> userAccountsList;
+    private List<UserProfileDto> userAccountsList;
 
     @JsonProperty("vendorName")
     private String vendorName;

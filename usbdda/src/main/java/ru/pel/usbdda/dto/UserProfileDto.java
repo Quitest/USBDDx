@@ -8,7 +8,7 @@ import java.nio.file.Path;
 
 @Getter
 @Setter
-public class UserProfile {
+public class UserProfileDto {
 
     @JsonProperty("username")
     private String username;

@@ -22,17 +22,17 @@ public class SystemInfoController {
     SystemInfoService service;
 
     @GetMapping
-    public ResponseEntity<SystemInfo> getSystemInfo() {
-        return systemInfo == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(systemInfo);
+    public ResponseEntity<List<SystemInfo>> getSystemInfo() {
+//        return systemInfo == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(systemInfo);
+        List<SystemInfo> all = service.getAll();
+        return ResponseEntity.ok(all);
     }
 
     @PostMapping
-    public ResponseEntity<List<SystemInfo>> systemInfo(@RequestBody SystemInfo systemInfo) {
-//        this.systemInfo = systemInfo;
-        service.save(systemInfo);
+    public ResponseEntity<SystemInfo> systemInfo(@RequestBody SystemInfo systemInfo) {
+        this.systemInfo = systemInfo;
+        service.save(this.systemInfo);
 
-        List<SystemInfo> all = service.getAll();
-
-        return ResponseEntity.ok(all);
+        return ResponseEntity.ok(this.systemInfo);
     }
 }

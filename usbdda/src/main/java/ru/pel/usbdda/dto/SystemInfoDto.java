@@ -9,9 +9,9 @@ import java.util.Map;
 @Getter
 @Setter
 public class SystemInfoDto {
-    @JsonProperty("osInfo")
-    private OSInfo osInfo;
+    @JsonProperty("osInfoDto")
+    private OSInfoDto osInfoDto;
 
     @JsonProperty("usbDeviceMap")
-    private Map<String, USBDevice> usbDeviceMap;
+    private Map<String, USBDeviceDto> usbDeviceMap;
 }

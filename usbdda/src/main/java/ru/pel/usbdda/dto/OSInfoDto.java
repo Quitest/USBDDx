@@ -9,7 +9,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class OSInfo {
+public class OSInfoDto {
     /**
      * Поле служит для идентификации ОС, а точнее конкретной инсталляции. Для чего это нужно? Что бы была хоть какая-то
      * возможность идентифицировать АРМ с высокой точностью. При использовании источников, указанных ниже, следует учитывать:
@@ -54,6 +54,6 @@ public class OSInfo {
     @JsonProperty("computerName")
     private String computerName;
 
-    @JsonProperty("networkInterfaceList")
-    private List<NetworkInterface> networkInterfaceList;
+    @JsonProperty("networkInterfaceDtoList")
+    private List<NetworkInterfaceDto> networkInterfaceDtoList;
 }

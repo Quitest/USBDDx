@@ -8,7 +8,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class NetworkInterface {
+public class NetworkInterfaceDto {
 
     @JsonProperty("name")
     private String name;
@@ -16,6 +16,6 @@ public class NetworkInterface {
     @JsonProperty("displayName")
     private String displayName;
 
-    @JsonProperty("inetAddressList")
-    private List<InetAddress> inetAddressList;
+    @JsonProperty("inetAddressDtoList")
+    private List<InetAddressDto> inetAddressDtoList;
 }
