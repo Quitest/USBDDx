@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-public class SystemInfo {
+public class SystemInfoDto {
     @JsonProperty("osInfo")
     private OSInfo osInfo;
 

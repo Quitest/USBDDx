@@ -21,5 +21,6 @@ public class SystemInfo {
     private OSInfo osInfo;
 
     @JsonProperty("usbDeviceMap")
+    @OneToMany
     private Map<String, USBDevice> usbDeviceMap;
 }
