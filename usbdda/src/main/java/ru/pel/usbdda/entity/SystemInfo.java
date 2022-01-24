@@ -14,7 +14,7 @@ public class SystemInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "os_info_id")
     private OSInfo osInfo;
 

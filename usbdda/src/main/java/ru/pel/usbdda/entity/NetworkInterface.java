@@ -12,7 +12,8 @@ import java.util.List;
 @Entity
 public class NetworkInterface {
     @Id
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "id", nullable = false)
     private Long id;
     private String name;
     private String displayName;

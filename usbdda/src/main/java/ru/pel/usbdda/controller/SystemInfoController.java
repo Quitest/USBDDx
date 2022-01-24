@@ -11,6 +11,7 @@ import ru.pel.usbdda.dto.SystemInfoDto;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.service.SystemInfoService;
 
+import javax.persistence.EntityManager;
 import java.util.List;
 
 @Controller
@@ -32,7 +33,7 @@ public class SystemInfoController {
     public ResponseEntity<SystemInfo> systemInfo(@RequestBody SystemInfo systemInfo) {
         this.systemInfo = systemInfo;
         service.save(this.systemInfo);
-
+        long id = systemInfo.getId();
         return ResponseEntity.ok(this.systemInfo);
     }
 }

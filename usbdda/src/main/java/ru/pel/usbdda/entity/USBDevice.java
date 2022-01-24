@@ -13,7 +13,8 @@ import java.util.List;
 @Entity
 public class USBDevice {
     @Id
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "id", nullable = false)
     private Long id;
 
     private String vid;

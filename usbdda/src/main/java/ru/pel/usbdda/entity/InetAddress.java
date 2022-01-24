@@ -11,7 +11,8 @@ import javax.persistence.*;
 @Entity
 public class InetAddress {
     @Id
-    @Column(name = "id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    @Column(name = "id", nullable = false)
     private Long id;
     private String hostAddress;
     private String hostName;
