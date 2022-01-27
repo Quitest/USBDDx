@@ -46,4 +46,7 @@ public class USBDeviceDto {
 
     @JsonProperty("revision")
     private String revision;
+
+    @JsonProperty("osInfoDtoList")
+    private List<OSInfoDto> osInfoDtoList;
 }

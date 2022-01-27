@@ -28,4 +28,10 @@ public class OSInfo {
 
     @OneToMany(mappedBy = "osInfo")
     private List<NetworkInterface> networkInterfaceList;
+
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "osinfo_usbDevice",
+            joinColumns = @JoinColumn(name = "osinfo_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "usb_device_id", referencedColumnName = "id"))
+    private List<USBDevice> usbDeviceList;
 }

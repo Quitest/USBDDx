@@ -1,6 +1,5 @@
 package ru.pel.usbdda.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,7 +13,6 @@ import java.util.List;
 public class USBDevice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "id", nullable = false)
     private Long id;
 
     private String vid;
@@ -32,7 +30,10 @@ public class USBDevice {
     private String productName;
     private String revision;
 
-    @ManyToOne
-    @JoinColumn(name = "system_info_id")
-    private SystemInfo systemInfo;
+//    @ManyToOne
+//    @JoinColumn(name = "system_info_id")
+//    private SystemInfo systemInfo;
+    @ManyToMany(mappedBy = "usbDeviceList", cascade = CascadeType.ALL)
+//    private List<SystemInfo> systemInfoList;
+    private List<OSInfo> OSInfoList;
 }
