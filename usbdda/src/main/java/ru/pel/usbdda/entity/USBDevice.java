@@ -30,10 +30,10 @@ public class USBDevice {
     private String productName;
     private String revision;
 
-//    @ManyToOne
+    //    @ManyToOne
 //    @JoinColumn(name = "system_info_id")
 //    private SystemInfo systemInfo;
-    @ManyToMany(mappedBy = "usbDeviceList", cascade = CascadeType.ALL)
-//    private List<SystemInfo> systemInfoList;
-    private List<OSInfo> OSInfoList;
+    @ManyToMany(mappedBy = "usbDeviceList")
+    private List<SystemInfo> systemInfoList;
+//    private List<OsInfo> osInfoList;
 }

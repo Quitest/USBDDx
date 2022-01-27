@@ -1,6 +1,5 @@
 package ru.pel.usbdda.entity;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,7 +12,6 @@ import java.util.List;
 public class NetworkInterface {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    @Column(name = "id", nullable = false)
     private Long id;
     private String name;
     private String displayName;
@@ -23,5 +21,5 @@ public class NetworkInterface {
 
     @ManyToOne
     @JoinColumn(name = "os_info_id")
-    private OSInfo osInfo;
+    private OsInfo osInfo;
 }
