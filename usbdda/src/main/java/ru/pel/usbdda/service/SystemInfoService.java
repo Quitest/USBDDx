@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.pel.usbdda.entity.OsInfo;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.repository.SystemInfoRepository;
 
@@ -13,7 +14,7 @@ import javax.persistence.EntityManager;
 import java.util.List;
 
 @Service
-public class SystemInfoService {
+public class SystemInfoService implements ISystemInfoService{
     //https://www.baeldung.com/jpa-get-auto-generated-id
 // пыатемся работать по статье
     EntityManager entityManager;
@@ -26,7 +27,11 @@ public class SystemInfoService {
     }
 
     public SystemInfo getByKey(long key) {
-        return entityManager.find(SystemInfo.class, key);
+//        return entityManager.find(SystemInfo.class, key);
+        SystemInfo systemInfo = entityManager.find(SystemInfo.class, key);
+        OsInfo osInfo = systemInfo.getOsInfo();
+        System.out.println(osInfo.getUsername());
+        return systemInfo;
     }
 
     public List<SystemInfo> getSystemInfoList(int page, int size, String sortDir, String sortBy) {

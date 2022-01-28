@@ -9,6 +9,9 @@ import java.util.List;
 @Getter
 @Setter
 public class SystemInfoDto {
+    @JsonProperty("id")
+    private Long id;
+
     @JsonProperty("osInfo")
     private OSInfoDto osInfo;
 
