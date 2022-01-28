@@ -41,7 +41,11 @@ public class OsInfo {
     @OneToMany(mappedBy = "osInfo")
     private List<NetworkInterface> networkInterfaceList;
 
-    @OneToOne(mappedBy = "osInfo")
+    /*@OneToOne(mappedBy = "osInfo")
+    private SystemInfo systemInfo;*/
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "sysinfo_id")
     private SystemInfo systemInfo;
 
 //    @ManyToMany(cascade = {CascadeType.DETACH,CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})

@@ -42,10 +42,10 @@ public class SystemInfoController {
 
     @PostMapping
     @ResponseBody
-    public SystemInfo systemInfo(@RequestBody SystemInfoDto systemInfoDto) {
+    public SystemInfoDto systemInfo(@RequestBody SystemInfoDto systemInfoDto) {
         SystemInfo sysInfo = toEntity(systemInfoDto);
         service.save(sysInfo);
-        return sysInfo;
+        return toDto(sysInfo);
     }
 
     private SystemInfoDto toDto(SystemInfo entity) {

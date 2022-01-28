@@ -14,8 +14,11 @@ public class SystemInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "os_info_id")
+    /*@OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "os_info_id", referencedColumnName = "id")
+    private OsInfo osInfo;*/
+    @OneToOne(mappedBy = "systemInfo", cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
     private OsInfo osInfo;
 
     //    @OneToMany(mappedBy = "systemInfo", cascade = {CascadeType.PERSIST, CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH})

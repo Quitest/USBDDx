@@ -16,6 +16,6 @@ public class NetworkInterfaceDto {
     @JsonProperty("displayName")
     private String displayName;
 
-    @JsonProperty("inetAddressDtoList")
-    private List<InetAddressDto> inetAddressDtoList;
+    @JsonProperty("inetAddressList")
+    private List<InetAddressDto> inetAddressList;
 }

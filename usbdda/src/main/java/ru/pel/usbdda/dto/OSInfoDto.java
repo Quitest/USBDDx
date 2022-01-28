@@ -24,25 +24,25 @@ public class OSInfoDto {
     private String osArch;
 
     @JsonProperty("tmpdir")
-    private Path tmpdir;
+    private String tmpdir;
 
     @JsonProperty("username")
     private String username;
 
     @JsonProperty("homeDir")
-    private Path homeDir;
+    private String homeDir;
 
     @JsonProperty("currentDir")
-    private Path currentDir;
+    private String currentDir;
 
     @JsonProperty("systemRoot")
-    private Path systemRoot;
+    private String systemRoot;
 
     @JsonProperty("computerName")
     private String computerName;
 
-    @JsonProperty("networkInterfaceDtoList")
-    private List<NetworkInterfaceDto> networkInterfaceDtoList;
+    @JsonProperty("networkInterfaceList")
+    private List<NetworkInterfaceDto> networkInterfaceList;
 
 //    @JsonProperty("systemInfo")
 //    private SystemInfo systemInfo;
