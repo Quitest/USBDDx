@@ -1,8 +1,6 @@
 package ru.pel.usbdda.controller;
 
 import org.modelmapper.ModelMapper;
-import org.modelmapper.convention.MatchingStrategies;
-import org.modelmapper.spi.MatchingStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -25,6 +23,7 @@ public class SystemInfoController {
     SystemInfoService service;
 
     @GetMapping("/page")
+    @ResponseBody
     public List<SystemInfoDto> getAllSystemInfo(@PathParam("page") int page, @PathParam("size") int size,
                                                 @PathParam("sortDir") String sortDir, @PathParam("sortBy") String sortBy) {
         List<SystemInfo> list = service.getSystemInfoList(page, size, sortDir, sortBy);

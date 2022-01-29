@@ -11,18 +11,13 @@ import java.util.List;
 @Entity
 public class SystemInfo {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /*@OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "os_info_id", referencedColumnName = "id")
-    private OsInfo osInfo;*/
-    @OneToOne(mappedBy = "systemInfo", cascade = CascadeType.ALL)
-    @PrimaryKeyJoinColumn
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "id")
     private OsInfo osInfo;
 
-    //    @OneToMany(mappedBy = "systemInfo", cascade = {CascadeType.PERSIST, CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH})
-//    private Map<String, USBDevice> usbDeviceMap;
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinTable(name = "systeminfo_usbDevice",
             joinColumns = @JoinColumn(name = "systeminfo_id", referencedColumnName = "id"),

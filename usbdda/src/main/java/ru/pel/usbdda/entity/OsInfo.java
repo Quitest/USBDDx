@@ -40,17 +40,4 @@ public class OsInfo {
 
     @OneToMany(mappedBy = "osInfo")
     private List<NetworkInterface> networkInterfaceList;
-
-    /*@OneToOne(mappedBy = "osInfo")
-    private SystemInfo systemInfo;*/
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "sysinfo_id")
-    private SystemInfo systemInfo;
-
-//    @ManyToMany(cascade = {CascadeType.DETACH,CascadeType.MERGE,CascadeType.PERSIST,CascadeType.REFRESH})
-//    @JoinTable(name = "systemInfo_usbDevice",
-//            joinColumns = @JoinColumn(name = "systemInfo_id", referencedColumnName = "id"),
-//            inverseJoinColumns = @JoinColumn(name = "usb_device_id", referencedColumnName = "id"))
-//    private List<USBDevice> usbDeviceList;
 }
