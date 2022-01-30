@@ -7,10 +7,10 @@ import ru.pel.usbdda.entity.USBDevice;
 import javax.persistence.EntityManager;
 
 @Service
-public class USBDeviceService {
+public class UsbDeviceServiceImpl implements UsbDeviceService {
     private EntityManager entityManager;
 
-    public USBDeviceService(EntityManager entityManager){
+    public UsbDeviceServiceImpl(EntityManager entityManager){
         this.entityManager = entityManager;
     }
 
@@ -18,5 +18,11 @@ public class USBDeviceService {
     public long save(USBDevice usbDevice){
         entityManager.persist(usbDevice);
         return usbDevice.getId();
+    }
+
+    @Override
+    public USBDevice getBySerial(String serial) {
+
+        return null;
     }
 }
