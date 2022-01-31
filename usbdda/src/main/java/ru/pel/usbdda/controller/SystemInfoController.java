@@ -1,12 +1,15 @@
 package ru.pel.usbdda.controller;
 
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.pel.usbdda.dto.SystemInfoDto;
+import ru.pel.usbdda.dto.USBDeviceDto;
 import ru.pel.usbdda.entity.SystemInfo;
+import ru.pel.usbdda.entity.USBDevice;
 import ru.pel.usbdda.service.SystemInfoServiceImpl;
 
 import javax.websocket.server.PathParam;
@@ -35,7 +38,7 @@ public class SystemInfoController {
     @GetMapping("{id}")
     public ResponseEntity<SystemInfoDto> getSystemInfo(@PathVariable long id) {
         SystemInfo sysInfo = service.getByKey(id);
-        SystemInfoDto dto = modelMapper.map(sysInfo, SystemInfoDto.class);
+        SystemInfoDto dto = toDto(sysInfo);
         return ResponseEntity.ok(dto);
     }
 
@@ -47,12 +50,15 @@ public class SystemInfoController {
         return toDto(sysInfo);
     }
 
-    private SystemInfoDto toDto(SystemInfo entity) {
+    /** Преобразование в DTO и "выкусывание" информацию о вложенных SystemInfo, что бы не было зацикливания. */
+    private SystemInfoDto toDto(SystemInfo entity){
+        ModelMapper modelMapper = new ModelMapper();
+        TypeMap<USBDevice, USBDeviceDto> typeMap = modelMapper.createTypeMap(USBDevice.class, USBDeviceDto.class);
+        typeMap.addMappings(m->m.skip(USBDeviceDto::setSystemInfoList));
         return modelMapper.map(entity, SystemInfoDto.class);
     }
 
     private SystemInfo toEntity(SystemInfoDto dto) {
-//        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         return modelMapper.map(dto, SystemInfo.class);
     }
 }
