@@ -7,10 +7,10 @@ import ru.pel.usbdda.entity.OsInfo;
 import javax.persistence.EntityManager;
 
 @Service
-public class OSInfoService {
+public class OSInfoServiceImpl implements OsInfoService{
     EntityManager entityManager;
 
-    public OSInfoService(EntityManager entityManager){
+    public OSInfoServiceImpl(EntityManager entityManager){
         this.entityManager = entityManager;
     }
 

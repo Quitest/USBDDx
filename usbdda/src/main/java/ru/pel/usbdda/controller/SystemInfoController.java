@@ -7,7 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.pel.usbdda.dto.SystemInfoDto;
 import ru.pel.usbdda.entity.SystemInfo;
-import ru.pel.usbdda.service.SystemInfoService;
+import ru.pel.usbdda.service.SystemInfoServiceImpl;
 
 import javax.websocket.server.PathParam;
 import java.util.List;
@@ -20,7 +20,7 @@ public class SystemInfoController {
     ModelMapper modelMapper;
 
     @Autowired
-    SystemInfoService service;
+    SystemInfoServiceImpl service;
 
     @GetMapping("/page")
     @ResponseBody
