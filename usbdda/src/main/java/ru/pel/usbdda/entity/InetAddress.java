@@ -16,6 +16,6 @@ public class InetAddress {
     private String hostName;
     private String canonicalName;
     @ManyToOne
-    @JoinColumn(name = "network_interface_id")
+    @JoinColumn(name = "network_interface_id", referencedColumnName = "id")
     private NetworkInterface networkInterface;
 }

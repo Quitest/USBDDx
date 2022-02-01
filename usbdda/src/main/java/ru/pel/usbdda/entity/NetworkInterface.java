@@ -16,10 +16,10 @@ public class NetworkInterface {
     private String name;
     private String displayName;
 
-    @OneToMany(mappedBy = "networkInterface")
+    @OneToMany(mappedBy = "networkInterface", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InetAddress> inetAddressList;
 
     @ManyToOne
-    @JoinColumn(name = "os_info_id")
+    @JoinColumn(name = "os_info_id", referencedColumnName = "id")
     private OsInfo osInfo;
 }

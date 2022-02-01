@@ -38,6 +38,6 @@ public class OsInfo {
     private String systemRoot;
     private String computerName;
 
-    @OneToMany(mappedBy = "osInfo")
+    @OneToMany(mappedBy = "osInfo", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<NetworkInterface> networkInterfaceList;
 }

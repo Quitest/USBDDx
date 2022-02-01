@@ -6,27 +6,23 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.pel.usbdda.entity.OsInfo;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.repository.SystemInfoRepository;
 
-import javax.persistence.EntityManager;
 import java.util.List;
 
 @Service
 public class SystemInfoServiceImpl implements SystemInfoService {
     //https://www.baeldung.com/jpa-get-auto-generated-id
 // пыатемся работать по статье
-    EntityManager entityManager;
 
     @Autowired
     SystemInfoRepository systemInfoRepository;
 
-    public SystemInfoServiceImpl(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
-
+    @Override
     public SystemInfo getByKey(long key) {
-        return entityManager.find(SystemInfo.class, key);
+        return systemInfoRepository.findById(key).orElseThrow();
     }
 
     public List<SystemInfo> getSystemInfoList(int page, int size, String sortDir, String sortBy) {
@@ -37,7 +33,16 @@ public class SystemInfoServiceImpl implements SystemInfoService {
 
     @Transactional
     public long save(SystemInfo systemInfo) {
-        entityManager.persist(systemInfo);
+        //устанавливаем обратные связи сущностей (для записи внешних ключей в БД)...
+        OsInfo osInfo = systemInfo.getOsInfo();
+        osInfo.getNetworkInterfaceList()
+                .forEach(networkInterface -> {
+                    networkInterface.getInetAddressList()
+                            .forEach(inetAddress -> inetAddress.setNetworkInterface(networkInterface)); //... тут IP адреса -> сетевойИнтерфейс,
+                    networkInterface.setOsInfo(osInfo); //а тут сетевойИнтерфейс -> операционнаяСистема.
+                });
+
+        systemInfoRepository.save(systemInfo);
         return systemInfo.getId();
     }
 }
