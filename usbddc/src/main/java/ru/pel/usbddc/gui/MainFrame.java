@@ -6,14 +6,17 @@ import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.service.SystemInfoCollector;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.regex.PatternSyntaxException;
 
 public class MainFrame extends JFrame {
     private JTable devicesTable;
@@ -22,23 +25,38 @@ public class MainFrame extends JFrame {
     private JPanel mainPanel;
     private JPanel buttonsPanel;
     private JScrollPane devicesInfoScrollPane;
+    private JTextField filterField;
+
+    private TableRowSorter<DefaultTableModel> sorter;
 
     public MainFrame() {
         super("USBDDc");
+
+        this.setContentPane(mainPanel);
+        devicesTable.setOpaque(true);
+
+//        DefaultTableModel tableModel = new DefaultTableModel(header,10);
+        DefaultTableModel tableModel = new DefaultTableModel(0, 0);
+        String[] header = new String[]{"№", "serial", "isSerialOSGenerated", "friendlyName", "PID", "VID",
+                "productName", "vendorName", "volumeName", "revision", "dateTimeFirstInstall",
+                "userAccountsList", "GUID"};
+        tableModel.setColumnIdentifiers(header);
+
+
+        sorter = new TableRowSorter<>(tableModel);
+        devicesTable.setModel(tableModel);
+        devicesTable.setRowSorter(sorter);
+        devicesTable.setPreferredScrollableViewportSize(new Dimension(500, 100));
+        devicesTable.setFillsViewportHeight(true);
+
         collectInfoButton.addActionListener(actionEvent -> {
             try {
                 SystemInfo systemInfo = new SystemInfoCollector().collectSystemInfo().getSystemInfo();
                 Map<String, USBDevice> usbDeviceMap = systemInfo.getUsbDeviceMap();
                 OSInfo osInfo = systemInfo.getOsInfo();
 
-                DefaultTableModel dm = new DefaultTableModel(0, 0);
-                String[] header = new String[]{"№", "serial", "isSerialOSGenerated", "friendlyName", "PID", "VID",
-                        "productName", "vendorName", "volumeName", "revision", "dateTimeFirstInstall",
-                        "userAccountsList", "GUID"};
 
-
-                dm.setColumnIdentifiers(header);
-                devicesTable.setModel(dm);
+//                devicesTable.setAutoCreateRowSorter(true);
 
                 List<USBDevice> usbDeviceList = new ArrayList<>(usbDeviceMap.values());
                 for (int count = 0; count < usbDeviceList.size(); count++) {
@@ -59,30 +77,64 @@ public class MainFrame extends JFrame {
                     data.add(device.getUserAccountsList());
                     data.add(device.getGuid());
 
-                    dm.addRow(data);
+                    tableModel.addRow(data);
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
+
+        filterField.getDocument().addDocumentListener(
+                new DocumentListener() {
+                    @Override
+                    public void changedUpdate(DocumentEvent e) {
+                        newFilter();
+                    }
+
+                    @Override
+                    public void insertUpdate(DocumentEvent e) {
+                        newFilter();
+                    }
+
+                    @Override
+                    public void removeUpdate(DocumentEvent e) {
+                        newFilter();
+                    }
+                }
+        );
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MainFrame().createAndShowGUI());
+        SwingUtilities.invokeLater(MainFrame::createAndShowGUI);
     }
 
-    private void createAndShowGUI() {
+    private static void createAndShowGUI() {
         //Create and set up the window.
         MainFrame frame = new MainFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         //Create and set up the content pane.
-        frame.setContentPane(mainPanel);
-        devicesTable.setOpaque(true);
+//        frame.setContentPane(mainPanel);
+//        devicesTable.setOpaque(true);
 
         //Display the window.
         frame.pack();
         frame.setVisible(true);
+    }
+
+    /**
+     * Update the row filter regular expression from the expression in
+     * the text box.
+     */
+    private void newFilter() {
+        RowFilter<DefaultTableModel, Object> rf;
+        //If current expression doesn't parse, don't update.
+        try {
+            rf = RowFilter.regexFilter(filterField.getText());
+        } catch (PatternSyntaxException e) {
+            return;
+        }
+        sorter.setRowFilter(rf);
     }
 }
