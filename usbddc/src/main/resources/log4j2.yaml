@@ -1,0 +1,23 @@
+Configuration:
+  status: error
+  appenders:
+    Console:
+      name: STDOUT
+      target: SYSTEM_OUT
+      PatternLayout:
+        Pattern: "%m%n"
+  Loggers:
+    logger:
+      -
+        name: org.apache.commons.beanutils.BeanUtils
+        level: error
+        additivity: false
+        AppenderRef:
+          ref: STDOUT
+      - name: test.logger
+          level: error
+          additivity: false
+          AppenderRef:
+            ref: STDOUT
+    Root:
+      level: error
