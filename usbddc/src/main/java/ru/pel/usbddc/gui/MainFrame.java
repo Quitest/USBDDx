@@ -1,5 +1,7 @@
 package ru.pel.usbddc.gui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.OSInfo;
 import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
@@ -26,8 +28,8 @@ public class MainFrame extends JFrame {
     private JPanel buttonsPanel;
     private JScrollPane devicesInfoScrollPane;
     private JTextField filterField;
-
-    private TableRowSorter<DefaultTableModel> sorter;
+    private final TableRowSorter<DefaultTableModel> sorter;
+    private final static Logger logger = LoggerFactory.getLogger(MainFrame.class);
 
     public MainFrame() {
         super("USBDDc");
@@ -35,7 +37,6 @@ public class MainFrame extends JFrame {
         this.setContentPane(mainPanel);
         devicesTable.setOpaque(true);
 
-//        DefaultTableModel tableModel = new DefaultTableModel(header,10);
         DefaultTableModel tableModel = new DefaultTableModel(0, 0);
         String[] header = new String[]{"№", "serial", "isSerialOSGenerated", "friendlyName", "PID", "VID",
                 "productName", "vendorName", "volumeName", "revision", "dateTimeFirstInstall",
@@ -50,18 +51,15 @@ public class MainFrame extends JFrame {
         devicesTable.setFillsViewportHeight(true);
 
         collectInfoButton.addActionListener(actionEvent -> {
+            tableModel.setRowCount(0);
             try {
                 SystemInfo systemInfo = new SystemInfoCollector().collectSystemInfo().getSystemInfo();
                 Map<String, USBDevice> usbDeviceMap = systemInfo.getUsbDeviceMap();
                 OSInfo osInfo = systemInfo.getOsInfo();
 
-
-//                devicesTable.setAutoCreateRowSorter(true);
-
                 List<USBDevice> usbDeviceList = new ArrayList<>(usbDeviceMap.values());
                 for (int count = 0; count < usbDeviceList.size(); count++) {
                     Vector<Object> data = new Vector<>();
-//                        int finalCount = count;
                     data.add(count + 1);
                     USBDevice device = usbDeviceList.get(count);
                     data.add(device.getSerial());
@@ -81,7 +79,7 @@ public class MainFrame extends JFrame {
                 }
 
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Analysis error. {}", e);
             }
         });
 
@@ -110,15 +108,9 @@ public class MainFrame extends JFrame {
     }
 
     private static void createAndShowGUI() {
-        //Create and set up the window.
         MainFrame frame = new MainFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        //Create and set up the content pane.
-//        frame.setContentPane(mainPanel);
-//        devicesTable.setOpaque(true);
-
-        //Display the window.
         frame.pack();
         frame.setVisible(true);
     }
