@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,8 @@ public class DeviceTableExporter implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         final String COLUMN_SEPARATOR = "\t";
         JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setCurrentDirectory(new File(System.getProperty("user.dir")));
+
         int returnVal = fileChooser.showDialog(null, "Save");
         fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
 
@@ -35,14 +38,13 @@ public class DeviceTableExporter implements ActionListener {
                     for (int col = 0; col < devicesTable.getColumnCount(); col++) {
                         printWriter.print(devicesTable.getValueAt(row, col) + COLUMN_SEPARATOR);
 
-                        if (logger.isTraceEnabled()) {
-                            logger.trace(devicesTable.getValueAt(row, col) + COLUMN_SEPARATOR);
-                        }
+                            logger.trace("{} : {}",devicesTable.getColumnName(col), devicesTable.getValueAt(row, col));
                     }
                     printWriter.println();
                 }
             } catch (IOException ex) {
-                logger.info("An I/O error occurs while opening or creating the file. {}", ex);
+                logger.error("An I/O error occurs while opening or creating the file. {}", ex.getMessage());
+                logger.debug("An I/O error occurs while opening or creating the file.", ex);
             }
         }
 
