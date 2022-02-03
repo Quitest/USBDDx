@@ -13,7 +13,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,8 @@ import java.util.Vector;
 import java.util.regex.PatternSyntaxException;
 
 public class MainFrame extends JFrame {
+    private final static Logger logger = LoggerFactory.getLogger(MainFrame.class);
+    private final TableRowSorter<DefaultTableModel> sorter;
     private JTable devicesTable;
     private JButton collectInfoButton;
     private JButton showOsInfoButton;
@@ -28,8 +33,7 @@ public class MainFrame extends JFrame {
     private JPanel buttonsPanel;
     private JScrollPane devicesInfoScrollPane;
     private JTextField filterField;
-    private final TableRowSorter<DefaultTableModel> sorter;
-    private final static Logger logger = LoggerFactory.getLogger(MainFrame.class);
+    private JButton exportButton;
 
     public MainFrame() {
         super("USBDDc");
@@ -101,6 +105,7 @@ public class MainFrame extends JFrame {
                     }
                 }
         );
+        exportButton.addActionListener(exportActionListener());
     }
 
     public static void main(String[] args) {
@@ -113,6 +118,37 @@ public class MainFrame extends JFrame {
 
         frame.pack();
         frame.setVisible(true);
+    }
+
+    private ActionListener exportActionListener() {
+        return e -> {
+            final String COLUMN_SEPARATOR = ";";
+            JFileChooser fileChooser = new JFileChooser();
+            int returnVal = fileChooser.showDialog(MainFrame.this, "Save");
+            fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
+
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                try (PrintWriter printWriter = new PrintWriter(fileChooser.getSelectedFile(), StandardCharsets.UTF_8)) {
+                    for (int col = 0; col < devicesTable.getColumnCount(); col++) {
+                        printWriter.print(devicesTable.getColumnName(col) + COLUMN_SEPARATOR);
+                    }
+                    printWriter.println();
+                    for (int row = 0; row < devicesTable.getRowCount(); row++) {
+                        for (int col = 0; col < devicesTable.getColumnCount(); col++) {
+                            printWriter.print(devicesTable.getValueAt(row, col) + COLUMN_SEPARATOR);
+
+                            if (logger.isTraceEnabled()) {
+                                logger.trace(devicesTable.getValueAt(row, col) + COLUMN_SEPARATOR);
+                            }
+                        }
+                        printWriter.println();
+                    }
+                } catch (IOException ex) {
+                    logger.info("An I/O error occurs while opening or creating the file. {}", ex);
+                }
+            }
+
+        };
     }
 
     /**

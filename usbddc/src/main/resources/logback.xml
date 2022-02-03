@@ -9,9 +9,10 @@
     </appender>
 
     <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>
+    <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>
 
     <root level="debug">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </root>
 
 </configuration>
