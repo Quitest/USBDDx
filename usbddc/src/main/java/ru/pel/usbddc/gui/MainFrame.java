@@ -105,7 +105,8 @@ public class MainFrame extends JFrame {
                     }
                 }
         );
-        exportButton.addActionListener(exportActionListener());
+//        exportButton.addActionListener(exportActionListener());
+        exportButton.addActionListener(new DeviceTableExporter(devicesTable));
     }
 
     public static void main(String[] args) {
