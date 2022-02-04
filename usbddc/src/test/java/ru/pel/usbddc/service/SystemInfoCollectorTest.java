@@ -33,4 +33,8 @@ class SystemInfoCollectorTest {
         assertThat(systemInfo.getUsbDeviceMap(),anyOf(hasKey("EFF732B1"),hasKey("1492710242260098")));
         assertThat(osVersion, is(10.0) );
     }
+
+    @Test
+    void analysisTime() throws IOException {
+    }
 }

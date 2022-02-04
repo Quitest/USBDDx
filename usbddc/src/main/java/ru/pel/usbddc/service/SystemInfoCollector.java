@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
 
@@ -20,6 +22,7 @@ import java.util.Map;
 @Getter
 @Setter
 public class SystemInfoCollector {
+    private static final Logger logger = LoggerFactory.getLogger(SystemInfoCollector.class);
     private SystemInfo systemInfo;
 
     public SystemInfoCollector() {
@@ -32,12 +35,19 @@ public class SystemInfoCollector {
      * @throws IOException
      */
     public SystemInfoCollector collectSystemInfo() throws IOException {
+        long startTime = System.currentTimeMillis();
         systemInfo.setOsInfo(new OSInfoCollector().collectInfo());
+        logger.debug("Время работы OsInfoCollector - {}мс", System.currentTimeMillis()-startTime);
 
+        long startTimeRegAnalysis = System.currentTimeMillis();
         Map<String, USBDevice> registryAnalysis = new RegistryAnalyzer().getRegistryAnalysis(true);
+        logger.debug("Время работы RegistryAnalyze() - {}мс", System.currentTimeMillis()-startTimeRegAnalysis);
 
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
+        long startTimeLogAnalysis = System.currentTimeMillis();
         Map<String, USBDevice> logAnalysis = new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
+        logger.debug("Время работы SetupapiDevLogAnalyzer() - {}мс", System.currentTimeMillis()-startTimeLogAnalysis);
+        logger.debug("Время работы общее - {}мс", System.currentTimeMillis()-startTime);
 
         systemInfo
                 .mergeUsbDeviceInfo(registryAnalysis)

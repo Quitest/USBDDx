@@ -27,4 +27,9 @@ class OSInfoCollectorTest {
         assertThat(setupapiDevLogList.size(), greaterThanOrEqualTo(1));
 
     }
+
+    @Test
+    void performance() throws SocketException {
+        new OSInfoCollector().getNetworkInterfaceList();
+    }
 }

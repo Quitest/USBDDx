@@ -1,6 +1,8 @@
 package ru.pel.usbddc.service;
 
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.OSInfo;
 
 import java.io.IOException;
@@ -20,7 +22,8 @@ import java.util.stream.Stream;
  */
 @Getter
 public class OSInfoCollector {
-    private OSInfo osInfo;
+    private static final Logger logger = LoggerFactory.getLogger(OSInfoCollector.class);
+    private final OSInfo osInfo;
 
     public OSInfoCollector() {
         osInfo = new OSInfo();
@@ -40,13 +43,10 @@ public class OSInfoCollector {
             osInfo.setComputerName(getComputerName());
 
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
-        } catch (SecurityException e) {
-            System.err.println("Возможно, Вам поможет документация на метод System.getProperties() или " +
-                    "java.util.Properties.getProperties()");
-            e.printStackTrace();
         } catch (SocketException e) {
-            System.err.println("Не удалось собрать информацию о сетевых интерфейсах");
-            e.printStackTrace();
+//            System.err.println("Не удалось собрать информацию о сетевых интерфейсах");
+//            e.printStackTrace();
+            logger.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
         }
 
         return osInfo;
@@ -79,21 +79,24 @@ public class OSInfoCollector {
             eth.setDisplayName(networkInterface.getDisplayName());
             eth.setName(networkInterface.getName());
             //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
-            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
+            long startTime = System.currentTimeMillis();
+            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses().parallel()
                     .map(inetAddress -> {
                         ru.pel.usbddc.entity.NetworkInterface.InetAddress addr =
                                 new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
                         addr.setHostAddress(inetAddress.getHostAddress());
                         addr.setHostName(inetAddress.getHostName());
+                        long start = System.currentTimeMillis();
                         addr.setCanonicalName(inetAddress.getCanonicalHostName());
+                        logger.trace("\tMapping inetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis()-start);
                         return addr;
                     }).collect(Collectors.toList());
+            logger.trace("If name: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis()-startTime);
             eth.setInetAddressList(inetAddressList);
 
             interfaces.add(eth);
         }
         return interfaces;
-//        return NetworkInterface.networkInterfaces().collect(Collectors.toList());
     }
 
     public String getOsArch() {
