@@ -78,27 +78,12 @@ public class OSInfoCollector {
         List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL);
         List<Callable<ru.pel.usbddc.entity.NetworkInterface>> taskList = new ArrayList<>();
+
         for (NetworkInterface networkInterface : networkInterfaceList) {
-            Callable<ru.pel.usbddc.entity.NetworkInterface> networkInterfaceCallable = () -> {
-                ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
-                //для каждого сетевого интерфейса определяем имена...
-                eth.setDisplayName(networkInterface.getDisplayName());
-                eth.setName(networkInterface.getName());
-                //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
-                long startTime = System.currentTimeMillis();
-                List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
-                        .map(inetAddress -> {
-                            long start = System.currentTimeMillis();
-                            ru.pel.usbddc.entity.NetworkInterface.InetAddress addr = mapInetAddress(inetAddress);
-                            logger.trace("\tInetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis() - start);
-                            return addr;
-                        }).collect(Collectors.toList());
-                logger.trace("Interface: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis() - startTime);
-                eth.setInetAddressList(inetAddressList);
-                return eth;
-            };
+            Callable<ru.pel.usbddc.entity.NetworkInterface> networkInterfaceCallable = () -> mapNetworkInterface(networkInterface);
             taskList.add(networkInterfaceCallable);
         }
+
         List<ru.pel.usbddc.entity.NetworkInterface> interfaces;
         interfaces = executorService.invokeAll(taskList).stream()
                 .map(networkInterfaceFuture -> {
@@ -112,7 +97,6 @@ public class OSInfoCollector {
                     }
                     return iface;
                 }).collect(Collectors.toList());
-
         executorService.shutdown();
         return interfaces;
     }
@@ -173,10 +157,6 @@ public class OSInfoCollector {
         +----------------------------+------------------+
         * */
         return getOsVersion() >= 6.0 ? Path.of(logPath, "\\inf") : Path.of(logPath);
-//        if (getOsVersion() >= 6.0) {
-//            logPath = getSystemRoot() + "\\inf";
-//        }
-//        return Paths.get(logPath);
     }
 
     /**
@@ -211,12 +191,23 @@ public class OSInfoCollector {
         return System.getProperty("user.name");
     }
 
-    private ru.pel.usbddc.entity.NetworkInterface.InetAddress mapInetAddress(
-            InetAddress src) {
+    private ru.pel.usbddc.entity.NetworkInterface.InetAddress mapInetAddress(InetAddress src) {
         ru.pel.usbddc.entity.NetworkInterface.InetAddress dst = new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
         dst.setHostAddress(src.getHostAddress());
         dst.setHostName(src.getHostName());
         dst.setCanonicalName(src.getCanonicalHostName());
         return dst;
+    }
+
+    private ru.pel.usbddc.entity.NetworkInterface mapNetworkInterface(NetworkInterface networkInterface) {
+        ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
+        //для каждого сетевого интерфейса определяем имена...
+        eth.setDisplayName(networkInterface.getDisplayName());
+        eth.setName(networkInterface.getName());
+        //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
+        List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
+                .map(this::mapInetAddress).collect(Collectors.toList());
+        eth.setInetAddressList(inetAddressList);
+        return eth;
     }
 }
