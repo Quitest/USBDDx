@@ -6,13 +6,16 @@ import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.OSInfo;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,6 +26,18 @@ import java.util.stream.Stream;
 @Getter
 public class OSInfoCollector {
     private static final Logger logger = LoggerFactory.getLogger(OSInfoCollector.class);
+    private static final int THREAD_POOL = 16;
+
+//    static {
+//        Properties props = new Properties();
+//        try {
+//            props.load(new FileReader("application.properties"));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        THREAD_POOL = Integer.parseInt(props.getProperty("thread.pool", "4"));
+//    }
+
     private final OSInfo osInfo;
 
     public OSInfoCollector() {
@@ -43,7 +58,7 @@ public class OSInfoCollector {
             osInfo.setComputerName(getComputerName());
 
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
-        } catch (SocketException e) {
+        } catch (SocketException | ExecutionException | InterruptedException | TimeoutException e) {
 //            System.err.println("Не удалось собрать информацию о сетевых интерфейсах");
 //            e.printStackTrace();
             logger.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
@@ -70,32 +85,64 @@ public class OSInfoCollector {
      * @return самописный более примитивный аналог java.net.NetworkInterface, содержащий только интересующую информацию.
      * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface
      */
-    public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException {
+    public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, ExecutionException, InterruptedException, TimeoutException {
         List<ru.pel.usbddc.entity.NetworkInterface> interfaces = new ArrayList<>();
         List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
-        for (NetworkInterface networkInterface : networkInterfaceList) {
-            ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
-            //для каждого сетевого интерфейса определяем имена...
-            eth.setDisplayName(networkInterface.getDisplayName());
-            eth.setName(networkInterface.getName());
-            //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
-            long startTime = System.currentTimeMillis();
-            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses().parallel()
-                    .map(inetAddress -> {
-                        ru.pel.usbddc.entity.NetworkInterface.InetAddress addr =
-                                new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
-                        addr.setHostAddress(inetAddress.getHostAddress());
-                        addr.setHostName(inetAddress.getHostName());
-                        long start = System.currentTimeMillis();
-                        addr.setCanonicalName(inetAddress.getCanonicalHostName());
-                        logger.trace("\tMapping inetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis()-start);
-                        return addr;
-                    }).collect(Collectors.toList());
-            logger.trace("If name: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis()-startTime);
-            eth.setInetAddressList(inetAddressList);
 
-            interfaces.add(eth);
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL);
+
+        List<Callable<ru.pel.usbddc.entity.NetworkInterface>> taskList = new ArrayList<>();
+        for (NetworkInterface networkInterface : networkInterfaceList) {
+            Callable<ru.pel.usbddc.entity.NetworkInterface> networkInterfaceCallable = ()->{
+                ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
+                //для каждого сетевого интерфейса определяем имена...
+                eth.setDisplayName(networkInterface.getDisplayName());
+                eth.setName(networkInterface.getName());
+                //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
+                long startTime = System.currentTimeMillis();
+                List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
+                        .map(inetAddress -> {
+                            long start = System.currentTimeMillis();
+                            ru.pel.usbddc.entity.NetworkInterface.InetAddress addr = mapInetAddress(inetAddress);
+                            logger.trace("\tInetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis() - start);
+                            return addr;
+                        }).collect(Collectors.toList());
+
+                logger.trace("Interface: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis() - startTime);
+                eth.setInetAddressList(inetAddressList);
+                return eth;
+            };
+            taskList.add(networkInterfaceCallable);
+
+//            ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
+//            //для каждого сетевого интерфейса определяем имена...
+//            eth.setDisplayName(networkInterface.getDisplayName());
+//            eth.setName(networkInterface.getName());
+//            //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
+//            long startTime = System.currentTimeMillis();
+//            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
+//                    .map(inetAddress -> {
+//                        long start = System.currentTimeMillis();
+//                        ru.pel.usbddc.entity.NetworkInterface.InetAddress addr = mapInetAddress(inetAddress);
+//                        logger.trace("\tInetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis() - start);
+//                        return addr;
+//                    }).collect(Collectors.toList());
+//
+//            logger.trace("Interface: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis() - startTime);
+//            eth.setInetAddressList(inetAddressList);
+//            interfaces.add(eth);
         }
+        interfaces = executorService.invokeAll(taskList).stream()
+                .map(networkInterfaceFuture -> {
+                    try {
+                        return networkInterfaceFuture.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                        return new ru.pel.usbddc.entity.NetworkInterface();
+                    }
+                }).collect(Collectors.toList());
+
+        executorService.shutdown();
         return interfaces;
     }
 
@@ -191,6 +238,17 @@ public class OSInfoCollector {
 
     public String getUsername() {
         return System.getProperty("user.name");
+    }
+
+    private ru.pel.usbddc.entity.NetworkInterface.InetAddress mapInetAddress(
+            InetAddress src) {
+        ru.pel.usbddc.entity.NetworkInterface.InetAddress dst = new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
+//        long start = System.currentTimeMillis();
+        dst.setHostAddress(src.getHostAddress());
+        dst.setHostName(src.getHostName());
+        dst.setCanonicalName(src.getCanonicalHostName());
+//        logger.trace("\tduration: {} ms. [{}]", System.currentTimeMillis()-start, src.getHostAddress());
+        return dst;
     }
 
 //    /**

@@ -6,9 +6,7 @@ import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 

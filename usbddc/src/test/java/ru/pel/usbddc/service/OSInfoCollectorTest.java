@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.net.SocketException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -29,7 +31,7 @@ class OSInfoCollectorTest {
     }
 
     @Test
-    void performance() throws SocketException {
+    void performance() throws SocketException, ExecutionException, InterruptedException, TimeoutException {
         new OSInfoCollector().getNetworkInterfaceList();
     }
 }

@@ -7,13 +7,16 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.entity.OSInfo;
 import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * Сборщик всей необходимой и доступной информации о системе - идентификационные данные системы, подключаемые
@@ -35,24 +38,41 @@ public class SystemInfoCollector {
      * @throws IOException
      */
     public SystemInfoCollector collectSystemInfo() throws IOException {
-        long startTime = System.currentTimeMillis();
-        systemInfo.setOsInfo(new OSInfoCollector().collectInfo());
-        logger.debug("Время работы OsInfoCollector - {}мс", System.currentTimeMillis()-startTime);
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
 
+        long startTime = System.currentTimeMillis();
+        Future<OSInfo> osInfoFuture = executorService.submit(()-> new OSInfoCollector().collectInfo());
+        logger.trace("Время работы OsInfoCollector - {}мс", System.currentTimeMillis()-startTime);
+
+        List<Callable<Map<String,USBDevice>>> taskList = new ArrayList<>();
         long startTimeRegAnalysis = System.currentTimeMillis();
-        Map<String, USBDevice> registryAnalysis = new RegistryAnalyzer().getRegistryAnalysis(true);
-        logger.debug("Время работы RegistryAnalyze() - {}мс", System.currentTimeMillis()-startTimeRegAnalysis);
+        Callable<Map<String,USBDevice>> registryAnalysisCallable = ()->new RegistryAnalyzer().getAnalysis(true);
+        logger.trace("Время работы RegistryAnalyze() - {}мс", System.currentTimeMillis()-startTimeRegAnalysis);
 
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
         long startTimeLogAnalysis = System.currentTimeMillis();
-        Map<String, USBDevice> logAnalysis = new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
-        logger.debug("Время работы SetupapiDevLogAnalyzer() - {}мс", System.currentTimeMillis()-startTimeLogAnalysis);
-        logger.debug("Время работы общее - {}мс", System.currentTimeMillis()-startTime);
 
-        systemInfo
-                .mergeUsbDeviceInfo(registryAnalysis)
-                .mergeUsbDeviceInfo(logAnalysis);
+        Callable<Map<String ,USBDevice>> logAnalysisCallable = ()->new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
+        logger.trace("Время работы SetupapiDevLogAnalyzer() - {}мс", System.currentTimeMillis()-startTimeLogAnalysis);
 
+        taskList.add(logAnalysisCallable);
+        taskList.add(registryAnalysisCallable);
+        try {
+            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(taskList);
+            for (Future<Map<String, USBDevice>> future : futures) {
+                Map<String, USBDevice> usbDeviceMap = future.get();
+                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
+            }
+            systemInfo.setOsInfo(osInfoFuture.get(30,TimeUnit.SECONDS));
+
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            logger.error("Exception occurred: {}", e.getLocalizedMessage());
+            logger.debug("Exception occurred: ", e);
+
+        }
+
+        logger.trace("Время работы общее - {}мс", System.currentTimeMillis()-startTime);
+        executorService.shutdown();
         return this;
     }
 

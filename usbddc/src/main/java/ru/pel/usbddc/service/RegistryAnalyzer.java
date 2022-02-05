@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 /**
  * Предназначен для сбора информации о USB устройствах из рестра ОС Windows.
  */
-public class RegistryAnalyzer {
+public class RegistryAnalyzer implements Analyzer {
     private static final String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
     private static final String REG_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
@@ -197,6 +197,23 @@ public class RegistryAnalyzer {
      * @return результаты предыдущего или нового анализа в зависимости от аргумента.
      */
     public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
+        if (doNewAnalysis) {
+            try {
+                getUsbDevices();
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+            associateSerialToGuid();
+            determineDeviceUsers();
+            getFriendlyName();
+            parseWindowsPortableDevice();
+        }
+        return usbDeviceMap;
+    }
+
+
+    @Override
+    public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
             try {
                 getUsbDevices();

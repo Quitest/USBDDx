@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.SystemInfo;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -16,7 +18,7 @@ class SystemInfoCollectorTest {
     private static String json;
 
     @BeforeAll
-    static void init() throws IOException {
+    static void init() throws IOException, ExecutionException, InterruptedException, TimeoutException {
         SystemInfoCollector systemInfo = new SystemInfoCollector().collectSystemInfo();
         json = systemInfo.systemInfoToJSON();
     }

@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 
 @Getter
 @Setter
-public class SetupapiDevLogAnalyzer {
+public class SetupapiDevLogAnalyzer implements Analyzer{
     private static final String NOT_PARSED = "<SERIAL IS NOT PARSED IN LOG>";
     @Setter
     private static Path pathToLog;
@@ -67,6 +67,7 @@ public class SetupapiDevLogAnalyzer {
      * @throws SecurityException        - If the security manager denies access to the starting file. In the case of the
      *                                  default provider, the checkRead method is invoked to check read access to the directory.
      */
+    @Override
     public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) throws IOException {
         if (doNewAnalysis) {
             if (usbDeviceMap.isEmpty()) {

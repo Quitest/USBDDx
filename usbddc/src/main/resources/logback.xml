@@ -10,7 +10,7 @@
 
     <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>
     <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>
-    <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="debug"/>
+    <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="trace"/>
     <logger name="ru.pel.usbddc.service.OSInfoCollector" level="trace"/>
 
     <root level="debug">
