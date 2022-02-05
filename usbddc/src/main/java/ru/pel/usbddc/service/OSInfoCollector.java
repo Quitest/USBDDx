@@ -13,9 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,17 +29,6 @@ import java.util.stream.Stream;
 public class OSInfoCollector {
     private static final Logger logger = LoggerFactory.getLogger(OSInfoCollector.class);
     private static final int THREAD_POOL = 16;
-
-//    static {
-//        Properties props = new Properties();
-//        try {
-//            props.load(new FileReader("application.properties"));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        THREAD_POOL = Integer.parseInt(props.getProperty("thread.pool", "4"));
-//    }
-
     private final OSInfo osInfo;
 
     public OSInfoCollector() {
@@ -45,23 +36,21 @@ public class OSInfoCollector {
     }
 
     public OSInfo collectInfo() {
+        osInfo.setTmpdir(getTmpDir());
+        osInfo.setOsName(getOsName());
+        osInfo.setOsArch(getOsArch());
+        osInfo.setOsVersion(getOsVersion());
+        osInfo.setUsername(getUsername());
+        osInfo.setHomeDir(getHomeDir());
+        osInfo.setCurrentDir(getCurrentDir());
+
+        osInfo.setSystemRoot(getSystemRoot());
+        osInfo.setComputerName(getComputerName());
         try {
-            osInfo.setTmpdir(getTmpDir());
-            osInfo.setOsName(getOsName());
-            osInfo.setOsArch(getOsArch());
-            osInfo.setOsVersion(getOsVersion());
-            osInfo.setUsername(getUsername());
-            osInfo.setHomeDir(getHomeDir());
-            osInfo.setCurrentDir(getCurrentDir());
-
-            osInfo.setSystemRoot(getSystemRoot());
-            osInfo.setComputerName(getComputerName());
-
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
-        } catch (SocketException | ExecutionException | InterruptedException | TimeoutException e) {
-//            System.err.println("Не удалось собрать информацию о сетевых интерфейсах");
-//            e.printStackTrace();
+        } catch (SocketException | InterruptedException e) {
             logger.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
+            Thread.currentThread().interrupt();
         }
 
         return osInfo;
@@ -85,15 +74,12 @@ public class OSInfoCollector {
      * @return самописный более примитивный аналог java.net.NetworkInterface, содержащий только интересующую информацию.
      * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface
      */
-    public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, ExecutionException, InterruptedException, TimeoutException {
-        List<ru.pel.usbddc.entity.NetworkInterface> interfaces = new ArrayList<>();
+    public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, InterruptedException {
         List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
-
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL);
-
         List<Callable<ru.pel.usbddc.entity.NetworkInterface>> taskList = new ArrayList<>();
         for (NetworkInterface networkInterface : networkInterfaceList) {
-            Callable<ru.pel.usbddc.entity.NetworkInterface> networkInterfaceCallable = ()->{
+            Callable<ru.pel.usbddc.entity.NetworkInterface> networkInterfaceCallable = () -> {
                 ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
                 //для каждого сетевого интерфейса определяем имена...
                 eth.setDisplayName(networkInterface.getDisplayName());
@@ -107,39 +93,24 @@ public class OSInfoCollector {
                             logger.trace("\tInetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis() - start);
                             return addr;
                         }).collect(Collectors.toList());
-
                 logger.trace("Interface: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis() - startTime);
                 eth.setInetAddressList(inetAddressList);
                 return eth;
             };
             taskList.add(networkInterfaceCallable);
-
-//            ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
-//            //для каждого сетевого интерфейса определяем имена...
-//            eth.setDisplayName(networkInterface.getDisplayName());
-//            eth.setName(networkInterface.getName());
-//            //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
-//            long startTime = System.currentTimeMillis();
-//            List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
-//                    .map(inetAddress -> {
-//                        long start = System.currentTimeMillis();
-//                        ru.pel.usbddc.entity.NetworkInterface.InetAddress addr = mapInetAddress(inetAddress);
-//                        logger.trace("\tInetAddress {} is {}ms", inetAddress.getHostAddress(), System.currentTimeMillis() - start);
-//                        return addr;
-//                    }).collect(Collectors.toList());
-//
-//            logger.trace("Interface: {} - {}ms", networkInterface.getDisplayName(), System.currentTimeMillis() - startTime);
-//            eth.setInetAddressList(inetAddressList);
-//            interfaces.add(eth);
         }
+        List<ru.pel.usbddc.entity.NetworkInterface> interfaces;
         interfaces = executorService.invokeAll(taskList).stream()
                 .map(networkInterfaceFuture -> {
+                    ru.pel.usbddc.entity.NetworkInterface iface;
                     try {
-                        return networkInterfaceFuture.get();
+                        iface = networkInterfaceFuture.get();
                     } catch (InterruptedException | ExecutionException e) {
-                        e.printStackTrace();
-                        return new ru.pel.usbddc.entity.NetworkInterface();
+                        logger.error("{}", e.getLocalizedMessage());
+                        iface = new ru.pel.usbddc.entity.NetworkInterface();
+                        Thread.currentThread().interrupt();
                     }
+                    return iface;
                 }).collect(Collectors.toList());
 
         executorService.shutdown();
@@ -222,8 +193,8 @@ public class OSInfoCollector {
                 (p, bfa) -> p.getFileName().toString().matches("setupapi\\.dev[0-9_.]*\\.log"))) {
             listLogs = pathStream.collect(Collectors.toList());
         } catch (IOException e) {
-            System.err.println("Косяк при работе ru.pel.usbddc.utility.OSInfoCollector.getListSetupapiDevLogs()");
-            e.printStackTrace();
+            logger.error("{}", e.getLocalizedMessage());
+            logger.debug("Не удалось получить список setupapi.dev.log: \n {}", e.toString());
         }
         return listLogs;
     }
@@ -243,39 +214,9 @@ public class OSInfoCollector {
     private ru.pel.usbddc.entity.NetworkInterface.InetAddress mapInetAddress(
             InetAddress src) {
         ru.pel.usbddc.entity.NetworkInterface.InetAddress dst = new ru.pel.usbddc.entity.NetworkInterface.InetAddress();
-//        long start = System.currentTimeMillis();
         dst.setHostAddress(src.getHostAddress());
         dst.setHostName(src.getHostName());
         dst.setCanonicalName(src.getCanonicalHostName());
-//        logger.trace("\tduration: {} ms. [{}]", System.currentTimeMillis()-start, src.getHostAddress());
         return dst;
     }
-
-//    /**
-//     * Выводит значения всех полей экземпляра.
-//     *
-//     * @return строку, содержащую все поля класса и их значения в формате {@code <имяПоля> = <значение>}
-//     */
-//    @Override
-//    public String toString() {
-//        //получение всех полей экземпляра и вывод их реализован при помощи методов reflection.
-//        //Почему? Да просто захотелось попробовать эту рефлексию. Плюс количество полей класса может меняться, и что бы
-//        //не лазить в метод лишний раз, решено автоматизировать немного.
-//        final String NEW_LINE = System.lineSeparator();
-//        StringBuilder sb = new StringBuilder();
-//        try {
-//            Field[] fields = OSInfoCollector.class.getDeclaredFields();
-//
-//            for (Field field : fields) {
-//
-//                sb.append(field.getName())
-//                        .append(" = ")
-//                        .append(field.get(this))
-//                        .append(NEW_LINE);
-//            }
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        }
-//        return sb.toString();
-//    }
 }
