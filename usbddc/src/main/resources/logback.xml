@@ -1,0 +1,20 @@
+<configuration scan="true" scanPeriod="2 seconds">
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{45} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>
+    <logger name="ru.pel.usbddc.gui.MainFrame" level="trace"/>
+    <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="trace"/>
+    <logger name="ru.pel.usbddc.service.OSInfoCollector" level="trace"/>
+
+    <root level="debug">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>

@@ -17,20 +17,24 @@ class SystemInfoCollectorTest {
 
     @BeforeAll
     static void init() throws IOException {
-        SystemInfoCollector systemInfo = new SystemInfoCollector().collectSystemInfo();
-        json = systemInfo.systemInfoToJSON();
+        SystemInfoCollector systemInfoCollector = new SystemInfoCollector().collectSystemInfo();
+        json = systemInfoCollector.systemInfoToJSON();
     }
 
     @Test
-    void toJSON() {
-        assertDoesNotThrow(() -> new ObjectMapper().readTree(json));
+    void analysisTime() {
     }
 
     @Test
     void jsonContainsData() throws JsonProcessingException {
         SystemInfo systemInfo = new ObjectMapper().findAndRegisterModules().readValue(json, SystemInfo.class);
         double osVersion = systemInfo.getOsInfo().getOsVersion();
-        assertThat(systemInfo.getUsbDeviceMap(),anyOf(hasKey("EFF732B1"),hasKey("1492710242260098")));
-        assertThat(osVersion, is(10.0) );
+        assertThat(systemInfo.getUsbDeviceMap(), anyOf(hasKey("EFF732B1"), hasKey("1492710242260098")));
+        assertThat(osVersion, is(10.0));
+    }
+
+    @Test
+    void toJSON() {
+        assertDoesNotThrow(() -> new ObjectMapper().readTree(json));
     }
 }
