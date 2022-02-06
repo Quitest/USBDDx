@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.OSInfo;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -14,6 +15,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -28,7 +31,23 @@ import java.util.stream.Stream;
 @Getter
 public class OSInfoCollector {
     private static final Logger logger = LoggerFactory.getLogger(OSInfoCollector.class);
-    private static final int THREAD_POOL = 16;
+    private static final int THREAD_POOL_SIZE;
+
+    static {
+        int tmpThreadPoolSize;
+        String rootPath = Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource("")).getPath();
+        String configPath = rootPath + "config.xml";
+        Properties config = new Properties();
+        try {
+            config.loadFromXML(new FileInputStream(configPath));
+            tmpThreadPoolSize = Integer.parseInt(config.getProperty("threadPoolSize"));
+        } catch (IOException e) {
+            tmpThreadPoolSize = 8;
+            logger.info("При чтении файла конфигурации. Размер пула потоков установлен по-умолчанию (8). {}", e.getLocalizedMessage());
+        }
+        THREAD_POOL_SIZE = tmpThreadPoolSize;
+    }
+
     private final OSInfo osInfo;
 
     public OSInfoCollector() {
@@ -75,8 +94,9 @@ public class OSInfoCollector {
      * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface
      */
     public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, InterruptedException {
+        long startTime = System.currentTimeMillis();
         List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
-        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL);
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         List<Callable<ru.pel.usbddc.entity.NetworkInterface>> taskList = new ArrayList<>();
 
         for (NetworkInterface networkInterface : networkInterfaceList) {
@@ -98,6 +118,7 @@ public class OSInfoCollector {
                     return iface;
                 }).collect(Collectors.toList());
         executorService.shutdown();
+        logger.trace("Время сбора инф об ОС: {}", System.currentTimeMillis() - startTime);
         return interfaces;
     }
 
@@ -200,6 +221,7 @@ public class OSInfoCollector {
     }
 
     private ru.pel.usbddc.entity.NetworkInterface mapNetworkInterface(NetworkInterface networkInterface) {
+        long mappingInterfaceStartTime = System.currentTimeMillis();
         ru.pel.usbddc.entity.NetworkInterface eth = new ru.pel.usbddc.entity.NetworkInterface();
         //для каждого сетевого интерфейса определяем имена...
         eth.setDisplayName(networkInterface.getDisplayName());
@@ -208,6 +230,7 @@ public class OSInfoCollector {
         List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
                 .map(this::mapInetAddress).collect(Collectors.toList());
         eth.setInetAddressList(inetAddressList);
+        logger.trace("Время маппинга интерфейса {} : {} ms", eth.getDisplayName(), System.currentTimeMillis() - mappingInterfaceStartTime);
         return eth;
     }
 }

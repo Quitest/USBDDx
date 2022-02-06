@@ -35,25 +35,17 @@ public class SystemInfoCollector {
     /**
      * Собирает всю необходимую информацию о системе, анализируя все доступные источники (логи, реестр, журналы и т.д.)
      * @return текущий объект, наполненный информацией об устройствах и ОС.
-     * @throws IOException
      */
-    public SystemInfoCollector collectSystemInfo() throws IOException {
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
-
+    public SystemInfoCollector collectSystemInfo() {
         long startTime = System.currentTimeMillis();
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        
         Future<OSInfo> osInfoFuture = executorService.submit(()-> new OSInfoCollector().collectInfo());
-        logger.trace("Время работы OsInfoCollector - {}мс", System.currentTimeMillis()-startTime);
 
         List<Callable<Map<String,USBDevice>>> taskList = new ArrayList<>();
-        long startTimeRegAnalysis = System.currentTimeMillis();
         Callable<Map<String,USBDevice>> registryAnalysisCallable = ()->new RegistryAnalyzer().getAnalysis(true);
-        logger.trace("Время работы RegistryAnalyze() - {}мс", System.currentTimeMillis()-startTimeRegAnalysis);
-
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
-        long startTimeLogAnalysis = System.currentTimeMillis();
-
         Callable<Map<String ,USBDevice>> logAnalysisCallable = ()->new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
-        logger.trace("Время работы SetupapiDevLogAnalyzer() - {}мс", System.currentTimeMillis()-startTimeLogAnalysis);
 
         taskList.add(logAnalysisCallable);
         taskList.add(registryAnalysisCallable);
@@ -67,12 +59,12 @@ public class SystemInfoCollector {
 
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             logger.error("Exception occurred: {}", e.getLocalizedMessage());
-            logger.debug("Exception occurred: ", e);
-
+            logger.debug("Exception occurred: {}", e.toString());
+            Thread.currentThread().interrupt();
         }
 
-        logger.trace("Время работы общее - {}мс", System.currentTimeMillis()-startTime);
         executorService.shutdown();
+        logger.trace("Время работы общее - {}мс", System.currentTimeMillis()-startTime);
         return this;
     }
 
