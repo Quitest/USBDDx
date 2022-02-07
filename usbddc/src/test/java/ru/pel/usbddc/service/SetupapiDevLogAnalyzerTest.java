@@ -58,4 +58,7 @@ class SetupapiDevLogAnalyzerTest {
         assertEquals(LocalDateTime.of(2016,11,28,11,3,24),
                 usbDeviceMap.get("00000").getDateTimeFirstInstall());
     }
+    //строка в которой не распознается серийный номер 00000
+    //>>>  [Device Install (Hardware initiated) - SWD\WPDBUSENUM\_??_USBSTOR#Disk&Ven_Generic-&Prod_xD#SD#M.S.&Rev_1.00#00000#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}]
+    //>>>  Section start 2016/11/28 11:03:24.136
 }
