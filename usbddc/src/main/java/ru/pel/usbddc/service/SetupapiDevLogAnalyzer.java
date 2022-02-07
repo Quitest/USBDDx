@@ -3,6 +3,8 @@ package ru.pel.usbddc.service;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.BufferedReader;
@@ -19,6 +21,7 @@ import java.util.regex.Pattern;
 @Getter
 @Setter
 public class SetupapiDevLogAnalyzer implements Analyzer{
+    private static final Logger logger = LoggerFactory.getLogger(SetupapiDevLogAnalyzer.class);
     private static final String NOT_PARSED = "<SERIAL IS NOT PARSED IN LOG>";
     @Setter
     private static Path pathToLog;
@@ -122,8 +125,9 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
      *                                  default provider, the checkRead method is invoked to check read access to the directory.
      */
     public Map<String, USBDevice> parseAllSetupapiDevLogs() throws IOException {
-        List<Path> devLogList = new OSInfoCollector().getSetupapiDevLogList();
-        for (Path devLog : devLogList) {
+//        List<Path> devLogList = new OSInfoCollector().getSetupapiDevLogList();
+//        for (Path devLog : devLogList) {
+        for (Path devLog : setupapiDevLogList) {
             try (BufferedReader reader = new BufferedReader(new FileReader(devLog.toString()))) {
                 String currStr = reader.readLine();
                 while (currStr != null) {
@@ -154,6 +158,9 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
                     }
                     currStr = reader.readLine();
                 }
+            }catch (IOException e){
+                logger.error("Ошибка парсинга лога {}", e.getLocalizedMessage());
+                throw e;
             }
         }
         return usbDeviceMap;

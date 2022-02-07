@@ -45,7 +45,20 @@ class SetupapiDevLogAnalyzerTest {
         Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer().parseAllSetupapiDevLogs();
 
         assertAll(
-                () -> assertEquals(expectedDateTimeInstall, usbDeviceMap.get(SERIAL).getDateTimeFirstInstall())
+                () -> assertEquals(expectedDateTimeInstall, usbDeviceMap.get(SERIAL).getDateTimeFirstInstall()),
+                () -> assertEquals(LocalDateTime.of(2020,4,13, 14,49,24),
+                        usbDeviceMap.get("00000000000E07").getDateTimeFirstInstall())
         );
     }
+
+    @Test
+    void parseDateTimeFirstInstallOfSerial() throws IOException {
+        Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer().parseAllSetupapiDevLogs();
+
+        assertEquals(LocalDateTime.of(2016,11,28,11,3,24),
+                usbDeviceMap.get("00000").getDateTimeFirstInstall());
+    }
+    //строка в которой не распознается серийный номер 00000
+    //>>>  [Device Install (Hardware initiated) - SWD\WPDBUSENUM\_??_USBSTOR#Disk&Ven_Generic-&Prod_xD#SD#M.S.&Rev_1.00#00000#{53f56307-b6bf-11d0-94f2-00a0c91efb8b}]
+    //>>>  Section start 2016/11/28 11:03:24.136
 }

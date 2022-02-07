@@ -29,6 +29,11 @@ public class UserProfile {
         return Objects.hash(username, profileImagePath, securityId);
     }
 
+    @Override
+    public String toString() {
+        return username;
+    }
+
     public static Builder getBuilder() {
         return new Builder();
     }
