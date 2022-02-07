@@ -3,5 +3,5 @@
 <properties>
     <comment>xml example</comment>
     <entry key="threadPoolSize">8</entry>
-    <entry key="usbIdsPath">usb.ids</entry>
+    <entry key="usbIdsPath">usb.ids.not.exists</entry>
 </properties>
