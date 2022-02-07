@@ -15,6 +15,16 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +35,7 @@ public class MainFrame extends JFrame {
     private static final Logger logger = LoggerFactory.getLogger(MainFrame.class);
     private final TableRowSorter<DefaultTableModel> sorter;
     private final boolean isSkipSerialTrash = UsbddcConfig.getInstance().isSkipSerialTrash();
-    private final String serialTrash= ".*[^\\w#{}&?\\-:]+";
+    private final String serialTrash = ".*[^\\w#{}&?\\-:]+";
     private JTable devicesTable;
     private JButton collectInfoButton;
     private JButton showOsInfoButton;
@@ -34,8 +44,9 @@ public class MainFrame extends JFrame {
     private JScrollPane devicesInfoScrollPane;
     private JTextField filterField;
     private JButton exportButton;
+    private JButton sendButton;
     private SystemInfo systemInfo;
-    private DefaultTableModel tableModel= new DefaultTableModel(0, 0);
+    private DefaultTableModel tableModel = new DefaultTableModel(0, 0);
 
 
     public MainFrame() {
@@ -76,6 +87,7 @@ public class MainFrame extends JFrame {
                 }
         );
         exportButton.addActionListener(new DeviceTableExporter(devicesTable));
+        sendButton.addActionListener(actionEvent->sendReport());
     }
 
     public static void main(String[] args) {
@@ -89,6 +101,55 @@ public class MainFrame extends JFrame {
         frame.pack();
         frame.setVisible(true);
     }
+//--------example--------------------
+    private void sendReport() {
+        //Change the URL with any other publicly accessible POST resource, which accepts JSON request body
+        URL url = null;
+        try {
+            url = new URL("https://localhost/systeminfo");
+
+
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+
+            con.setRequestProperty("Content-Type", "application/json; utf-8");
+            con.setRequestProperty("Accept", "application/json");
+
+            con.setDoOutput(true);
+
+            //JSON String need to be constructed for the specific resource.
+            //We may construct complex JSON using any third-party JSON libraries such as jackson or org.json
+            String jsonInputString = "{\"name\": \"Upendra\", \"job\": \"Programmer\"}";
+            try (OutputStream os = con.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+
+            int code = con.getResponseCode();
+            System.out.println(code);
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                System.out.println(response.toString());
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+
+        } catch (ProtocolException protocolException) {
+            protocolException.printStackTrace();
+        } catch (MalformedURLException malformedURLException) {
+            malformedURLException.printStackTrace();
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
+    }
+    //--------example--------------------
 
     private void fillDevTable() {
         long startTime = System.currentTimeMillis();
