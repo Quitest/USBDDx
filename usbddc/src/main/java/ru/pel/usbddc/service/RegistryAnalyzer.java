@@ -264,7 +264,6 @@ public class RegistryAnalyzer implements Analyzer {
      * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
      */
     public Map<String, USBDevice> getUsbDevices() throws InvocationTargetException, IllegalAccessException {
-        USBDevice.setUsbIds("usb.ids");
         try {
             List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
 

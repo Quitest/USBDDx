@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.config.UsbddcConfig;
 import ru.pel.usbddc.service.IgnoreNullBeanUtilsBean;
 
 import java.io.BufferedReader;
@@ -31,16 +32,11 @@ import java.util.*;
 
 @Getter
 @Setter
-//@EqualsAndHashCode
 public class USBDevice {
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
-    private static String usbIds;
-
-    static {
-        usbIds = "usb.ids";
-    }
+    private static String usbIds=UsbddcConfig.getInstance().getUsbIdsPath();
 
     private String friendlyName;
     private String guid;
@@ -276,10 +272,10 @@ public class USBDevice {
                 }
 
             } catch (IOException e) {
-                //TODO сделать запись в лог
-                e.printStackTrace();
-                newUsbDevice.productName = "";
-                newUsbDevice.vendorName = "";
+                logger.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
+                        vid,pid,e.getLocalizedMessage());
+                newUsbDevice.productName = "undef.";
+                newUsbDevice.vendorName = "undef.";
             }
 
             return this;
