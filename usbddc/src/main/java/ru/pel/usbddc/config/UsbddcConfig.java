@@ -21,14 +21,23 @@ import java.util.Properties;
 public class UsbddcConfig {
     private static final Logger logger = LoggerFactory.getLogger(UsbddcConfig.class);
     //TODO а нужен ли тут вообще синглтон, может все поля перегнать в статик и класс сделать utility?
-    private static volatile UsbddcConfig instance;
-    private int threadPoolSize;
-    private String usbIdsPath;
-
-    {
-        threadPoolSize = 8;
-        usbIdsPath = "usb.ids";
-    }
+    private static UsbddcConfig instance;
+    /**
+     * <p>Максимальный размер пула поток. В настоящее время используется в анализаторах. </p>
+     * <p>Значение по умолчанию - 8.</p>
+     */
+    private int threadPoolSize = 8;
+    /**
+     * <p>Путь к файлу <a href=http://www.linux-usb.org/usb.ids>usb.ids</a>, содержащему расшифровку VID/PID.</p>
+     * <p>Значение по умолчанию - usb.ids.</p>
+     */
+    private String usbIdsPath = "usb.ids";
+    /**
+     * <p>Признак фильтрации серийных номеров устройств. True - отбрасывать номера, содержащие в своем составе нечитаемые символы.
+     * False - выводить все найденные серийные номера.</p>
+     * <p>Значение по умолчанию - false.</p>
+     */
+    private boolean isSkipSerialTrash = false;
 
     private UsbddcConfig(String pathToConfig) {
 
@@ -38,6 +47,7 @@ public class UsbddcConfig {
             config.loadFromXML(file);
             threadPoolSize = Integer.parseInt(config.getProperty("threadPoolSize"));
             usbIdsPath = config.getProperty("usbIdsPath");
+            isSkipSerialTrash = Boolean.parseBoolean(config.getProperty("isSkipSerialTrash"));
 
         } catch (IOException e) {
             logger.warn("Используется конфигурация по умолчанию, т.к. не удалось загрузить конфигурацию из файла {}. Причина: {}",
