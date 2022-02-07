@@ -3,6 +3,7 @@ package ru.pel.usbddc.service;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.config.UsbddcConfig;
 import ru.pel.usbddc.entity.OSInfo;
 
 import java.io.FileInputStream;
@@ -34,18 +35,8 @@ public class OSInfoCollector {
     private static final int THREAD_POOL_SIZE;
 
     static {
-        int tmpThreadPoolSize;
-        String rootPath = Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource("")).getPath();
-        String configPath = rootPath + "config.xml";
-        Properties config = new Properties();
-        try {
-            config.loadFromXML(new FileInputStream(configPath));
-            tmpThreadPoolSize = Integer.parseInt(config.getProperty("threadPoolSize"));
-        } catch (IOException e) {
-            tmpThreadPoolSize = 8;
-            logger.info("При чтении файла конфигурации. Размер пула потоков установлен по-умолчанию (8). {}", e.getLocalizedMessage());
-        }
-        THREAD_POOL_SIZE = tmpThreadPoolSize;
+        THREAD_POOL_SIZE = UsbddcConfig.getInstance().getThreadPoolSize();
+        logger.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
     }
 
     private final OSInfo osInfo;
