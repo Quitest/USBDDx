@@ -9,9 +9,9 @@
     </appender>
 
     <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>
-    <logger name="ru.pel.usbddc.gui.MainFrame" level="trace"/>
-    <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="trace"/>
-    <logger name="ru.pel.usbddc.service.OSInfoCollector" level="trace"/>
+    <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>
+    <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="debug"/>
+    <logger name="ru.pel.usbddc.service.OSInfoCollector" level="debug"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT"/>

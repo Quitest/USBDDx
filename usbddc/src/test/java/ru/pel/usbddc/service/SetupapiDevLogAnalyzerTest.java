@@ -45,7 +45,17 @@ class SetupapiDevLogAnalyzerTest {
         Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer().parseAllSetupapiDevLogs();
 
         assertAll(
-                () -> assertEquals(expectedDateTimeInstall, usbDeviceMap.get(SERIAL).getDateTimeFirstInstall())
+                () -> assertEquals(expectedDateTimeInstall, usbDeviceMap.get(SERIAL).getDateTimeFirstInstall()),
+                () -> assertEquals(LocalDateTime.of(2020,4,13, 14,49,24),
+                        usbDeviceMap.get("00000000000E07").getDateTimeFirstInstall())
         );
+    }
+
+    @Test
+    void parseDateTimeFirstInstallOfSerial() throws IOException {
+        Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer().parseAllSetupapiDevLogs();
+
+        assertEquals(LocalDateTime.of(2016,11,28,11,3,24),
+                usbDeviceMap.get("00000").getDateTimeFirstInstall());
     }
 }
