@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.config.UsbddcConfig;
 import ru.pel.usbddc.entity.OSInfo;
 import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
@@ -26,7 +27,14 @@ import java.util.concurrent.*;
 @Setter
 public class SystemInfoCollector {
     private static final Logger logger = LoggerFactory.getLogger(SystemInfoCollector.class);
+    private static final int THREAD_POOL_SIZE;
     private SystemInfo systemInfo;
+
+    static {
+        //TODO Вероятно, в данном случае размер пула потоков стоило бы определять исходя из количества запускаемых анализаторов?
+        THREAD_POOL_SIZE = UsbddcConfig.getInstance().getThreadPoolSize();
+        logger.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
+    }
 
     public SystemInfoCollector() {
         systemInfo = new SystemInfo();
@@ -38,7 +46,7 @@ public class SystemInfoCollector {
      */
     public SystemInfoCollector collectSystemInfo() {
         long startTime = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         
         Future<OSInfo> osInfoFuture = executorService.submit(()-> new OSInfoCollector().collectInfo());
 
@@ -71,7 +79,9 @@ public class SystemInfoCollector {
     /**
      * Конвертирует SystemInfo в JSON представление.
      * @return строку формата JSON, содержащую собранные данные
-     * @throws JsonProcessingException
+     * @throws JsonProcessingException Из документации: Intermediate base class for all problems encountered when
+     * processing (parsing, generating) JSON content that are not pure I/O problems. Regular IOExceptions will be passed
+     * through as is. Sub-class of IOException for convenience.
      */
     public String systemInfoToJSON() throws JsonProcessingException {
         ObjectWriter ow = new ObjectMapper().findAndRegisterModules().writer().withDefaultPrettyPrinter();
