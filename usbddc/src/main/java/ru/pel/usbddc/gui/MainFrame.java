@@ -191,7 +191,6 @@ public class MainFrame extends JFrame {
         URL url;
         localStatusLabel.setText("Идет отправка отчета...");
         try {
-//            url = new URL("http://localhost:8080/systeminfo");
             url = new URL(UsbddcConfig.getInstance().getUrlPostSystemInfo());
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
@@ -234,8 +233,8 @@ public class MainFrame extends JFrame {
         } catch (IOException ioException) {
             remoteStatusLabel.setText(ioException.getLocalizedMessage());
             logger.error("Ошибка ввода/вывода (I/O Exception). {}", ioException.getLocalizedMessage());
-        } catch (Exception e) {
-            localStatusLabel.setText("При отправке отчета произошла ошибка.");
+        } finally {
+            localStatusLabel.setText("ГОТОВ");
         }
     }
 }
