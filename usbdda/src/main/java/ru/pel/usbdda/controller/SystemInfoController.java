@@ -2,6 +2,7 @@ package ru.pel.usbdda.controller;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
+import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,8 +20,8 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/systeminfo")
 public class SystemInfoController {
-    @Autowired
-    ModelMapper modelMapper;
+//    @Autowired
+//    ModelMapper modelMapper;
 
     @Autowired
     SystemInfoServiceImpl service;
@@ -59,6 +60,8 @@ public class SystemInfoController {
     }
 
     private SystemInfo toEntity(SystemInfoDto dto) {
+        ModelMapper modelMapper = new ModelMapper();
+        modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         return modelMapper.map(dto, SystemInfo.class);
     }
 }
