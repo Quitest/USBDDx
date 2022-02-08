@@ -5,4 +5,5 @@
     <entry key="threadPoolSize">8</entry>
     <entry key="usbIdsPath">usb.ids</entry>
     <entry key="isSkipSerialTrash">false</entry>
+    <entry key="urlPostSystemInfo">http://localhost:8080/systeminfo</entry>
 </properties>

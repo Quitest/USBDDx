@@ -39,6 +39,8 @@ public class UsbddcConfig {
      */
     private boolean isSkipSerialTrash = false;
 
+    private String urlPostSystemInfo = "http://localhost:8080/systeminfo";
+
     private UsbddcConfig(String pathToConfig) {
 
         try {
@@ -48,7 +50,7 @@ public class UsbddcConfig {
             threadPoolSize = Integer.parseInt(config.getProperty("threadPoolSize"));
             usbIdsPath = config.getProperty("usbIdsPath");
             isSkipSerialTrash = Boolean.parseBoolean(config.getProperty("isSkipSerialTrash"));
-
+            urlPostSystemInfo = config.getProperty("urlPostSystemInfo");
         } catch (IOException e) {
             logger.warn("Используется конфигурация по умолчанию, т.к. не удалось загрузить конфигурацию из файла {}. Причина: {}",
                     pathToConfig, e.getLocalizedMessage());

@@ -48,6 +48,9 @@ public class MainFrame extends JFrame {
     private JTextField filterField;
     private JButton exportButton;
     private JButton sendButton;
+    private JPanel statusPanel;
+    private JLabel localStatusLabel;
+    private JLabel remoteStatusLabel;
     private SystemInfo systemInfo;
     private DefaultTableModel tableModel = new DefaultTableModel(0, 0);
 
@@ -111,6 +114,8 @@ public class MainFrame extends JFrame {
         collectInfoButton.setEnabled(false);
         exportButton.setEnabled(false);
         showOsInfoButton.setEnabled(false);
+        sendButton.setEnabled(false);
+        localStatusLabel.setText("Анализ выполняется...");
         new Thread(() -> {
             systemInfo = new SystemInfoCollector().collectSystemInfo().getSystemInfo();
             Map<String, USBDevice> usbDeviceMap = systemInfo.getUsbDeviceMap();
@@ -144,6 +149,8 @@ public class MainFrame extends JFrame {
                 collectInfoButton.setEnabled(true);
                 exportButton.setEnabled(true);
                 showOsInfoButton.setEnabled(true);
+                sendButton.setEnabled(true);
+                localStatusLabel.setText("Анализ выполнен.");
             });
         }).start();
         logger.trace("Общее время выполнения анализа {}", System.currentTimeMillis() - startTime);
@@ -167,23 +174,25 @@ public class MainFrame extends JFrame {
     public void resizeColumnWidth(JTable table) {
         final TableColumnModel columnModel = table.getColumnModel();
         for (int column = 0; column < table.getColumnCount(); column++) {
-            int width = 100; // Min width
+            int width = 50; // Min width
             for (int row = 0; row < table.getRowCount(); row++) {
                 TableCellRenderer renderer = table.getCellRenderer(row, column);
                 Component comp = table.prepareRenderer(renderer, row, column);
                 width = Math.max(comp.getPreferredSize().width + 1, width);
             }
-            if (width > 400)
+            if (width > 400) {
                 width = 400;
+            }
             columnModel.getColumn(column).setPreferredWidth(width);
         }
     }
 
     private void sendReport() {
-        //Change the URL with any other publicly accessible POST resource, which accepts JSON request body
         URL url;
+        localStatusLabel.setText("Идет отправка отчета...");
         try {
-            url = new URL("http://localhost:8080/systeminfo");
+//            url = new URL("http://localhost:8080/systeminfo");
+            url = new URL(UsbddcConfig.getInstance().getUrlPostSystemInfo());
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -201,7 +210,8 @@ public class MainFrame extends JFrame {
             }
 
             int code = con.getResponseCode();
-            logger.info("Код ответа сервера: {}", code);
+            remoteStatusLabel.setText(code + "[" + con.getResponseMessage() + "]");
+            logger.info("Ответ сервера: {} [{}]", code, con.getResponseMessage());
 
             try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
                 StringBuilder response = new StringBuilder();
@@ -211,14 +221,21 @@ public class MainFrame extends JFrame {
                 }
                 logger.debug("Получен JSON-ответ: {}", response);
             }
+            localStatusLabel.setText("Отчет отправлен...");
         } catch (ProtocolException protocolException) {
+            remoteStatusLabel.setText(protocolException.getLocalizedMessage());
             logger.error("Ошибка протокола (Protocol Exception). {}", protocolException.getLocalizedMessage());
         } catch (MalformedURLException malformedURLException) {
+            remoteStatusLabel.setText(malformedURLException.getLocalizedMessage());
             logger.error("Ошибка URL (Malformed URL Exception). {}", malformedURLException.getLocalizedMessage());
         } catch (JsonProcessingException jsonProcessingException) {
+            remoteStatusLabel.setText(jsonProcessingException.getLocalizedMessage());
             logger.error("Ошибка обработки JSON (Json Processing Exception). {}", jsonProcessingException.getLocalizedMessage());
         } catch (IOException ioException) {
+            remoteStatusLabel.setText(ioException.getLocalizedMessage());
             logger.error("Ошибка ввода/вывода (I/O Exception). {}", ioException.getLocalizedMessage());
+        } catch (Exception e) {
+            localStatusLabel.setText("При отправке отчета произошла ошибка.");
         }
     }
 }
