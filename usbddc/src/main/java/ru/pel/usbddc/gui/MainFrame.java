@@ -1,8 +1,12 @@
 package ru.pel.usbddc.gui;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
+import ru.pel.usbddc.dto.SystemInfoDto;
 import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.service.SystemInfoCollector;
@@ -15,7 +19,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -87,7 +90,7 @@ public class MainFrame extends JFrame {
                 }
         );
         exportButton.addActionListener(new DeviceTableExporter(devicesTable));
-        sendButton.addActionListener(actionEvent->sendReport());
+        sendButton.addActionListener(actionEvent -> sendReport());
     }
 
     public static void main(String[] args) {
@@ -101,55 +104,6 @@ public class MainFrame extends JFrame {
         frame.pack();
         frame.setVisible(true);
     }
-//--------example--------------------
-    private void sendReport() {
-        //Change the URL with any other publicly accessible POST resource, which accepts JSON request body
-        URL url = null;
-        try {
-            url = new URL("https://localhost/systeminfo");
-
-
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("POST");
-
-            con.setRequestProperty("Content-Type", "application/json; utf-8");
-            con.setRequestProperty("Accept", "application/json");
-
-            con.setDoOutput(true);
-
-            //JSON String need to be constructed for the specific resource.
-            //We may construct complex JSON using any third-party JSON libraries such as jackson or org.json
-            String jsonInputString = "{\"name\": \"Upendra\", \"job\": \"Programmer\"}";
-            try (OutputStream os = con.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-
-            int code = con.getResponseCode();
-            System.out.println(code);
-
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine = null;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                System.out.println(response.toString());
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-
-        } catch (ProtocolException protocolException) {
-            protocolException.printStackTrace();
-        } catch (MalformedURLException malformedURLException) {
-            malformedURLException.printStackTrace();
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-        }
-    }
-    //--------example--------------------
 
     private void fillDevTable() {
         long startTime = System.currentTimeMillis();
@@ -222,6 +176,49 @@ public class MainFrame extends JFrame {
             if (width > 400)
                 width = 400;
             columnModel.getColumn(column).setPreferredWidth(width);
+        }
+    }
+
+    private void sendReport() {
+        //Change the URL with any other publicly accessible POST resource, which accepts JSON request body
+        URL url;
+        try {
+            url = new URL("http://localhost:8080/systeminfo");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json; utf-8");
+            con.setRequestProperty("Accept", "application/json");
+            con.setDoOutput(true);
+
+            SystemInfoDto dto = new SystemInfoDto(systemInfo);
+            ObjectWriter ow = new ObjectMapper().findAndRegisterModules().writer().withDefaultPrettyPrinter();
+            String jsonInputString = ow.writeValueAsString(dto);
+            logger.debug("Сформирован JSON-запрос: {}", jsonInputString);
+
+            try (OutputStream os = con.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+
+            int code = con.getResponseCode();
+            logger.info("Код ответа сервера: {}", code);
+
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                logger.debug("Получен JSON-ответ: {}", response);
+            }
+        } catch (ProtocolException protocolException) {
+            logger.error("Ошибка протокола (Protocol Exception). {}", protocolException.getLocalizedMessage());
+        } catch (MalformedURLException malformedURLException) {
+            logger.error("Ошибка URL (Malformed URL Exception). {}", malformedURLException.getLocalizedMessage());
+        } catch (JsonProcessingException jsonProcessingException) {
+            logger.error("Ошибка обработки JSON (Json Processing Exception). {}", jsonProcessingException.getLocalizedMessage());
+        } catch (IOException ioException) {
+            logger.error("Ошибка ввода/вывода (I/O Exception). {}", ioException.getLocalizedMessage());
         }
     }
 }
