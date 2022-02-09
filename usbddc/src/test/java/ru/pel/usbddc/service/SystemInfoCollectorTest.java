@@ -14,11 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 class SystemInfoCollectorTest {
     private static String json;
+    private static SystemInfo systemInfo;
+    private static SystemInfoCollector systemInfoCollector;
 
     @BeforeAll
     static void init() throws IOException {
-        SystemInfoCollector systemInfoCollector = new SystemInfoCollector().collectSystemInfo();
+        systemInfoCollector = new SystemInfoCollector().collectSystemInfo();
         json = systemInfoCollector.systemInfoToJSON();
+        systemInfo = systemInfoCollector.getSystemInfo();
     }
 
     @Test
@@ -31,6 +34,16 @@ class SystemInfoCollectorTest {
         double osVersion = systemInfo.getOsInfo().getOsVersion();
         assertThat(systemInfo.getUsbDeviceMap(), anyOf(hasKey("EFF732B1"), hasKey("1492710242260098")));
         assertThat(osVersion, is(10.0));
+    }
+
+    @Test
+    void systemInfoJSONContainsOsId() throws JsonProcessingException {
+        //паттерн для UUID XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX, где X - символ один из A-Fa-f0-9
+        String pattern = ".*[A-Fa-f\\d]{8}-([A-Fa-f\\d-]{5}){3}[A-Fa-f\\d]{12}.*";
+        String osId = systemInfo.getOsInfo().getOsId();
+//        assertThat(systemInfoCollector.systemInfoToJSON(), matchesRegex(pattern));
+        assertThat(systemInfoCollector.systemInfoToJSON(), containsString(osId));
+//        assertThat(systemInfoCollector.systemInfoToJSON(), contains(matchesRegex()));
     }
 
     @Test

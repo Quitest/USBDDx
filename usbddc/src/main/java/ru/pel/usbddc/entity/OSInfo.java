@@ -9,6 +9,7 @@ import java.util.List;
 @Getter
 @Setter
 public class OSInfo {
+    private String osId;
     private String osName;
     private double osVersion;
     private String osArch;
