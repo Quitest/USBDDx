@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
 import ru.pel.usbddc.entity.OSInfo;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -16,8 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -56,6 +53,7 @@ public class OSInfoCollector {
 
         osInfo.setSystemRoot(getSystemRoot());
         osInfo.setComputerName(getComputerName());
+        osInfo.setOsId(getOsId());
         try {
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
         } catch (SocketException | InterruptedException e) {
@@ -115,6 +113,24 @@ public class OSInfoCollector {
 
     public String getOsArch() {
         return System.getProperty("os.arch");
+    }
+
+    public String getOsId() {
+        return WinRegReader.getValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "MachineGuid").orElseThrow();
+//        try {
+//            Process SerNumProcess = Runtime.getRuntime().exec("wmic csproduct get UUID");
+//            BufferedReader sNumReader = new BufferedReader(new InputStreamReader(SerNumProcess.getInputStream()));
+//            StringBuilder output = new StringBuilder();
+//            String line;
+//            while ((line = sNumReader.readLine()) != null) {
+//                output.append(line).append("\n");
+//            }
+//            return output.substring(output.indexOf("\n"), output.length()).trim();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            logger.error("ОШИБКА при попытке получить UUID. {}", e.getLocalizedMessage());
+//            return "error";
+//        }
     }
 
     public String getOsName() {
