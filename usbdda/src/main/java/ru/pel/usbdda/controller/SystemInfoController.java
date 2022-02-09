@@ -15,13 +15,10 @@ import ru.pel.usbdda.service.SystemInfoServiceImpl;
 
 import javax.websocket.server.PathParam;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/systeminfo")
 public class SystemInfoController {
-//    @Autowired
-//    ModelMapper modelMapper;
 
     @Autowired
     SystemInfoServiceImpl service;
@@ -33,7 +30,7 @@ public class SystemInfoController {
         List<SystemInfo> list = service.getSystemInfoList(page, size, sortDir, sortBy);
         return list.stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @GetMapping("{id}")
@@ -45,7 +42,7 @@ public class SystemInfoController {
 
     @PostMapping
     @ResponseBody
-    public SystemInfoDto systemInfo(@RequestBody SystemInfoDto systemInfoDto) {
+    public SystemInfoDto postSystemInfo(@RequestBody SystemInfoDto systemInfoDto) {
         SystemInfo sysInfo = toEntity(systemInfoDto);
         service.save(sysInfo);
         return toDto(sysInfo);
