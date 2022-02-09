@@ -117,20 +117,6 @@ public class OSInfoCollector {
 
     public String getOsId() {
         return WinRegReader.getValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "MachineGuid").orElseThrow();
-//        try {
-//            Process SerNumProcess = Runtime.getRuntime().exec("wmic csproduct get UUID");
-//            BufferedReader sNumReader = new BufferedReader(new InputStreamReader(SerNumProcess.getInputStream()));
-//            StringBuilder output = new StringBuilder();
-//            String line;
-//            while ((line = sNumReader.readLine()) != null) {
-//                output.append(line).append("\n");
-//            }
-//            return output.substring(output.indexOf("\n"), output.length()).trim();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            logger.error("ОШИБКА при попытке получить UUID. {}", e.getLocalizedMessage());
-//            return "error";
-//        }
     }
 
     public String getOsName() {

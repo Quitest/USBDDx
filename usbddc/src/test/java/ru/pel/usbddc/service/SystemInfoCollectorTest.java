@@ -28,6 +28,7 @@ class SystemInfoCollectorTest {
     void jsonContainsData() throws JsonProcessingException {
         SystemInfo systemInfo = new ObjectMapper().findAndRegisterModules().readValue(json, SystemInfo.class);
         double osVersion = systemInfo.getOsInfo().getOsVersion();
+
         assertThat(systemInfo.getUsbDeviceMap(), anyOf(hasKey("EFF732B1"), hasKey("1492710242260098")));
         assertThat(osVersion, is(10.0));
     }
@@ -39,7 +40,14 @@ class SystemInfoCollectorTest {
     }
 
     @Test
-    void toJSON() {
+    void mappingToJSON_doesNotThrow() {
         assertDoesNotThrow(() -> new ObjectMapper().readTree(json));
+    }
+
+    @Test
+    void gettingUUID() {
+        //паттерн для UUID XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX, где X - символ один из A-Fa-f0-9
+        String pattern = ".*[A-Fa-f\\d]{8}-([A-Fa-f\\d-]{5}){3}[A-Fa-f\\d]{12}.*";
+        assertThat(systemInfo.getUuid(), matchesRegex(pattern));
     }
 }
