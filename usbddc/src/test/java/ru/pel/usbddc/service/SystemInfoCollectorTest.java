@@ -25,10 +25,6 @@ class SystemInfoCollectorTest {
     }
 
     @Test
-    void analysisTime() {
-    }
-
-    @Test
     void jsonContainsData() throws JsonProcessingException {
         SystemInfo systemInfo = new ObjectMapper().findAndRegisterModules().readValue(json, SystemInfo.class);
         double osVersion = systemInfo.getOsInfo().getOsVersion();
@@ -38,12 +34,8 @@ class SystemInfoCollectorTest {
 
     @Test
     void systemInfoJSONContainsOsId() throws JsonProcessingException {
-        //паттерн для UUID XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX, где X - символ один из A-Fa-f0-9
-        String pattern = ".*[A-Fa-f\\d]{8}-([A-Fa-f\\d-]{5}){3}[A-Fa-f\\d]{12}.*";
         String osId = systemInfo.getOsInfo().getOsId();
-//        assertThat(systemInfoCollector.systemInfoToJSON(), matchesRegex(pattern));
         assertThat(systemInfoCollector.systemInfoToJSON(), containsString(osId));
-//        assertThat(systemInfoCollector.systemInfoToJSON(), contains(matchesRegex()));
     }
 
     @Test
