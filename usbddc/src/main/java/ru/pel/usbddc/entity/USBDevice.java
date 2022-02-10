@@ -23,12 +23,6 @@ import java.util.*;
  *     <li>setupapi.dev.log (прим.: в текущей версии сведения не берутся из него)</li>
  * </ul>
  */
-/*
- * Учитывая что для конструирования объекта ru.pel.usbddc.entity.USBDevice требуется много параметров, как вариант дальнейшей "пробы пера" и
- * прокачки навыков, можно попробовать реализовать создание ru.pel.usbddc.entity.USBDevice, используя паттерн Строитель/Builder.
- * Однако, плюсов применения его в данной версии ПО не вижу пока что - уменьшим количество параметров, увеличим количество
- * классов и интерфесов ради одного типа? Сомнительно... Или не понимаю еще каких-то плюсов применения паттерна.
- * */
 
 @Getter
 @Setter
@@ -36,33 +30,21 @@ public class USBDevice {
     private static final Logger logger = LoggerFactory.getLogger(USBDevice.class.getName());
     @Getter
     @Setter
-    private static String usbIds=UsbddcConfig.getInstance().getUsbIdsPath();
-
-    private String friendlyName;
-    private String guid;
-    private String pid;
-    private String productName;
-    private String serial;
-    private String vendorName;
-    private String vid;
-    private String volumeName;
-    private String revision;
-    private LocalDateTime dateTimeFirstInstall;
-    private boolean isSerialOSGenerated;
-    private List<UserProfile> userAccountsList;
+    private static String usbIds = UsbddcConfig.getInstance().getUsbIdsPath();
+    private String friendlyName = "";
+    private String guid = "";
+    private String pid = "";
+    private String productName = "";
+    private String serial = "";
+    private String vendorName = "";
+    private String vid = "";
+    private String volumeName = "";
+    private String revision = "";
+    private LocalDateTime dateTimeFirstInstall = LocalDateTime.MIN;
+    private boolean isSerialOSGenerated = true;
+    private List<UserProfile> userAccountsList = new ArrayList<>();
 
     private USBDevice() {
-        friendlyName = "";
-        pid = "";
-        productName = "";
-        serial = "";
-        vendorName = "";
-        vid = "";
-        volumeName = "";
-        revision = "";
-        isSerialOSGenerated = true;
-        userAccountsList = new ArrayList<>();
-        dateTimeFirstInstall = LocalDateTime.MIN;
     }
 
     public static Builder getBuilder() {
@@ -85,7 +67,7 @@ public class USBDevice {
         try {
             new IgnoreNullBeanUtilsBean().copyProperties(this, src);
         } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+            logger.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
         }
         return this;
     }
@@ -116,12 +98,10 @@ public class USBDevice {
 
     @Override
     public String toString() {
-        //получение всех полей экземпляра и вывод их реализован при помощи методов reflection.
+        //Получение всех полей экземпляра и вывод их реализован при помощи методов reflection.
         //Почему? Да просто захотелось попробовать эту рефлексию. Плюс количество полей класса может меняться, и что бы
         //не лазить в метод лишний раз, решено автоматизировать немного.
-        //WTF Как делать лучше или допустимо: один раз получить символ новой строки, сохранить его в String и потом
-        // использовать в цикле или же в цикле напрямую использовать System.lineSeparator() ?
-        final String NEW_LINE = System.lineSeparator();
+        final String LINE_SEPARATOR = System.lineSeparator();
         StringBuilder sb = new StringBuilder();
         try {
             Field[] fieldsThis = USBDevice.class.getDeclaredFields();
@@ -133,11 +113,11 @@ public class USBDevice {
                 sb.append(field.getName())
                         .append(" = ")
                         .append(field.get(this))
-                        .append(NEW_LINE);
+                        .append(LINE_SEPARATOR);
             }
 
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            logger.error("Не возможно получить доступ к свойству объекта: {}", e.getLocalizedMessage());
         }
         return sb.toString();
     }
@@ -182,6 +162,11 @@ public class USBDevice {
             }
         }
 
+        public Builder withDateTimeFirstInstall(LocalDateTime dateTime) {
+            newUsbDevice.dateTimeFirstInstall = dateTime;
+            return this;
+        }
+
         public Builder withFriendlyName(String friendlyName) {
             newUsbDevice.friendlyName = friendlyName;
             return this;
@@ -189,11 +174,6 @@ public class USBDevice {
 
         public Builder withGuid(String guid) {
             newUsbDevice.guid = guid;
-            return this;
-        }
-
-        public Builder withDateTimeFirstInstall(LocalDateTime dateTime){
-            newUsbDevice.dateTimeFirstInstall = dateTime;
             return this;
         }
 
@@ -273,7 +253,7 @@ public class USBDevice {
 
             } catch (IOException e) {
                 logger.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
-                        vid,pid,e.getLocalizedMessage());
+                        vid, pid, e.getLocalizedMessage());
                 newUsbDevice.productName = "undef.";
                 newUsbDevice.vendorName = "undef.";
             }
