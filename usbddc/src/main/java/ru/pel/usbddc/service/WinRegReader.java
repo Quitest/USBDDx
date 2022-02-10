@@ -2,9 +2,14 @@ package ru.pel.usbddc.service;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -15,6 +20,8 @@ import java.util.stream.Collectors;
  * </p>
  */
 public class WinRegReader {
+    private static Logger logger = LoggerFactory.getLogger(WinRegReader.class);
+
     private WinRegReader() {
         //все методы статические - нет необходимости создавать объект.
     }
@@ -70,7 +77,8 @@ public class WinRegReader {
                             l -> l.length >= 3 ? l[l.length - 1] : ""));
             return Optional.of(values);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            logger.error("ОШИБКА. Не удалось получить список параметров реестра в разделе {}. Причина: {}", key, e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
             return Optional.empty();
         }
     }
@@ -99,7 +107,8 @@ public class WinRegReader {
             // т.к. в output деление идет четырьмя символами пробела
             return Optional.of(parsed[parsed.length - 1]);
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            logger.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
             return Optional.empty();
         }
 
@@ -115,7 +124,7 @@ public class WinRegReader {
      */
     public static ExecResult<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
 //        String command = "cmd /c start /b /wait /I reg.lnk load " + nodeName + " " + hive;
-        String command = "reg load " + nodeName + " \"" + hive+ "\"";
+        String command = "reg load " + nodeName + " \"" + hive + "\"";
 //        String command = "reg load " + nodeName + " " + hive;
         ExecResult<Integer, String> execResult = new ExecResult<>();
         execResult = execCommand(command);
@@ -173,8 +182,8 @@ public class WinRegReader {
         return new ExecResult<>(exitCode, result);
     }
 
-    //TODO не пойму зачем вынесено в отдельный класс. Может избавиться от него?
     private static class StreamReader extends Thread {
+        private static Logger logger = LoggerFactory.getLogger(StreamReader.class);
         private final StringWriter sw = new StringWriter();
         private InputStreamReader isr;
 
@@ -182,7 +191,8 @@ public class WinRegReader {
             try {
                 this.isr = new InputStreamReader(is, "866");
             } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                logger.error("{}", e.getLocalizedMessage());
+                logger.debug("{}", e.toString());
             }
         }
 
@@ -198,7 +208,8 @@ public class WinRegReader {
                     sw.write(c);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("{}", e.getLocalizedMessage());
+                logger.debug("{}", e.toString());
             }
 
         }
