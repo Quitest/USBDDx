@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Предназначен для сбора информации о USB устройствах из рестра ОС Windows.
+ * Предназначен для сбора информации о USB устройствах из реестра ОС Windows.
  */
 public class RegistryAnalyzer implements Analyzer {
     private static final String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
@@ -114,6 +114,7 @@ public class RegistryAnalyzer implements Analyzer {
             } catch (InvocationTargetException | IllegalAccessException e) {
                 logger.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
                         "Причина: {}", e.getLocalizedMessage());
+                logger.debug("{}", e.toString());
             }
             associateSerialToGuid();
             determineDeviceUsers();
@@ -150,6 +151,7 @@ public class RegistryAnalyzer implements Analyzer {
             }
         } catch (IOException | InterruptedException e) {
             logger.error("ОШИБКА. Не удалось получить поле Friendly name. Причина {}", e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
         }
         return usbDeviceMap;
     }
@@ -170,6 +172,7 @@ public class RegistryAnalyzer implements Analyzer {
         } catch (IOException | InterruptedException e) {
             logger.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых ТЕКУЩИМ пользователем. Причина: {}",
                     e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
         }
         return result;
     }
@@ -206,6 +209,7 @@ public class RegistryAnalyzer implements Analyzer {
             e.printStackTrace();
             logger.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых пользователем {}. Причина: {}",
                     username, e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
         }
         return guidList;
     }
@@ -226,6 +230,7 @@ public class RegistryAnalyzer implements Analyzer {
             } catch (InvocationTargetException | IllegalAccessException e) {
                 logger.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
                         "Причина: {}", e.getLocalizedMessage());
+                logger.debug("{}", e.toString());
             }
             associateSerialToGuid();
             determineDeviceUsers();
@@ -300,6 +305,7 @@ public class RegistryAnalyzer implements Analyzer {
         } catch (IOException | InterruptedException e) {
             logger.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
                     "Причина: {}", e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
         }
         return usbDeviceMap;
     }
@@ -335,6 +341,7 @@ public class RegistryAnalyzer implements Analyzer {
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
             logger.error("ОШИБКА. Не удалось получить список профилей в системе. Причина: {}", e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
         }
         return userProfileList;
     }
@@ -385,6 +392,7 @@ public class RegistryAnalyzer implements Analyzer {
             }
         } catch (IOException | InterruptedException e) {
             logger.error("ОШИБКА. Не удалось получить метку для устройства. Причина: {}", e.getLocalizedMessage());
+            logger.debug("{}", e.toString());
         }
 
         return usbDeviceMap;

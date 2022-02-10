@@ -108,6 +108,7 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
 
         } catch (IOException e) {
             logger.error("ОШИБКА. Не удалось найти дату первого подключения устройства. Причина: {}", e.getLocalizedMessage());
+            logger.debug("{}",e.toString());
         }
         return timeStamp;
     }
@@ -157,6 +158,7 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
                 }
             }catch (IOException e){
                 logger.error("Ошибка парсинга лога {}", e.getLocalizedMessage());
+                logger.debug("{}",e.toString());
                 throw e;
             }
         }

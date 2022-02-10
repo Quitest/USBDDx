@@ -68,6 +68,7 @@ public class USBDevice {
             new IgnoreNullBeanUtilsBean().copyProperties(this, src);
         } catch (IllegalAccessException | InvocationTargetException e) {
             logger.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
+            logger.debug("{}",e.toString());
         }
         return this;
     }
@@ -118,6 +119,7 @@ public class USBDevice {
 
         } catch (IllegalAccessException e) {
             logger.error("Не возможно получить доступ к свойству объекта: {}", e.getLocalizedMessage());
+            logger.debug("{}",e.toString());
         }
         return sb.toString();
     }
@@ -254,6 +256,7 @@ public class USBDevice {
             } catch (IOException e) {
                 logger.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
                         vid, pid, e.getLocalizedMessage());
+                logger.debug("{}",e.toString());
                 newUsbDevice.productName = "undef.";
                 newUsbDevice.vendorName = "undef.";
             }

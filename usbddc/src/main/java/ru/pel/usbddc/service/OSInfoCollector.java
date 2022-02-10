@@ -57,6 +57,7 @@ public class OSInfoCollector {
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
         } catch (SocketException | InterruptedException e) {
             logger.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
+            logger.debug("{}",e.toString());
             Thread.currentThread().interrupt();
         }
 
@@ -100,6 +101,7 @@ public class OSInfoCollector {
                         iface = networkInterfaceFuture.get();
                     } catch (InterruptedException | ExecutionException e) {
                         logger.error("{}", e.getLocalizedMessage());
+                        logger.debug("{}",e.toString());
                         iface = new ru.pel.usbddc.entity.NetworkInterface();
                         Thread.currentThread().interrupt();
                     }
