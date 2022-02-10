@@ -22,14 +22,6 @@ class USBDeviceTest {
     }
 
     @Test
-    @DisplayName("Определение названий по VID/PID")
-    void determineVendorNameAndProductName() {
-        assertAll("Определение имен производителя и продукта по vid/pid",
-                () -> assertEquals(EXPECTED_VENDOR_NAME, testUsbDevice.getVendorName()),
-                () -> assertEquals(EXPECTED_PRODUCT_NAME, testUsbDevice.getProductName()));
-    }
-
-    @Test
     @DisplayName("Копирование не нулевых полей")
     void copyNonNullProperties() {
         USBDevice dst = USBDevice.getBuilder()
@@ -42,19 +34,45 @@ class USBDeviceTest {
                 .withVolumeName(null)
                 .build();
 
-            dst.copyNonBlankProperties(src);
+        dst.copyNonBlankProperties(src);
 
-            assertAll(                                                              //проверяем качество заполнения полей:
-                    () -> assertEquals(dst.getSerial(), src.getSerial()),              //явный null и
-                    () -> assertEquals("{1}", dst.getGuid()),                  //неявный null переписывается значением,
-                    () -> assertEquals("oldVolumeName", dst.getVolumeName()),  //но значение НЕ переписывается null'ем.
-                    () -> dst.setGuid("{2}"),                                         //Изменение одного из объектов
-                    () -> assertEquals("{2}", dst.getGuid()),                  //не влияет
-                    () -> assertNotEquals("{2}", src.getGuid())             //на состояние другого.
-            );
+        assertAll(                                                              //проверяем качество заполнения полей:
+                () -> assertEquals(dst.getSerial(), src.getSerial()),              //явный null и
+                () -> assertEquals("{1}", dst.getGuid()),                  //неявный null переписывается значением,
+                () -> assertEquals("oldVolumeName", dst.getVolumeName()),  //но значение НЕ переписывается null'ем.
+                () -> dst.setGuid("{2}"),                                         //Изменение одного из объектов
+                () -> assertEquals("{2}", dst.getGuid()),                  //не влияет
+                () -> assertNotEquals("{2}", src.getGuid())             //на состояние другого.
+        );
     }
 
     @Test
+    @DisplayName("Создание объекта, передавая null-значения")
+    void creatingUSBDeviceWithNullProperties() {
+        assertDoesNotThrow(() -> USBDevice.getBuilder()
+                        .withUserProfileList(null)
+                        .withFriendlyName(null)
+                        .withVidPid(null, null)
+                        .withGuid(null)
+                        .withSerial(null)
+                        .withDateTimeFirstInstall(null)
+                        .withRevision(null)
+                        .withVolumeName(null)
+                        .build()
+                , "Исключения не должны возникать");
+
+    }
+
+    @Test
+    @DisplayName("Определение названий по VID/PID")
+    void determineVendorNameAndProductName() {
+        assertAll("Определение имен производителя и продукта по vid/pid",
+                () -> assertEquals(EXPECTED_VENDOR_NAME, testUsbDevice.getVendorName()),
+                () -> assertEquals(EXPECTED_PRODUCT_NAME, testUsbDevice.getProductName()));
+    }
+
+    @Test
+    @DisplayName("Проверка алгоритма определения типа серийного номера (сгенерирован ОС или нет)")
     void isSerialOSGenerated() {
         USBDevice OSGeneratedSerial1 = USBDevice.getBuilder().withSerial("0&123456789").build();
         USBDevice OSGeneratedSerial2 = USBDevice.getBuilder().withSerial("0&123456789&0").build();
@@ -70,6 +88,7 @@ class USBDeviceTest {
     }
 
     @Test
+    @DisplayName("Проверка эквивалентности объектов")
     void testEquals() {
         USBDevice sameUsbDevice = testUsbDevice;
         USBDevice copyOfTestUsbDevice = USBDevice.getBuilder()
