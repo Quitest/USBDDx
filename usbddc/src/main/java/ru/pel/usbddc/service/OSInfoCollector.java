@@ -24,7 +24,6 @@ import java.util.stream.Stream;
  * Класс предназначен для получения сведений об операционной системе, необходимых для сбора исходных данных
  * для анализатора.
  */
-@Getter
 public class OSInfoCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(OSInfoCollector.class);
     private static final int THREAD_POOL_SIZE;
