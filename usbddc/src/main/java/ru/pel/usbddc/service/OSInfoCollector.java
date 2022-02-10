@@ -40,13 +40,8 @@ public class OSInfoCollector {
     }
 
     /**
-     * Получить сведения о системе. Не выполняет какого-либо сбора, анализа информации.
-     * @return объект OSInfo, содержащий результаты предыдущего вызова {@link #collectInfo()}
-     */
-    public OSInfo getOsInfo(){return osInfo;}
-
-    /**
      * Выполняет сбор всей доступной информации о системе.
+     *
      * @return объект типа OSInfo с заполненными свойствами.
      */
     public OSInfo collectInfo() {
@@ -88,7 +83,8 @@ public class OSInfoCollector {
      * Собирает минимальный объем информации о сетевых интерфейсах: имена интерфейсов, сетевые адреса и соответствующие сетевые имена
      *
      * @return самописный более примитивный аналог java.net.NetworkInterface, содержащий только интересующую информацию.
-     * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface
+     * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface.
+     * @throws InterruptedException if interrupted while waiting, in which case unfinished tasks are cancelled
      */
     public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, InterruptedException {
         long startTime = System.currentTimeMillis();
@@ -128,10 +124,48 @@ public class OSInfoCollector {
         return WinRegReader.getValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "MachineGuid").orElseThrow();
     }
 
+    /**
+     * Получить сведения о системе. Не выполняет какого-либо сбора, анализа информации.
+     *
+     * @return объект OSInfo, содержащий результаты предыдущего вызова {@link #collectInfo()}
+     */
+    public OSInfo getOsInfo() {
+        return osInfo;
+    }
+
     public String getOsName() {
         return System.getProperty("os.name");
     }
 
+    /**
+     * Возвращает версию ОС. Для семейства MS Windows соответствие версии и названия приведены в таблице:
+     * <pre>{@code
+     * +---------------------------+---------------+
+     * | Operating system          | Version number|
+     * +---------------------------+---------------+
+     * | Windows 11                | 10.0*         |
+     * | Windows 10                | 10.0*         |
+     * | Windows Server 2022       | 10.0*         |
+     * | Windows Server 2019       | 10.0*         |
+     * | Windows Server 2016       | 10.0*         |
+     * | Windows 8.1               | 6.3*          |
+     * | Windows Server 2012 R2    | 6.3*          |
+     * | Windows 8                 | 6.2           |
+     * | Windows Server 2012       | 6.2           |
+     * | Windows 7                 | 6.1           |
+     * | Windows Server 2008 R2    | 6.1           |
+     * | Windows Server 2008       | 6.0           |
+     * | Windows Vista             | 6.0           |
+     * | Windows Server 2003 R2    | 5.2           |
+     * | Windows Server 2003       | 5.2           |
+     * | Windows XP 64-Bit Edition | 5.2           |
+     * | Windows XP                | 5.1           |
+     * | Windows 2000              | 5.0           |
+     * +---------------------------+---------------+
+     * }</pre>
+     *
+     * @return версия операционной системы.
+     */
     public double getOsVersion() {
         return Double.parseDouble(System.getProperty("os.version"));
     }
@@ -155,30 +189,6 @@ public class OSInfoCollector {
         String logPath = WinRegReader
                 .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
                 .orElse(getSystemRoot().toString());
-        /*
-        +----------------------------+------------------+
-        | Operating system	         | Version number   |
-        +----------------------------+------------------+
-        | Windows 11                 | 10.0*            |
-        | Windows 10                 | 10.0*            |
-        | Windows Server 2022        | 10.0*            |
-        | Windows Server 2019        | 10.0*            |
-        | Windows Server 2016        | 10.0*            |
-        | Windows 8.1                | 6.3*             |
-        | Windows Server 2012 R2     | 6.3*             |
-        | Windows 8                  | 6.2              |
-        | Windows Server 2012        | 6.2              |
-        | Windows 7	                 | 6.1              |
-        | Windows Server 2008 R2     | 6.1              |
-        | Windows Server 2008	     | 6.0              |
-        | Windows Vista	             | 6.0              |
-        | Windows Server 2003 R2 	 | 5.2              |
-        | Windows Server 2003	     | 5.2              |
-        | Windows XP 64-Bit Edition  | 5.2              |
-        | Windows XP	             | 5.1              |
-        | Windows 2000	             | 5.0              |
-        +----------------------------+------------------+
-        * */
         return getOsVersion() >= 6.0 ? Path.of(logPath, "\\inf") : Path.of(logPath);
     }
 
