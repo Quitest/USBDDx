@@ -13,6 +13,8 @@ public class SystemInfo {
     @Id
     private Long id;
 
+    private String uuid;
+
     @OneToOne
     @MapsId
     @JoinColumn(name = "id")
