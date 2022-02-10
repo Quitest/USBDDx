@@ -76,7 +76,6 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
             if (usbDeviceMap.isEmpty()) {
                 usbDeviceMap = new HashMap<>();
             }
-//            usbDeviceMap = new HashMap<>();
             parseAllSetupapiDevLogs();
         }
         return usbDeviceMap;
@@ -108,7 +107,7 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("ОШИБКА. Не удалось найти дату первого подключения устройства. Причина: {}", e.getLocalizedMessage());
         }
         return timeStamp;
     }
@@ -125,8 +124,6 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
      *                                  default provider, the checkRead method is invoked to check read access to the directory.
      */
     public Map<String, USBDevice> parseAllSetupapiDevLogs() throws IOException {
-//        List<Path> devLogList = new OSInfoCollector().getSetupapiDevLogList();
-//        for (Path devLog : devLogList) {
         for (Path devLog : setupapiDevLogList) {
             try (BufferedReader reader = new BufferedReader(new FileReader(devLog.toString()))) {
                 String currStr = reader.readLine();
