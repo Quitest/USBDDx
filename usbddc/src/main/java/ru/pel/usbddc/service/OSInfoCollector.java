@@ -1,6 +1,5 @@
 package ru.pel.usbddc.service;
 
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
@@ -41,6 +40,16 @@ public class OSInfoCollector {
         osInfo = new OSInfo();
     }
 
+    /**
+     * Получить сведения о системе. Не выполняет какого-либо сбора, анализа информации.
+     * @return объект OSInfo, содержащий результаты предыдущего вызова {@link #collectInfo()}
+     */
+    public OSInfo getOsInfo(){return osInfo;}
+
+    /**
+     * Выполняет сбор всей доступной информации о системе.
+     * @return объект типа OSInfo с заполненными свойствами.
+     */
     public OSInfo collectInfo() {
         osInfo.setTmpdir(getTmpDir());
         osInfo.setOsName(getOsName());
@@ -57,7 +66,7 @@ public class OSInfoCollector {
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
         } catch (SocketException | InterruptedException e) {
             LOGGER.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
-            LOGGER.debug("{}",e.toString());
+            LOGGER.debug("{}", e.toString());
             Thread.currentThread().interrupt();
         }
 
@@ -101,7 +110,7 @@ public class OSInfoCollector {
                         iface = networkInterfaceFuture.get();
                     } catch (InterruptedException | ExecutionException e) {
                         LOGGER.error("{}", e.getLocalizedMessage());
-                        LOGGER.debug("{}",e.toString());
+                        LOGGER.debug("{}", e.toString());
                         iface = new ru.pel.usbddc.entity.NetworkInterface();
                         Thread.currentThread().interrupt();
                     }
