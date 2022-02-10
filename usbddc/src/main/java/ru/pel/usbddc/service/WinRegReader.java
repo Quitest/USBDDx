@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * </p>
  */
 public class WinRegReader {
-    private static Logger logger = LoggerFactory.getLogger(WinRegReader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WinRegReader.class);
 
     private WinRegReader() {
         //все методы статические - нет необходимости создавать объект.
@@ -77,8 +77,8 @@ public class WinRegReader {
                             l -> l.length >= 3 ? l[l.length - 1] : ""));
             return Optional.of(values);
         } catch (IOException | InterruptedException e) {
-            logger.error("ОШИБКА. Не удалось получить список параметров реестра в разделе {}. Причина: {}", key, e.getLocalizedMessage());
-            logger.debug("{}", e.toString());
+            LOGGER.error("ОШИБКА. Не удалось получить список параметров реестра в разделе {}. Причина: {}", key, e.getLocalizedMessage());
+            LOGGER.debug("{}", e.toString());
             return Optional.empty();
         }
     }
@@ -107,8 +107,8 @@ public class WinRegReader {
             // т.к. в output деление идет четырьмя символами пробела
             return Optional.of(parsed[parsed.length - 1]);
         } catch (IOException | InterruptedException e) {
-            logger.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
-            logger.debug("{}", e.toString());
+            LOGGER.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
+            LOGGER.debug("{}", e.toString());
             return Optional.empty();
         }
 

@@ -19,7 +19,7 @@ import java.util.Properties;
 @Getter
 @Setter
 public class UsbddcConfig {
-    private static final Logger logger = LoggerFactory.getLogger(UsbddcConfig.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UsbddcConfig.class);
     //TODO а нужен ли тут вообще синглтон, может все поля перегнать в статик и класс сделать utility?
     private static UsbddcConfig instance;
     /**
@@ -52,7 +52,7 @@ public class UsbddcConfig {
             isSkipSerialTrash = Boolean.parseBoolean(config.getProperty("isSkipSerialTrash"));
             urlPostSystemInfo = config.getProperty("urlPostSystemInfo");
         } catch (IOException e) {
-            logger.warn("Используется конфигурация по умолчанию, т.к. не удалось загрузить конфигурацию из файла {}. Причина: {}",
+            LOGGER.warn("Используется конфигурация по умолчанию, т.к. не удалось загрузить конфигурацию из файла {}. Причина: {}",
                     pathToConfig, e.getLocalizedMessage());
         }
     }

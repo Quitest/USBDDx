@@ -28,13 +28,13 @@ import java.util.concurrent.*;
 @Getter
 @Setter
 public class SystemInfoCollector {
-    private static final Logger logger = LoggerFactory.getLogger(SystemInfoCollector.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemInfoCollector.class);
     private static final int THREAD_POOL_SIZE;
 
     static {
         //TODO Вероятно, в данном случае размер пула потоков стоило бы определять исходя из количества запускаемых анализаторов?
         THREAD_POOL_SIZE = UsbddcConfig.getInstance().getThreadPoolSize();
-        logger.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
+        LOGGER.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
     }
 
     private SystemInfo systemInfo;
@@ -72,13 +72,13 @@ public class SystemInfoCollector {
             systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
 
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            logger.error("Exception occurred: {}", e.getLocalizedMessage());
-            logger.debug("Exception occurred: {}", e.toString());
+            LOGGER.error("Exception occurred: {}", e.getLocalizedMessage());
+            LOGGER.debug("Exception occurred: {}", e.toString());
             Thread.currentThread().interrupt();
         }
 
         executorService.shutdown();
-        logger.trace("Время работы общее - {}мс", System.currentTimeMillis() - startTime);
+        LOGGER.trace("Время работы общее - {}мс", System.currentTimeMillis() - startTime);
         return this;
     }
 
@@ -92,11 +92,11 @@ public class SystemInfoCollector {
                 output.append(line).append("\n");
             }
             String uuid = output.substring(output.indexOf("\n"), output.length()).trim();
-            logger.debug("UUID системы успешно получен [{}]", uuid);
+            LOGGER.debug("UUID системы успешно получен [{}]", uuid);
             return uuid;
         } catch (IOException e) {
             String error = "error";
-            logger.error("ОШИБКА при попытке получить UUID. Присвоено значение \"{}\". {}",error, e.getLocalizedMessage());
+            LOGGER.error("ОШИБКА при попытке получить UUID. Присвоено значение \"{}\". {}",error, e.getLocalizedMessage());
             return error;
         }
     }

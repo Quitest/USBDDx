@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 @Getter
 @Setter
 public class SetupapiDevLogAnalyzer implements Analyzer{
-    private static final Logger logger = LoggerFactory.getLogger(SetupapiDevLogAnalyzer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SetupapiDevLogAnalyzer.class);
     private static final String NOT_PARSED = "<SERIAL IS NOT PARSED IN LOG>";
     @Setter
     private static Path pathToLog;
@@ -107,8 +107,8 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
             }
 
         } catch (IOException e) {
-            logger.error("ОШИБКА. Не удалось найти дату первого подключения устройства. Причина: {}", e.getLocalizedMessage());
-            logger.debug("{}",e.toString());
+            LOGGER.error("ОШИБКА. Не удалось найти дату первого подключения устройства. Причина: {}", e.getLocalizedMessage());
+            LOGGER.debug("{}",e.toString());
         }
         return timeStamp;
     }
@@ -157,8 +157,8 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
                     currStr = reader.readLine();
                 }
             }catch (IOException e){
-                logger.error("Ошибка парсинга лога {}", e.getLocalizedMessage());
-                logger.debug("{}",e.toString());
+                LOGGER.error("Ошибка парсинга лога {}", e.getLocalizedMessage());
+                LOGGER.debug("{}",e.toString());
                 throw e;
             }
         }

@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 
 public class DeviceTableExporter implements ActionListener {
     private final JTable devicesTable;
-    private final Logger logger = LoggerFactory.getLogger(DeviceTableExporter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeviceTableExporter.class);
 
     public DeviceTableExporter(JTable devicesTable) {
         this.devicesTable = devicesTable;
@@ -38,13 +38,13 @@ public class DeviceTableExporter implements ActionListener {
                     for (int col = 0; col < devicesTable.getColumnCount(); col++) {
                         printWriter.print(devicesTable.getValueAt(row, col) + COLUMN_SEPARATOR);
 
-                            logger.trace("{} : {}",devicesTable.getColumnName(col), devicesTable.getValueAt(row, col));
+                            LOGGER.trace("{} : {}",devicesTable.getColumnName(col), devicesTable.getValueAt(row, col));
                     }
                     printWriter.println();
                 }
             } catch (IOException ex) {
-                logger.error("An I/O error occurs while opening or creating the file. {}", ex.getMessage());
-                logger.debug("An I/O error occurs while opening or creating the file.", ex);
+                LOGGER.error("An I/O error occurs while opening or creating the file. {}", ex.getMessage());
+                LOGGER.debug("An I/O error occurs while opening or creating the file.", ex);
             }
         }
 

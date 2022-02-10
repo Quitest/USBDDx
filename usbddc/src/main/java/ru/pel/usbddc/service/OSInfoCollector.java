@@ -27,12 +27,12 @@ import java.util.stream.Stream;
  */
 @Getter
 public class OSInfoCollector {
-    private static final Logger logger = LoggerFactory.getLogger(OSInfoCollector.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(OSInfoCollector.class);
     private static final int THREAD_POOL_SIZE;
 
     static {
         THREAD_POOL_SIZE = UsbddcConfig.getInstance().getThreadPoolSize();
-        logger.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
+        LOGGER.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
     }
 
     private final OSInfo osInfo;
@@ -56,8 +56,8 @@ public class OSInfoCollector {
         try {
             osInfo.setNetworkInterfaceList(getNetworkInterfaceList());
         } catch (SocketException | InterruptedException e) {
-            logger.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
-            logger.debug("{}",e.toString());
+            LOGGER.error("Не удалось собрать информацию о сетевых интерфейсах. {}", e.getLocalizedMessage());
+            LOGGER.debug("{}",e.toString());
             Thread.currentThread().interrupt();
         }
 
@@ -100,15 +100,15 @@ public class OSInfoCollector {
                     try {
                         iface = networkInterfaceFuture.get();
                     } catch (InterruptedException | ExecutionException e) {
-                        logger.error("{}", e.getLocalizedMessage());
-                        logger.debug("{}",e.toString());
+                        LOGGER.error("{}", e.getLocalizedMessage());
+                        LOGGER.debug("{}",e.toString());
                         iface = new ru.pel.usbddc.entity.NetworkInterface();
                         Thread.currentThread().interrupt();
                     }
                     return iface;
                 }).toList();
         executorService.shutdown();
-        logger.trace("Время сбора инф об ОС: {}", System.currentTimeMillis() - startTime);
+        LOGGER.trace("Время сбора инф об ОС: {}", System.currentTimeMillis() - startTime);
         return interfaces;
     }
 
@@ -188,8 +188,8 @@ public class OSInfoCollector {
                 (p, bfa) -> p.getFileName().toString().matches("setupapi\\.dev[0-9_.]*\\.log"))) {
             listLogs = pathStream.toList();
         } catch (IOException e) {
-            logger.error("{}", e.getLocalizedMessage());
-            logger.debug("Не удалось получить список setupapi.dev.log: \n {}", e.toString());
+            LOGGER.error("{}", e.getLocalizedMessage());
+            LOGGER.debug("Не удалось получить список setupapi.dev.log: \n {}", e.toString());
         }
         return listLogs;
     }
@@ -224,7 +224,7 @@ public class OSInfoCollector {
         List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
                 .map(this::mapInetAddress).toList();
         eth.setInetAddressList(inetAddressList);
-        logger.trace("Время маппинга интерфейса {} : {} ms", eth.getDisplayName(), System.currentTimeMillis() - mappingInterfaceStartTime);
+        LOGGER.trace("Время маппинга интерфейса {} : {} ms", eth.getDisplayName(), System.currentTimeMillis() - mappingInterfaceStartTime);
         return eth;
     }
 }
