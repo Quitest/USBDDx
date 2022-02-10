@@ -19,7 +19,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -84,7 +83,7 @@ public class OSInfoCollector {
      */
     public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, InterruptedException {
         long startTime = System.currentTimeMillis();
-        List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().collect(Collectors.toList());
+        List<NetworkInterface> networkInterfaceList = NetworkInterface.networkInterfaces().toList();
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         List<Callable<ru.pel.usbddc.entity.NetworkInterface>> taskList = new ArrayList<>();
 
@@ -105,7 +104,7 @@ public class OSInfoCollector {
                         Thread.currentThread().interrupt();
                     }
                     return iface;
-                }).collect(Collectors.toList());
+                }).toList();
         executorService.shutdown();
         logger.trace("Время сбора инф об ОС: {}", System.currentTimeMillis() - startTime);
         return interfaces;
@@ -117,20 +116,6 @@ public class OSInfoCollector {
 
     public String getOsId() {
         return WinRegReader.getValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "MachineGuid").orElseThrow();
-//        try {
-//            Process SerNumProcess = Runtime.getRuntime().exec("wmic csproduct get UUID");
-//            BufferedReader sNumReader = new BufferedReader(new InputStreamReader(SerNumProcess.getInputStream()));
-//            StringBuilder output = new StringBuilder();
-//            String line;
-//            while ((line = sNumReader.readLine()) != null) {
-//                output.append(line).append("\n");
-//            }
-//            return output.substring(output.indexOf("\n"), output.length()).trim();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//            logger.error("ОШИБКА при попытке получить UUID. {}", e.getLocalizedMessage());
-//            return "error";
-//        }
     }
 
     public String getOsName() {
@@ -199,7 +184,7 @@ public class OSInfoCollector {
         try (Stream<Path> pathStream = Files.find(getPathToSetupapiDevLog(),
                 1,
                 (p, bfa) -> p.getFileName().toString().matches("setupapi\\.dev[0-9_.]*\\.log"))) {
-            listLogs = pathStream.collect(Collectors.toList());
+            listLogs = pathStream.toList();
         } catch (IOException e) {
             logger.error("{}", e.getLocalizedMessage());
             logger.debug("Не удалось получить список setupapi.dev.log: \n {}", e.toString());
@@ -235,7 +220,7 @@ public class OSInfoCollector {
         eth.setName(networkInterface.getName());
         //... и выбираем из общей кучи информации только IP адреса и соответствующие сетевые имена.
         List<ru.pel.usbddc.entity.NetworkInterface.InetAddress> inetAddressList = networkInterface.inetAddresses()
-                .map(this::mapInetAddress).collect(Collectors.toList());
+                .map(this::mapInetAddress).toList();
         eth.setInetAddressList(inetAddressList);
         logger.trace("Время маппинга интерфейса {} : {} ms", eth.getDisplayName(), System.currentTimeMillis() - mappingInterfaceStartTime);
         return eth;

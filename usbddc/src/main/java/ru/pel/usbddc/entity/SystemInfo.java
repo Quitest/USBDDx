@@ -12,7 +12,8 @@ import java.util.stream.Stream;
 @Setter
 public class SystemInfo {
     private OSInfo osInfo;
-    private Map<String,USBDevice> usbDeviceMap;
+    private String uuid;
+    private Map<String, USBDevice> usbDeviceMap;
 
     public SystemInfo() {
         osInfo = new OSInfo();
@@ -22,12 +23,13 @@ public class SystemInfo {
     /**
      * Выполнить слияние информации о USBDevice. Свойства, не равные null и не пустые, копируются в текущий объект из
      * источника.
+     *
      * @param src источник данных для слияния.
      * @return текущий объект с дополненными данными.
      */
-    public SystemInfo mergeUsbDeviceInfo(Map<String,USBDevice> src){
-        usbDeviceMap = Stream.of(usbDeviceMap,src)
-                .flatMap(map-> map.entrySet().stream())
+    public SystemInfo mergeUsbDeviceInfo(Map<String, USBDevice> src) {
+        usbDeviceMap = Stream.of(usbDeviceMap, src)
+                .flatMap(map -> map.entrySet().stream())
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,

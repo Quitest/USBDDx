@@ -12,6 +12,9 @@ public class SystemInfoDto {
     @JsonProperty("id")
     private Long id;
 
+    @JsonProperty("uuid")
+    private String uuid;
+
     @JsonProperty("osInfo")
     private OSInfoDto osInfo;
 
