@@ -68,11 +68,12 @@ public class USBDevice {
             new IgnoreNullBeanUtilsBean().copyProperties(this, src);
         } catch (IllegalAccessException | InvocationTargetException e) {
             LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}",e.toString());
+            LOGGER.debug("{}", e.toString());
         }
         return this;
     }
 
+    //См. https://github.com/Quitest/USBDDx/issues/47
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -119,13 +120,17 @@ public class USBDevice {
 
         } catch (IllegalAccessException e) {
             LOGGER.error("Не возможно получить доступ к свойству объекта: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}",e.toString());
+            LOGGER.debug("{}", e.toString());
         }
         return sb.toString();
     }
 
+    /**
+     * "Строитель" объектов типа USBDevice. Особенность строителя - при передаче в качестве аргументов значений null, в
+     * поля записываются не нулевые значения (пустые строки, списки нулевой длинны, дата и время минимального значения).
+     */
     public static class Builder {
-        private USBDevice newUsbDevice;
+        private final USBDevice newUsbDevice;
 
         private Builder() {
             newUsbDevice = new USBDevice();
@@ -165,17 +170,17 @@ public class USBDevice {
         }
 
         public Builder withDateTimeFirstInstall(LocalDateTime dateTime) {
-            newUsbDevice.dateTimeFirstInstall = dateTime;
+            newUsbDevice.dateTimeFirstInstall = Objects.requireNonNullElse(dateTime, LocalDateTime.MIN);
             return this;
         }
 
         public Builder withFriendlyName(String friendlyName) {
-            newUsbDevice.friendlyName = friendlyName;
+            newUsbDevice.friendlyName = Objects.requireNonNullElse(friendlyName, "");
             return this;
         }
 
         public Builder withGuid(String guid) {
-            newUsbDevice.guid = guid;
+            newUsbDevice.guid = Objects.requireNonNullElse(guid, "");
             return this;
         }
 
@@ -183,7 +188,7 @@ public class USBDevice {
         // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
 
         public Builder withRevision(String rev) {
-            newUsbDevice.revision = rev;
+            newUsbDevice.revision = Objects.requireNonNullElse(rev, "");
             return this;
         }
 
@@ -196,7 +201,7 @@ public class USBDevice {
          * @return возвращает билдер
          */
         public Builder withSerial(String serial) {
-            newUsbDevice.serial = serial;
+            newUsbDevice.serial = Objects.requireNonNullElse(serial, "");
             //бывает что серийника нет вообще или при чтении данных серийником выступает набор бит, что бы корректно
             // найти и сравнить символ '&' введена проверка.
             if (newUsbDevice.serial.isBlank()) {
@@ -208,7 +213,7 @@ public class USBDevice {
         }
 
         public Builder withUserProfileList(List<UserProfile> userProfileList) {
-            newUsbDevice.userAccountsList = new ArrayList<>(userProfileList);
+            newUsbDevice.userAccountsList = Objects.requireNonNullElse(userProfileList, new ArrayList<>());
             return this;
         }
 
@@ -220,8 +225,15 @@ public class USBDevice {
          * @return возвращает билдер.
          */
         public Builder withVidPid(String vid, String pid) {
-            newUsbDevice.vid = vid;
-            newUsbDevice.pid = pid;
+            if (vid == null) {
+                vid = "";
+            }
+            if (pid == null) {
+                pid = "";
+            }
+            //WTF почему если использовать две строки ниже вместо двух IF'ов выше, то null прорывается до vid.matches()?
+//            newUsbDevice.vid = Objects.requireNonNullElse(vid, "");
+//            newUsbDevice.pid = Objects.requireNonNullElse(pid, "");
             newUsbDevice.productName = "";
             newUsbDevice.vendorName = "";
             String regexVidPid = "[0-9a-fA-F]{4}";
@@ -256,7 +268,7 @@ public class USBDevice {
             } catch (IOException e) {
                 LOGGER.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
                         vid, pid, e.getLocalizedMessage());
-                LOGGER.debug("{}",e.toString());
+                LOGGER.debug("{}", e.toString());
                 newUsbDevice.productName = "undef.";
                 newUsbDevice.vendorName = "undef.";
             }
@@ -264,8 +276,8 @@ public class USBDevice {
             return this;
         }
 
-        public Builder withVolumeName(String volumeNameList) {
-            newUsbDevice.volumeName = volumeNameList;
+        public Builder withVolumeName(String volumeName) {
+            newUsbDevice.volumeName = Objects.requireNonNullElse(volumeName, "");
             return this;
         }
     }
