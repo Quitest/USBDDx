@@ -107,8 +107,7 @@ public class USBDevice {
         StringBuilder sb = new StringBuilder();
         try {
             Field[] fieldsThis = USBDevice.class.getDeclaredFields();
-            List<Field> fields = new ArrayList<>();
-            fields.addAll(Arrays.asList(fieldsThis));
+            List<Field> fields = new ArrayList<>(Arrays.asList(fieldsThis));
             fields.sort(Comparator.comparing(Field::getName));
 
             for (Field field : fields) {
@@ -157,7 +156,7 @@ public class USBDevice {
             try {
                 field = USBDevice.Builder.class.getDeclaredField(fieldName);
             } catch (NoSuchFieldException e) {
-//                logger.warn("WARN: {} = {}", e, value);
+                LOGGER.warn("WARN: {} = {}", e, value);
             }
             if (field != null) {
                 field.setAccessible(true);
@@ -225,28 +224,22 @@ public class USBDevice {
          * @return возвращает билдер.
          */
         public Builder withVidPid(String vid, String pid) {
-            if (vid == null) {
-                vid = "";
-            }
-            if (pid == null) {
-                pid = "";
-            }
             //WTF почему если использовать две строки ниже вместо двух IF'ов выше, то null прорывается до vid.matches()?
-//            newUsbDevice.vid = Objects.requireNonNullElse(vid, "");
-//            newUsbDevice.pid = Objects.requireNonNullElse(pid, "");
-            newUsbDevice.productName = "";
-            newUsbDevice.vendorName = "";
+            newUsbDevice.vid = Objects.requireNonNullElse(vid, "");
+            newUsbDevice.pid = Objects.requireNonNullElse(pid, "");
             String regexVidPid = "[0-9a-fA-F]{4}";
-            if (!vid.matches(regexVidPid) || !pid.matches(regexVidPid)) {
+            if (!newUsbDevice.vid.matches(regexVidPid) || !newUsbDevice.pid.matches(regexVidPid)) {
                 return this;
             }
+            newUsbDevice.productName = "";
+            newUsbDevice.vendorName = "";
 
             try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
                 String currStr = "";
                 boolean vendorFound = false;
                 //TODO код лажа - переписать на нормальный.
                 while (currStr != null) {
-                    if (currStr.matches("^" + vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
+                    if (currStr.matches("^" + newUsbDevice.vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
                         newUsbDevice.vendorName = currStr.split(" {2}")[1];// делитель - два пробела, т.о.:
                         // [0] - vid
                         // [1] - vendor name (имя производителя)
@@ -254,7 +247,7 @@ public class USBDevice {
                         currStr = usbIdsReader.readLine();
                         continue;
                     }
-                    if (vendorFound && currStr.matches("\\t" + pid + ".+")) {//блок вендора начат и строка содержит ProductID?
+                    if (vendorFound && currStr.matches("\\t" + newUsbDevice.pid + ".+")) {//блок вендора начат и строка содержит ProductID?
                         newUsbDevice.productName = currStr.split(" {2}")[1];
                         break;
                     }
@@ -267,7 +260,7 @@ public class USBDevice {
 
             } catch (IOException e) {
                 LOGGER.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
-                        vid, pid, e.getLocalizedMessage());
+                        newUsbDevice.vid, newUsbDevice.vid, e.getLocalizedMessage());
                 LOGGER.debug("{}", e.toString());
                 newUsbDevice.productName = "undef.";
                 newUsbDevice.vendorName = "undef.";

@@ -11,14 +11,11 @@ import java.util.stream.Stream;
 @Getter
 @Setter
 public class SystemInfo {
-    private OSInfo osInfo;
-    private String uuid;
-    private Map<String, USBDevice> usbDeviceMap;
+    private OSInfo osInfo = new OSInfo();
+    private String uuid = "";
+    private Map<String, USBDevice> usbDeviceMap = new HashMap<>();
 
-    public SystemInfo() {
-        osInfo = new OSInfo();
-        usbDeviceMap = new HashMap<>();
-    }
+    public SystemInfo() {}
 
     /**
      * Выполнить слияние информации о USBDevice. Свойства, не равные null и не пустые, копируются в текущий объект из
