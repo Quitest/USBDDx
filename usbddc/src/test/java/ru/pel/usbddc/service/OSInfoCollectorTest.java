@@ -40,8 +40,9 @@ class OSInfoCollectorTest {
     void getSetupapiDevLogList() {
         List<Path> setupapiDevLogList = new OSInfoCollector().getSetupapiDevLogList();
 
-        assertThat(setupapiDevLogList, hasItem(Path.of("C:\\WINDOWS\\inf\\setupapi.dev.log")));
-        assertThat(setupapiDevLogList.size(), greaterThanOrEqualTo(1));
+        assertThat(setupapiDevLogList, anyOf(
+                hasItem((Path.of("C:\\WINDOWS\\inf\\setupapi.dev.log"))),
+                hasItem(Path.of("C:\\WINDOWS\\setupapi.dev.log"))));
 
     }
 }
