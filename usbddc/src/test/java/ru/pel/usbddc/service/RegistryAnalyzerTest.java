@@ -44,7 +44,7 @@ class RegistryAnalyzerTest {
 
     @BeforeAll
     static void beforeAll() {
-        usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
+        usbDeviceMap = new RegistryAnalyzer().getAnalysis(true);
     }
 
     @Test
@@ -191,7 +191,7 @@ class RegistryAnalyzerTest {
         registryAnalyzer.getFriendlyName();
         registryAnalyzer.determineDeviceUsers();
         registryAnalyzer.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis = registryAnalyzer.getRegistryAnalysis(false);
+        Map<String, USBDevice> registryAnalysis = registryAnalyzer.getAnalysis(false);
 
         //Вариант1
         RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
@@ -204,7 +204,7 @@ class RegistryAnalyzerTest {
         registryAnalyzer1.determineDeviceUsers();
         registryAnalyzer1.getFriendlyName();
         registryAnalyzer1.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis1 = registryAnalyzer1.getRegistryAnalysis(false);
+        Map<String, USBDevice> registryAnalysis1 = registryAnalyzer1.getAnalysis(false);
 
         //Вариант2
         RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
@@ -217,7 +217,7 @@ class RegistryAnalyzerTest {
         registryAnalyzer2.determineDeviceUsers();
         registryAnalyzer2.getFriendlyName();
         registryAnalyzer2.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis2 = registryAnalyzer2.getRegistryAnalysis(false);
+        Map<String, USBDevice> registryAnalysis2 = registryAnalyzer2.getAnalysis(false);
 
         //Вариант2
         RegistryAnalyzer registryAnalyzer3 = new RegistryAnalyzer();
@@ -230,7 +230,7 @@ class RegistryAnalyzerTest {
         registryAnalyzer3.parseWindowsPortableDevice();
         registryAnalyzer3.getFriendlyName();
         registryAnalyzer3.determineDeviceUsers();
-        Map<String, USBDevice> registryAnalysis3 = registryAnalyzer3.getRegistryAnalysis(false);
+        Map<String, USBDevice> registryAnalysis3 = registryAnalyzer3.getAnalysis(false);
 
         assertAll(
                 () -> assertEquals(usbDeviceMap, registryAnalysis),
