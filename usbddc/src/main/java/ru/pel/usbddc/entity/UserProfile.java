@@ -38,6 +38,10 @@ public class UserProfile {
         return new Builder();
     }
 
+    /**
+     * "Строитель" объектов типа UserProfile. Особенность строителя - при передаче в качестве аргументов значений null, в
+     * поля записываются не нулевые значения (пустые строки, списки нулевой длинны, дата и время минимального значения).
+     */
     public static class Builder {
         private final UserProfile newUserProfile;
 
