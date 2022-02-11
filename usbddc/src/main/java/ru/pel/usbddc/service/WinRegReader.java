@@ -1,11 +1,9 @@
 package ru.pel.usbddc.service;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +35,7 @@ public class WinRegReader {
         //<key>\subkey1 - первая строка, в моем случае вседга пустая.
         //<key>\subkey2
         //<key>\subkeyN
-        String output = execCommand("reg query \"" + key + "\"").getResult();
+        String output = WinComExecutor.exec("reg query \"" + key + "\"").getResult();
 //            String output = execCommand("cmd /c start /wait /I reg.lnk query \"" + key + "\"").getResult();
 
         return Arrays.stream(output.split(System.lineSeparator()))
@@ -56,7 +54,7 @@ public class WinRegReader {
      */
     public static Optional<Map<String, String>> getAllValuesInKey(String key) {
         try {
-            String output = execCommand("reg query \"" + key + "\"").getResult();
+            String output = WinComExecutor.exec("reg query \"" + key + "\"").getResult();
 
 //            String cyr = new String(output.getBytes("cp866"), "windows-1251");
 
@@ -92,7 +90,7 @@ public class WinRegReader {
      */
     public static Optional<String> getValue(String key, String value) {
         try {
-            String output = execCommand("reg query " + '"' + key + "\" /v \"" + value + "\"").getResult();
+            String output = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"").getResult();
 
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
@@ -122,13 +120,8 @@ public class WinRegReader {
      * @param hive     Имя файла куста, подлежащего загрузке.
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static ExecResult<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
-//        String command = "cmd /c start /b /wait /I reg.lnk load " + nodeName + " " + hive;
-        String command = "reg load " + nodeName + " \"" + hive + "\"";
-//        String command = "reg load " + nodeName + " " + hive;
-        ExecResult<Integer, String> execResult = new ExecResult<>();
-        execResult = execCommand(command);
-        return execResult;
+    public static WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
+        return WinComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
     }
 
     /**
@@ -138,12 +131,9 @@ public class WinRegReader {
      * @param nodeName выгружаемый куст реестра
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static ExecResult<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
-        ExecResult<Integer, String> execResult = new ExecResult<>();
+    public static WinComExecutor.Result<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
         //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
-//        execResult = execCommand("cmd /c start /b /wait /I reg.lnk unload " + nodeName);
-        execResult = execCommand("reg unload " + nodeName);
-        return execResult;
+        return WinComExecutor.exec("reg unload " + nodeName);
     }
 
     /**
@@ -156,13 +146,13 @@ public class WinRegReader {
      * @throws InterruptedException
      */
     public static boolean isKeyExists(String key) throws IOException, InterruptedException {
-        ExecResult<Integer, String> result = execCommand("reg query \"" + key + "\" /ve ");
-        boolean b = result.exitCode == 0;
+        WinComExecutor.Result<Integer, String> result = WinComExecutor.exec("reg query \"" + key + "\" /ve ");
+        boolean b = result.getExitCode() == 0;
         boolean s = !result.getResult().isEmpty();
         return b && s;
     }
-
-    /**
+    /*
+     *//**
      * Выполняет указанную команду в отдельном процессе, ждет окончания ее работы и возвращает результат.
      *
      * @param command команда для выполнения
@@ -170,7 +160,7 @@ public class WinRegReader {
      * виде строки.
      * @throws IOException
      * @throws InterruptedException
-     */
+     *//*
     private static ExecResult<Integer, String> execCommand(String command) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command);
 
@@ -228,5 +218,5 @@ public class WinRegReader {
 
         public ExecResult() {
         }
-    }
+    }*/
 }
