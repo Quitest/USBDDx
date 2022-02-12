@@ -35,14 +35,13 @@ public class WinRegReader {
         //<key>\subkey1 - первая строка, в моем случае вседга пустая.
         //<key>\subkey2
         //<key>\subkeyN
-        String output = WinComExecutor.exec("reg query \"" + key + "\"").getResult();
-//            String output = execCommand("cmd /c start /wait /I reg.lnk query \"" + key + "\"").getResult();
+        String output = WinComExecutor.exec("reg query \"" + key + "\"").getBody();
 
         return Arrays.stream(output.split(System.lineSeparator()))
                 .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
                         s.matches("HKEY.+") &&    //строки с параметрами
                         !s.matches(Pattern.quote(key)))  //отбстроку с именем раздела, в котором ищем подразделы
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -53,8 +52,9 @@ public class WinRegReader {
      * Optional.empty()
      */
     public static Optional<Map<String, String>> getAllValuesInKey(String key) {
+        Optional<Map<String, String>> valuesOptional = Optional.empty();
         try {
-            String output = WinComExecutor.exec("reg query \"" + key + "\"").getResult();
+            String output = WinComExecutor.exec("reg query \"" + key + "\"").getBody();
 
 //            String cyr = new String(output.getBytes("cp866"), "windows-1251");
 
@@ -73,12 +73,13 @@ public class WinRegReader {
 //                    .collect(Collectors.toMap(l->l[1],l->l[l.length-1])); //и собираем в мапу, где l[1] - имя параметра, l[l.length-1] - значение
                     .collect(Collectors.toMap(l -> l[1],
                             l -> l.length >= 3 ? l[l.length - 1] : ""));
-            return Optional.of(values);
+            valuesOptional = Optional.of(values);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить список параметров реестра в разделе {}. Причина: {}", key, e.getLocalizedMessage());
             LOGGER.debug("{}", e.toString());
-            return Optional.empty();
+            Thread.currentThread().interrupt();
         }
+        return valuesOptional;
     }
 
     /**
@@ -89,8 +90,9 @@ public class WinRegReader {
      * @return {@code Optional<String>}, содержащий значение параметра
      */
     public static Optional<String> getValue(String key, String value) {
+        Optional<String> valueOptional = Optional.empty();
         try {
-            String output = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"").getResult();
+            String output = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"").getBody();
 
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
@@ -103,13 +105,14 @@ public class WinRegReader {
 
             String[] parsed = output.split("\\s{4}"); //в оригинале регулярка была "\t", что давало неверный результат,
             // т.к. в output деление идет четырьмя символами пробела
-            return Optional.of(parsed[parsed.length - 1]);
+//            return Optional.of(parsed[parsed.length - 1]);
+            valueOptional = Optional.of(parsed[parsed.length - 1]);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
             LOGGER.debug("{}", e.toString());
             return Optional.empty();
         }
-
+        return valueOptional;
     }
 
     /**
@@ -148,7 +151,7 @@ public class WinRegReader {
     public static boolean isKeyExists(String key) throws IOException, InterruptedException {
         WinComExecutor.Result<Integer, String> result = WinComExecutor.exec("reg query \"" + key + "\" /ve ");
         boolean b = result.getExitCode() == 0;
-        boolean s = !result.getResult().isEmpty();
+        boolean s = !result.getBody().isEmpty();
         return b && s;
     }
     /*
@@ -168,8 +171,8 @@ public class WinRegReader {
         reader.start();
         int exitCode = process.waitFor();
         reader.join();
-        String result = reader.getResult();
-        return new ExecResult<>(exitCode, result);
+        String body = reader.getBody();
+        return new ExecResult<>(exitCode, body);
     }
 
     private static class StreamReader extends Thread {
@@ -186,7 +189,7 @@ public class WinRegReader {
             }
         }
 
-        public String getResult() {
+        public String getBody() {
             return sw.toString();
         }
 
@@ -209,11 +212,11 @@ public class WinRegReader {
     @Setter
     public static class ExecResult<C, R> {
         private C exitCode;
-        private R result;
+        private R body;
 
-        public ExecResult(C exitCode, R result) {
+        public ExecResult(C exitCode, R body) {
             this.exitCode = exitCode;
-            this.result = result;
+            this.body = body;
         }
 
         public ExecResult() {

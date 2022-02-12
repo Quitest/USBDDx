@@ -77,7 +77,7 @@ class RegistryAnalyzerTest {
                 .filter(usbDevice -> usbDevice.getUserAccountsList().size() > 1)
                 .collect(Collectors.toList());
 
-        assertTrue(collect.size() > 0, "В системе есть USB-устройство, использовавшееся несколькими пользователями?");
+        assertTrue(collect.size() > 0, "В системе есть USB-устройство, использовавшееся несколькими пользователями? Права админа есть?");
     }
 
     @Test
@@ -89,7 +89,7 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Поиск правильного GUID'а. Ожидается успех.")
-    void getMountedDevicesTest2() {
+    void getMountedDevicesTest() {
         USBDevice usbDevice = usbDeviceMap.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
@@ -122,7 +122,7 @@ class RegistryAnalyzerTest {
                 .filter(mp -> mp.equals(expectedMountPoints2))
                 .findFirst().orElse("<NOT FOUND>");
 
-        assertEquals(expectedMountPoints2, actualGuid, "Не найдено устройств с GUID " + expectedGuid + "Временный профиль существует?");
+        assertEquals(expectedMountPoints2, actualGuid, "Устройств не найдено. Временный профиль существует? Права админа есть?");
     }
 
     @Test
@@ -180,53 +180,36 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
     void orderInvokingRegistryAnalysisMethod() {
-        //Вариант
+        //Вариант 0
         RegistryAnalyzer registryAnalyzer = new RegistryAnalyzer();
-        try {
             registryAnalyzer.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
         registryAnalyzer.associateSerialToGuid();
         registryAnalyzer.getFriendlyName();
         registryAnalyzer.determineDeviceUsers();
         registryAnalyzer.parseWindowsPortableDevice();
         Map<String, USBDevice> registryAnalysis = registryAnalyzer.getAnalysis(false);
 
-        //Вариант1
+        //Вариант 1
         RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
         registryAnalyzer1.associateSerialToGuid();
-        try {
             registryAnalyzer1.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
         registryAnalyzer1.determineDeviceUsers();
         registryAnalyzer1.getFriendlyName();
         registryAnalyzer1.parseWindowsPortableDevice();
         Map<String, USBDevice> registryAnalysis1 = registryAnalyzer1.getAnalysis(false);
 
-        //Вариант2
+        //Вариант 2
         RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
         registryAnalyzer2.associateSerialToGuid();
-        try {
-            registryAnalyzer2.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
         registryAnalyzer2.determineDeviceUsers();
         registryAnalyzer2.getFriendlyName();
         registryAnalyzer2.parseWindowsPortableDevice();
         Map<String, USBDevice> registryAnalysis2 = registryAnalyzer2.getAnalysis(false);
 
-        //Вариант2
+        //Вариант 3
         RegistryAnalyzer registryAnalyzer3 = new RegistryAnalyzer();
         registryAnalyzer3.associateSerialToGuid();
-        try {
             registryAnalyzer3.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
         registryAnalyzer3.parseWindowsPortableDevice();
         registryAnalyzer3.getFriendlyName();
         registryAnalyzer3.determineDeviceUsers();

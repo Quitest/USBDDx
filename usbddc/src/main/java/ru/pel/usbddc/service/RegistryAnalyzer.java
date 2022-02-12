@@ -109,13 +109,13 @@ public class RegistryAnalyzer implements Analyzer {
     @Override
     public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
-            try {
+//            try {
                 getUsbDevices();
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
-                        "Причина: {}", e.getLocalizedMessage());
-                LOGGER.debug("{}", e.toString());
-            }
+//            } catch (InvocationTargetException | IllegalAccessException e) {
+//                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
+//                        "Причина: {}", e.getLocalizedMessage());
+//                LOGGER.debug("{}", e.toString());
+//            }
             associateSerialToGuid();
             determineDeviceUsers();
             getFriendlyName();
@@ -225,13 +225,13 @@ public class RegistryAnalyzer implements Analyzer {
     @Deprecated(forRemoval = true)
     public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
-            try {
+//            try {
                 getUsbDevices();
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
-                        "Причина: {}", e.getLocalizedMessage());
-                LOGGER.debug("{}", e.toString());
-            }
+//            } catch (InvocationTargetException | IllegalAccessException e) {
+//                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
+//                        "Причина: {}", e.getLocalizedMessage());
+//                LOGGER.debug("{}", e.toString());
+//            }
             associateSerialToGuid();
             determineDeviceUsers();
             getFriendlyName();
@@ -275,7 +275,7 @@ public class RegistryAnalyzer implements Analyzer {
      *
      * @return список USB устройств, когда-либо подключенных и зарегистрированных в ОС.
      */
-    public Map<String, USBDevice> getUsbDevices() throws InvocationTargetException, IllegalAccessException {
+    public Map<String, USBDevice> getUsbDevices() {
         try {
             List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
 

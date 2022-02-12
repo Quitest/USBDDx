@@ -8,14 +8,17 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 
 public class WinComExecutor {
+    private WinComExecutor() {
+    }
+
     /**
      * Выполняет указанную команду в отдельном процессе, ждет окончания ее работы и возвращает результат.
      *
      * @param command команда для выполнения
      * @return кортеж (пару значений): первое - код, с которым завершилась команда; второе - сам результат выполнения в
      * виде строки.
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException          If an I/O error occurs
+     * @throws InterruptedException if the current thread is interrupted by another thread while it is waiting, then the wait is ended and an InterruptedException is thrown.
      */
     public static Result<Integer, String> exec(String command) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command);
@@ -65,14 +68,11 @@ public class WinComExecutor {
     @Setter
     public static class Result<C, R> {
         private C exitCode;
-        private R result;
+        private R body;
 
-        public Result(C exitCode, R result) {
+        public Result(C exitCode, R body) {
             this.exitCode = exitCode;
-            this.result = result;
-        }
-
-        public Result() {
+            this.body = body;
         }
     }
 }
