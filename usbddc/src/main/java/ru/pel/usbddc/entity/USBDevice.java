@@ -40,6 +40,8 @@ public class USBDevice {
     private String vid = "";
     private String volumeName = "";
     private String revision = "";
+    /** Источник данных: {@code HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR\<XXX>\<SERIAL>\Device Parameters\Partmgr} параметр {@code DiskId}*/
+    private String diskId = "";
     private LocalDateTime dateTimeFirstInstall = LocalDateTime.MIN;
     private boolean isSerialOSGenerated = true;
     private List<UserProfile> userAccountsList = new ArrayList<>();
@@ -239,7 +241,7 @@ public class USBDevice {
                 boolean vendorFound = false;
                 //TODO код лажа - переписать на нормальный.
                 while (currStr != null) {
-                    if (currStr.matches("^" + newUsbDevice.vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
+                    if (currStr.matches("(?i)^" + newUsbDevice.vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
                         newUsbDevice.vendorName = currStr.split(" {2}")[1];// делитель - два пробела, т.о.:
                         // [0] - vid
                         // [1] - vendor name (имя производителя)
@@ -247,7 +249,7 @@ public class USBDevice {
                         currStr = usbIdsReader.readLine();
                         continue;
                     }
-                    if (vendorFound && currStr.matches("\\t" + newUsbDevice.pid + ".+")) {//блок вендора начат и строка содержит ProductID?
+                    if (vendorFound && currStr.matches("(?i)\\t" + newUsbDevice.pid + ".+")) {//блок вендора начат и строка содержит ProductID?
                         newUsbDevice.productName = currStr.split(" {2}")[1];
                         break;
                     }
@@ -271,6 +273,11 @@ public class USBDevice {
 
         public Builder withVolumeName(String volumeName) {
             newUsbDevice.volumeName = Objects.requireNonNullElse(volumeName, "");
+            return this;
+        }
+
+        public Builder withDiskId(String diskId){
+            newUsbDevice.diskId = Objects.requireNonNullElse(diskId, "");
             return this;
         }
     }

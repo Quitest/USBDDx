@@ -226,7 +226,7 @@ class RegistryAnalyzerTest {
     @Test
     void parseWindowsPortableDevice() {
 //        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
-        List<USBDevice> collect = usbDeviceMap.values().stream()
+        List<USBDevice> notEmptyVolumeName = usbDeviceMap.values().stream()
                 .filter(val -> !val.getVolumeName().isEmpty())
                 .collect(Collectors.toList());
         assertEquals(expectedVolumeName, usbDeviceMap.get(expectedSerial).getVolumeName());

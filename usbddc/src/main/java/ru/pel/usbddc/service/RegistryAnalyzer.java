@@ -138,13 +138,18 @@ public class RegistryAnalyzer implements Analyzer {
                             serialKey.substring(lastIndexOfSlash, serialKey.length() - 2) : //Если да - отбрасываем его и префикс в виде пути
                             serialKey.substring(lastIndexOfSlash);                          //иначе просто отбрасываем префикс в виде пути.
                     String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
+                    String diskId = WinRegReader.getValue(serialKey+"\\Device Parameters\\Partmgr", "DiskId").orElse("<не доступно>");
+
                     USBDevice tmp = USBDevice.getBuilder()
                             .withRevision(revision)
-                            .withFriendlyName(friendlyName).build();
+                            .withFriendlyName(friendlyName)
+                            .withDiskId(diskId)
+                            .build();
 
                     usbDeviceMap.merge(serial, tmp, (usbDevice, src) -> {
                         usbDevice.setFriendlyName(src.getFriendlyName());
                         usbDevice.setRevision(src.getRevision());
+                        usbDevice.setDiskId(src.getDiskId());
                         return usbDevice;
                     });
                 }
@@ -351,7 +356,7 @@ public class RegistryAnalyzer implements Analyzer {
      * @return значение PID (ProductID)
      */
     private Optional<String> parsePid(String pidvid) {
-        Matcher matcher = Pattern.compile("pid_(.{4})").matcher(pidvid);
+        Matcher matcher = Pattern.compile("(?i)pid_(.{4})").matcher(pidvid);
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
@@ -360,7 +365,8 @@ public class RegistryAnalyzer implements Analyzer {
      * @return значение VID (VendorID)
      */
     private Optional<String> parseVid(String pidvid) {
-        Matcher matcher = Pattern.compile("vid_(.{4})").matcher(pidvid);
+        Matcher matcher = Pattern.compile("(?i)vid_(.{4})").matcher(pidvid);
+//        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
@@ -376,18 +382,55 @@ public class RegistryAnalyzer implements Analyzer {
             List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
             for (String deviceEntry : deviceList) {
                 Optional<String> serial = usbDeviceMap.keySet().stream()
-                        .filter(s -> deviceEntry.contains("#" + s)) //что бы уменьшить количество ложно-положительных совпадений
+//                        .filter(s -> deviceEntry.contains("#" + s)) //что бы уменьшить количество ложно-положительных совпадений
                         //вводится неуникальный признак начала серийника - #.
+//                        .filter(s->deviceEntry.matches("#"+s+"[#&]?.*"))
+                        .filter(s->{
+                            String r1 = "(?i).*#" + s + "[#&].*";
+                            String r2 = ".*#" + s + "$";
+                            return deviceEntry.matches(r1);
+                        })
                         .findFirst();
                 if (serial.isPresent()) {
                     String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
                     USBDevice tmp = USBDevice.getBuilder()
+                            .withSerial(serial.get())
                             .withVolumeName(volumeName).build();
 
                     usbDeviceMap.merge(serial.get(), tmp, (dst, src) -> {
                         dst.setVolumeName(src.getVolumeName());
                         return dst;
                     });
+                }else{
+                    //FIXME код говно. переписать.
+                    List<String> stringList = Arrays.stream(deviceEntry.split("#")).toList();
+                    try {
+                        String newVid = stringList.stream()
+                                .filter(elem -> elem.matches("(?i).*vid_.*"))
+                                .map(elem -> parseVid(elem).orElseThrow())
+                                .findFirst().orElseThrow();
+                        String newPid = stringList.stream()
+                                .filter(elem -> elem.matches("(?i).*pid_.*"))
+                                .map(elem -> parsePid(elem).orElseThrow())
+                                .findFirst().orElseThrow();
+                        String newSerial = stringList.get(stringList.size() - 1);
+                        String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
+                        USBDevice tmp = USBDevice.getBuilder()
+                                .withVidPid(newVid, newPid)
+                                .withSerial(newSerial)
+                                .withVolumeName(volumeName).build();
+                        //FIXME рассмотреть вариант использования ObjectMapper
+                        usbDeviceMap.merge(newSerial, tmp, (dst, src) -> {
+                            dst.setSerial(src.getSerial());
+                            dst.setPid(src.getPid());
+                            dst.setVid(src.getVid());
+                            dst.setProductName(src.getProductName());
+                            dst.setVendorName(src.getVendorName());
+                            return dst;
+                        });
+                    }catch (NoSuchElementException e){
+                        e.printStackTrace();
+                    }
                 }
             }
         } catch (IOException | InterruptedException e) {
