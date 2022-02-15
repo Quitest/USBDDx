@@ -6,7 +6,6 @@ import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -43,13 +42,24 @@ public class RegistryAnalyzer implements Analyzer {
 
         for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
             String encodedValue = entry.getValue();
+            if (isHDDPartition(encodedValue)) {
+                LOGGER.info("[i] Устройство определено как раздел несъемного HDD/SSD. \n\t\tПропущено: {} :: {}.",
+                        entry.getKey(), encodedValue);
+                continue;
+            }
             String decodedValue = decodeHexToString(encodedValue);
+
 
             String serial = Arrays.stream(decodedValue.split("#"))
                     .skip(2)
                     .map(s -> s.charAt(s.length() - 2) == '&' ? // если на предпоследней позиции символ "&", то
                             s.substring(0, s.length() - 2) : s) //отбрасываем его и последний (например &0), иначе целиком забираем серийник.
                     .findFirst().orElse(decodedValue);
+//            if(serial.matches(".*[^\\w\\s&#_.]+.*")){
+//            if(serial.contains("(") && !serial.contains(")")){
+//                LOGGER.warn("[W] При анализе HKLM\\SYSTEM\\MountedDevices пропущен серийник: {} - содержит только открывающую скобку", serial);
+//                continue;
+//            }
             entry.setValue(decodedValue);
 
             String key = entry.getKey();
@@ -111,7 +121,7 @@ public class RegistryAnalyzer implements Analyzer {
     public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
 //            try {
-                getUsbDevices();
+            getUsbDevices();
 //            } catch (InvocationTargetException | IllegalAccessException e) {
 //                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
 //                        "Причина: {}", e.getLocalizedMessage());
@@ -139,7 +149,7 @@ public class RegistryAnalyzer implements Analyzer {
                             serialKey.substring(lastIndexOfSlash, serialKey.length() - 2) : //Если да - отбрасываем его и префикс в виде пути
                             serialKey.substring(lastIndexOfSlash);                          //иначе просто отбрасываем префикс в виде пути.
                     String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
-                    String diskId = WinRegReader.getValue(serialKey+"\\Device Parameters\\Partmgr", "DiskId").orElse("<не доступно>");
+                    String diskId = WinRegReader.getValue(serialKey + "\\Device Parameters\\Partmgr", "DiskId").orElse("<не доступно>");
 
                     USBDevice tmp = USBDevice.getBuilder()
                             .withRevision(revision)
@@ -232,7 +242,7 @@ public class RegistryAnalyzer implements Analyzer {
     public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
 //            try {
-                getUsbDevices();
+            getUsbDevices();
 //            } catch (InvocationTargetException | IllegalAccessException e) {
 //                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
 //                        "Причина: {}", e.getLocalizedMessage());
@@ -311,7 +321,7 @@ public class RegistryAnalyzer implements Analyzer {
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
                     "Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("{}", e);
         }
         return usbDeviceMap;
     }
@@ -353,6 +363,17 @@ public class RegistryAnalyzer implements Analyzer {
     }
 
     /**
+     * Проверить относится ли запись к разделу несъемного HDD/SDD
+     *
+     * @param hexValue - проверяемое значение - строка, содержащая HEX-символы
+     * @return true - если строка начинается с HEX-сигнатуры {@code 444D494F3A49443A}, false - во всех остальных случаях.
+     */
+    private boolean isHDDPartition(String hexValue) {
+        final String signature = "444D494F3A49443A"; //TODO есть подозрение, что это сигнатура свойственна только GPT-дискам.
+        return hexValue.startsWith(signature);
+    }
+
+    /**
      * @param pidvid строка, содержащая в себе подстроку вида {@code pid_VVVV&PID_PPPP}
      * @return значение PID (ProductID)
      */
@@ -387,12 +408,15 @@ public class RegistryAnalyzer implements Analyzer {
                     serial = usbDeviceMap.keySet().stream()
                             .filter(s -> deviceEntry.matches("(?i).*#" + s + "[#&].*"))
                             .findFirst();
-                }catch (PatternSyntaxException e){
+                } catch (PatternSyntaxException e) {
                     //Т.к. regexp формируется за счет строковой переменной, которая может в себе содержать весь набор символов,
                     // в том числе и символы, влияющие на обработку выражения, необходимо учесть высокую вероятность
                     // построения некорректного regexp.
-                    LOGGER.error("ОШИБКА при попытке определить метку тома: {}", e.getLocalizedMessage());
-                    LOGGER.debug("{}",e);
+                    serial = usbDeviceMap.keySet().stream()
+                            .filter(s -> deviceEntry.contains("#" + s))
+                            .findFirst();
+                    LOGGER.warn("[W] При определении метки тома {} использовался метод contains() вместо matches", serial.orElse("***"));
+                    LOGGER.debug("{}", e);
                 }
                 if (serial.isPresent()) {
                     String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
@@ -404,7 +428,7 @@ public class RegistryAnalyzer implements Analyzer {
                         dst.setVolumeName(src.getVolumeName());
                         return dst;
                     });
-                }else{
+                } else {
                     //FIXME код говно. переписать.
                     List<String> stringList = Arrays.stream(deviceEntry.split("#")).toList();
                     try {
@@ -431,7 +455,7 @@ public class RegistryAnalyzer implements Analyzer {
                             dst.setVendorName(src.getVendorName());
                             return dst;
                         });
-                    }catch (NoSuchElementException e){
+                    } catch (NoSuchElementException e) {
                         e.printStackTrace();
                     }
                 }
