@@ -71,6 +71,11 @@ class RegistryAnalyzerTest {
     }
 
     @Test
+    void getReadyBoostDevices() {
+        new RegistryAnalyzer().getReadyBoostDevices();
+    }
+
+    @Test
     @DisplayName("Получение информации о всех пользователях устройств")
     void findDevicesWithManyUsers() {
         List<USBDevice> collect = usbDeviceMap.values().stream()

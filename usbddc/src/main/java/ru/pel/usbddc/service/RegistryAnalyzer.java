@@ -19,7 +19,11 @@ import java.util.stream.Collectors;
 public class RegistryAnalyzer implements Analyzer {
     private static final String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
-    private static final String REG_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
+    private static final String REG_KEY_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
+    /**
+     * Ветка службы ReadyBoost
+     */
+    private static final String REG_KEY_EMDMGMT = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt";
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistryAnalyzer.class);
     private final Map<String, USBDevice> usbDeviceMap;
 
@@ -231,6 +235,43 @@ public class RegistryAnalyzer implements Analyzer {
     }
 
     /**
+     * Анализ ветки {@code HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\EMDMgmt}. Ветка реестра ведется службой ReadyBoost.
+     * В нее записывается информация о всех подключаемых к системе устройствах, что служит неплохим источником данных для дальнейшего анализа.
+     * Анализ ветки выполняется на случай, если лог файлы или другие ветки были почищены - получим хоть какую-то информацию об устройствах.
+     *
+     * @return
+     */
+    public Map<String, USBDevice> getReadyBoostDevices() {
+        try {
+            List<String> keyList = WinRegReader.getSubkeys(REG_KEY_EMDMGMT);
+//            VOL [диск:]
+            for (String key : keyList) {
+                try {
+                    //.*&(Ven_(\w*)&Prod_(\w*)&Rev_(\w*)#(\w*)&.*}(\w*)_\d*)
+                    //.*&(Ven_(?<ven>\w*)&Prod_(?<prod>\w*)&Rev_(?<rev>\w*)#(?<serial>\w*)&.*}(?<vollabel>\w*)_(?<volId>\d*))
+                    String pattern = ".*&(Ven_(?<ven>\\w*)&Prod_(?<prod>\\w*)&Rev_(?<rev>\\w*)#(?<serial>\\w*)&.*}(?<volLabel>\\w*)_(?<volId>\\d*))";
+                    Matcher matcher = Pattern.compile(pattern).matcher(key);
+                    if (matcher.find()) {
+                        String ven = matcher.group("ven");
+                        String prod = matcher.group("prod");
+                        String rev = matcher.group("rev");
+                        String serial = matcher.group("serial");
+                        String vollable = matcher.group("volLable");
+                        String volId = matcher.group("volId");
+                    }
+                } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("Анализ ветки {} прерван: {}", REG_KEY_EMDMGMT, e.getLocalizedMessage());
+            LOGGER.debug("{}", e);
+        }
+        return null;
+    }
+
+    /**
      * Получить результат анализа реестра. Результат содержит в себе все данные, которые удалось получить путем чтения
      * реестра.
      *
@@ -340,7 +381,7 @@ public class RegistryAnalyzer implements Analyzer {
     public List<UserProfile> getUserProfileList() {
         List<UserProfile> userProfileList = new ArrayList<>();
         try {
-            List<String> profileRegKeys = WinRegReader.getSubkeys(REG_PROFILE_LIST);
+            List<String> profileRegKeys = WinRegReader.getSubkeys(REG_KEY_PROFILE_LIST);
             userProfileList = profileRegKeys.stream()
                     .map(profile -> {
                         String profileImagePath = WinRegReader.getValue(profile, "ProfileImagePath").orElseThrow();
