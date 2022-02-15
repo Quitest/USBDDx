@@ -16,7 +16,7 @@ class IgnoreNullBeanUtilsBeanTest {
     private final ArrayList<UserProfile> userList = new ArrayList<>();
     private final LocalDateTime dateTime = LocalDateTime.now();
     private final USBDevice control = USBDevice.getBuilder()
-            .withVolumeName("oldVolume")
+            .addVolumeLabel("oldVolume")
             .withSerial("1234Serial")
             .withRevision("PSV")
             .withDateTimeFirstInstall(dateTime)
@@ -26,7 +26,7 @@ class IgnoreNullBeanUtilsBeanTest {
             .withUserProfileList(userList)
             .build();
     private final USBDevice src = USBDevice.getBuilder()
-            .withVolumeName("")
+            .addVolumeLabel("")
             .withSerial("1234Serial")
             .withRevision(null)
             .withDateTimeFirstInstall(LocalDateTime.MIN)
@@ -40,7 +40,7 @@ class IgnoreNullBeanUtilsBeanTest {
     @DisplayName("Проверка корректности копирования ненулевых, непустых свойств объекта")
     void copyProperty() throws InvocationTargetException, IllegalAccessException {
         USBDevice dst = USBDevice.getBuilder()
-                .withVolumeName("oldVolume")
+                .addVolumeLabel("oldVolume")
                 .withSerial(null)
                 .withRevision("PSV")
                 .withDateTimeFirstInstall(dateTime)

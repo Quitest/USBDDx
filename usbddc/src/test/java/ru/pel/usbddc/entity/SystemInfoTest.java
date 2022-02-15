@@ -25,7 +25,7 @@ class SystemInfoTest {
                 .withVidPid("125f", "312b")
                 .withRevision("0.00")
                 .withSerial(SERIAL)
-                .withVolumeName("My flash").build();
+                .addVolumeLabel("My flash").build();
         map1 = new HashMap<>();
         map1.put(SERIAL, device1);
 

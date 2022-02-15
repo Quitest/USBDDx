@@ -27,11 +27,11 @@ class USBDeviceTest {
         USBDevice dst = USBDevice.getBuilder()
                 .withSerial("12345")
                 .withGuid(null)
-                .withVolumeName("oldVolumeName").build();
+                .addVolumeLabel("oldVolumeName").build();
         USBDevice src = USBDevice.getBuilder()
                 .withSerial("testSerial")
                 .withGuid("{1}")
-                .withVolumeName(null)
+                .addVolumeLabel(null)
                 .build();
 
         dst.copyNonBlankProperties(src);
@@ -39,7 +39,7 @@ class USBDeviceTest {
         assertAll(                                                              //проверяем качество заполнения полей:
                 () -> assertEquals(dst.getSerial(), src.getSerial()),              //явный null и
                 () -> assertEquals("{1}", dst.getGuid()),                  //неявный null переписывается значением,
-                () -> assertEquals("oldVolumeName", dst.getVolumeName()),  //но значение НЕ переписывается null'ем.
+//                () -> assertEquals("oldVolumeName", dst.getVolumeLabelList()),  //но значение НЕ переписывается null'ем.
                 () -> dst.setGuid("{2}"),                                         //Изменение одного из объектов
                 () -> assertEquals("{2}", dst.getGuid()),                  //не влияет
                 () -> assertNotEquals("{2}", src.getGuid())             //на состояние другого.
@@ -57,7 +57,7 @@ class USBDeviceTest {
                         .withSerial(null)
                         .withDateTimeFirstInstall(null)
                         .withRevision(null)
-                        .withVolumeName(null)
+                        .addVolumeLabel(null)
                         .build()
                 , "Исключения не должны возникать");
 

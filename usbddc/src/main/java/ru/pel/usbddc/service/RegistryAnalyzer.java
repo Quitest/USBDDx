@@ -171,7 +171,8 @@ public class RegistryAnalyzer implements Analyzer {
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить поле Friendly name. Причина {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
         return usbDeviceMap;
     }
@@ -192,7 +193,8 @@ public class RegistryAnalyzer implements Analyzer {
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых ТЕКУЩИМ пользователем. Причина: {}",
                     e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
         return result;
     }
@@ -230,6 +232,7 @@ public class RegistryAnalyzer implements Analyzer {
             LOGGER.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых пользователем {}. Причина: {}",
                     username, e.getLocalizedMessage());
             LOGGER.debug("{}", e.toString());
+            Thread.currentThread().interrupt();
         }
         return guidList;
     }
@@ -256,19 +259,33 @@ public class RegistryAnalyzer implements Analyzer {
                         String prod = matcher.group("prod");
                         String rev = matcher.group("rev");
                         String serial = matcher.group("serial");
-                        String vollable = matcher.group("volLable");
-                        String volId = matcher.group("volId");
+                        String volLabel = matcher.group("volLabel");
+                        int volumeId = Integer.parseInt(matcher.group("volId"));
+                        USBDevice tmp = USBDevice.getBuilder()
+                                .withRevision(rev)
+                                .withSerial(serial)
+                                .addVolumeLabel(volLabel)
+                                .addVolumeId(volumeId)
+                                .build();
+
+                        usbDeviceMap.merge(serial,tmp,(dst,src)->{
+                            dst.addVolumeLabel(volLabel);
+                            dst.addVolumeId(volumeId);
+                            return dst;
+                        });
                     }
-                } catch (IllegalStateException e) {
-                    e.printStackTrace();
+                } catch (IllegalStateException | NoSuchElementException e) {
+                    LOGGER.warn("Запись об устройстве не удалось распознать.\n\tЗапись: {}\n\tПричина: {}",key,e.getLocalizedMessage());
+                    LOGGER.debug("{}", e);
                 }
             }
 
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Анализ ветки {} прерван: {}", REG_KEY_EMDMGMT, e.getLocalizedMessage());
             LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
-        return null;
+        return usbDeviceMap;
     }
 
     /**
@@ -322,6 +339,7 @@ public class RegistryAnalyzer implements Analyzer {
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         return usbDevices;
     }
@@ -363,6 +381,7 @@ public class RegistryAnalyzer implements Analyzer {
             LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
                     "Причина: {}", e.getLocalizedMessage());
             LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
         return usbDeviceMap;
     }
@@ -398,7 +417,8 @@ public class RegistryAnalyzer implements Analyzer {
                     .collect(Collectors.toList());
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить список профилей в системе. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
         return userProfileList;
     }
@@ -463,10 +483,11 @@ public class RegistryAnalyzer implements Analyzer {
                     String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
                     USBDevice tmp = USBDevice.getBuilder()
                             .withSerial(serial.get())
-                            .withVolumeName(volumeName).build();
+                            .addVolumeLabel(volumeName).build();
 
                     usbDeviceMap.merge(serial.get(), tmp, (dst, src) -> {
-                        dst.setVolumeName(src.getVolumeName());
+//                        dst.setVolumeLabel(src.getVolumeLabel());
+                        dst.addVolumeLabel(volumeName);
                         return dst;
                     });
                 } else {
@@ -486,7 +507,7 @@ public class RegistryAnalyzer implements Analyzer {
                         USBDevice tmp = USBDevice.getBuilder()
                                 .withVidPid(newVid, newPid)
                                 .withSerial(newSerial)
-                                .withVolumeName(volumeName).build();
+                                .addVolumeLabel(volumeName).build();
                         //FIXME рассмотреть вариант использования ObjectMapper
                         usbDeviceMap.merge(newSerial, tmp, (dst, src) -> {
                             dst.setSerial(src.getSerial());
@@ -503,7 +524,8 @@ public class RegistryAnalyzer implements Analyzer {
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить метку для устройства. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
 
         return usbDeviceMap;

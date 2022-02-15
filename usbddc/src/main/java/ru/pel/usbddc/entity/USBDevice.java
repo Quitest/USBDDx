@@ -38,10 +38,18 @@ public class USBDevice {
     private String serial = "";
     private String vendorName = "";
     private String vid = "";
-    private String volumeName = "";
+    private List<String> volumeLabelList = new ArrayList<>();
     private String revision = "";
-    /** Источник данных: {@code HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR\<XXX>\<SERIAL>\Device Parameters\Partmgr} параметр {@code DiskId}*/
+    /**
+     * Источник данных: {@code HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR\<XXX>\<SERIAL>\Device Parameters\Partmgr} параметр {@code DiskId}
+     */
     private String diskId = "";
+    /**
+     * Список серийных номеров томов, с которыми устройство когда-либо подключалось к системе.
+     * При форматировании, как правило, меняется. Источник: последняя (после символа "_") цифра каждого подраздела ветки
+     * {@code HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\EMDMgmt}
+     */
+    private List<Integer> volumeIdList = new ArrayList<>();
     private LocalDateTime dateTimeFirstInstall = LocalDateTime.MIN;
     private boolean isSerialOSGenerated = true;
     private List<UserProfile> userAccountsList = new ArrayList<>();
@@ -55,6 +63,14 @@ public class USBDevice {
 
     public void addUserProfile(UserProfile userProfile) {
         userAccountsList.add(userProfile);
+    }
+
+    public void addVolumeId(int volumeId) {
+        volumeIdList.add(volumeId);
+    }
+
+    public void addVolumeLabel(String volumeLabel) {
+        volumeLabelList.add(volumeLabel);
     }
 
     /**
@@ -81,12 +97,12 @@ public class USBDevice {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         USBDevice usbDevice = (USBDevice) o;
-        return isSerialOSGenerated == usbDevice.isSerialOSGenerated && Objects.equals(friendlyName, usbDevice.friendlyName) && Objects.equals(guid, usbDevice.guid) && Objects.equals(pid, usbDevice.pid) && Objects.equals(productName, usbDevice.productName) && Objects.equals(serial, usbDevice.serial) && Objects.equals(vendorName, usbDevice.vendorName) && Objects.equals(vid, usbDevice.vid) && Objects.equals(volumeName, usbDevice.volumeName) && Objects.equals(revision, usbDevice.revision) && Objects.equals(userAccountsList, usbDevice.userAccountsList);
+        return isSerialOSGenerated == usbDevice.isSerialOSGenerated && Objects.equals(friendlyName, usbDevice.friendlyName) && Objects.equals(guid, usbDevice.guid) && Objects.equals(pid, usbDevice.pid) && Objects.equals(productName, usbDevice.productName) && Objects.equals(serial, usbDevice.serial) && Objects.equals(vendorName, usbDevice.vendorName) && Objects.equals(vid, usbDevice.vid) && Objects.equals(volumeLabelList, usbDevice.volumeLabelList) && Objects.equals(revision, usbDevice.revision) && Objects.equals(userAccountsList, usbDevice.userAccountsList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeName, revision, isSerialOSGenerated, userAccountsList);
+        return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeLabelList, revision, isSerialOSGenerated, userAccountsList);
     }
 
     /**
@@ -137,6 +153,22 @@ public class USBDevice {
             newUsbDevice = new USBDevice();
         }
 
+        /**
+         * Добавить дополнительный ID (серийный номер) тома диска.
+         *
+         * @param volumeId ID (серийный номер) тома.
+         * @return
+         */
+        public Builder addVolumeId(int volumeId) {
+            newUsbDevice.volumeIdList.add(volumeId);
+            return this;
+        }
+
+        public Builder addVolumeLabel(String volumeName) {
+            newUsbDevice.volumeLabelList.add(Objects.requireNonNullElse(volumeName, ""));
+            return this;
+        }
+
         public USBDevice build() {
             return newUsbDevice;
         }
@@ -175,6 +207,14 @@ public class USBDevice {
             return this;
         }
 
+        //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
+        // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
+
+        public Builder withDiskId(String diskId) {
+            newUsbDevice.diskId = Objects.requireNonNullElse(diskId, "");
+            return this;
+        }
+
         public Builder withFriendlyName(String friendlyName) {
             newUsbDevice.friendlyName = Objects.requireNonNullElse(friendlyName, "");
             return this;
@@ -184,9 +224,6 @@ public class USBDevice {
             newUsbDevice.guid = Objects.requireNonNullElse(guid, "");
             return this;
         }
-
-        //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
-        // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
 
         public Builder withRevision(String rev) {
             newUsbDevice.revision = Objects.requireNonNullElse(rev, "");
@@ -259,7 +296,6 @@ public class USBDevice {
                     }
                     currStr = usbIdsReader.readLine();
                 }
-
             } catch (IOException e) {
                 LOGGER.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
                         newUsbDevice.vid, newUsbDevice.vid, e.getLocalizedMessage());
@@ -267,17 +303,6 @@ public class USBDevice {
                 newUsbDevice.productName = "undef.";
                 newUsbDevice.vendorName = "undef.";
             }
-
-            return this;
-        }
-
-        public Builder withVolumeName(String volumeName) {
-            newUsbDevice.volumeName = Objects.requireNonNullElse(volumeName, "");
-            return this;
-        }
-
-        public Builder withDiskId(String diskId){
-            newUsbDevice.diskId = Objects.requireNonNullElse(diskId, "");
             return this;
         }
     }

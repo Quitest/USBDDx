@@ -137,7 +137,7 @@ public class MainFrame extends JFrame {
                     data.add(device.getVid());
                     data.add(device.getProductName());
                     data.add(device.getVendorName());
-                    data.add(device.getVolumeName());
+                    data.add(device.getVolumeLabelList());
                     data.add(device.getRevision());
                     data.add(device.getDateTimeFirstInstall());
                     data.add(device.getUserAccountsList());
