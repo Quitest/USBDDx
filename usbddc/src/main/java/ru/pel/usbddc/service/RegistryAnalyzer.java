@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 /**
@@ -381,16 +382,18 @@ public class RegistryAnalyzer implements Analyzer {
         try {
             List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
             for (String deviceEntry : deviceList) {
-                Optional<String> serial = usbDeviceMap.keySet().stream()
-//                        .filter(s -> deviceEntry.contains("#" + s)) //что бы уменьшить количество ложно-положительных совпадений
-                        //вводится неуникальный признак начала серийника - #.
-//                        .filter(s->deviceEntry.matches("#"+s+"[#&]?.*"))
-                        .filter(s->{
-                            String r1 = "(?i).*#" + s + "[#&].*";
-                            String r2 = ".*#" + s + "$";
-                            return deviceEntry.matches(r1);
-                        })
-                        .findFirst();
+                Optional<String> serial = Optional.empty();
+                try {
+                    serial = usbDeviceMap.keySet().stream()
+                            .filter(s -> deviceEntry.matches("(?i).*#" + s + "[#&].*"))
+                            .findFirst();
+                }catch (PatternSyntaxException e){
+                    //Т.к. regexp формируется за счет строковой переменной, которая может в себе содержать весь набор символов,
+                    // в том числе и символы, влияющие на обработку выражения, необходимо учесть высокую вероятность
+                    // построения некорректного regexp.
+                    LOGGER.error("ОШИБКА при попытке определить метку тома: {}", e.getLocalizedMessage());
+                    LOGGER.debug("{}",e);
+                }
                 if (serial.isPresent()) {
                     String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
                     USBDevice tmp = USBDevice.getBuilder()
