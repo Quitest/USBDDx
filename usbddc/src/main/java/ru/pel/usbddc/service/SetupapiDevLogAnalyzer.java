@@ -143,9 +143,9 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
                             timeStamp = LocalDateTime.parse(currStr, DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"));
                         }
 
-                        USBDevice tmp = USBDevice.getBuilder()
-                                .withSerial(serial)
-                                .withDateTimeFirstInstall(timeStamp).build();
+                        USBDevice tmp = new USBDevice()
+                                .setSerial(serial)
+                                .setDateTimeFirstInstall(timeStamp);
 
                         usbDeviceMap.merge(serial, tmp, (dst, src) -> {
                             if (dst.getDateTimeFirstInstall().equals(LocalDateTime.MIN)) {
@@ -172,7 +172,6 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
      * @return серийный номер или {@code <SERIAL IS NOT PARSED IN LOG>}, если подходящего серийника нет.
      */
     private String parseSerial(String str) {
-
         String serial = Arrays.stream(str.split("#"))
                 .filter(w -> w.charAt(1) == '&' || w.charAt(w.length() - 2) == '&')
                 .map(s -> s.charAt(s.length() - 2) == '&' ?       //Имеется ли суффикс по типу "&0"?

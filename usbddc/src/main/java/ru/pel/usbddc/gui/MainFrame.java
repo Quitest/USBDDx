@@ -60,7 +60,7 @@ public class MainFrame extends JFrame {
 
         this.setContentPane(mainPanel);
         String[] header = new String[]{"№", "Serial", "Generated", "Friendly name", "PID", "VID",
-                "Product name", "Vendor name", "Volume name", "Revision", "First install",
+                "Product name","Product name by Registry", "Vendor name", "Vendor name by Registry", "Volume name", "Volume ID", "Revision", "First install",
                 "User accounts list", "GUID"};
         tableModel.setColumnIdentifiers(header);
         devicesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -136,8 +136,11 @@ public class MainFrame extends JFrame {
                     data.add(device.getPid());
                     data.add(device.getVid());
                     data.add(device.getProductName());
+                    data.add(device.getProductNameByRegistry());
                     data.add(device.getVendorName());
+                    data.add(device.getVendorNameByRegistry());
                     data.add(device.getVolumeLabelList());
+                    data.add(device.getVolumeIdList());
                     data.add(device.getRevision());
                     data.add(device.getDateTimeFirstInstall());
                     data.add(device.getUserAccountsList());

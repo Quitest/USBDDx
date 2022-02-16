@@ -16,28 +16,27 @@ class USBDeviceTest {
 
     @BeforeAll
     static void beforeAll() {
-        testUsbDevice = USBDevice.getBuilder()
-                .withSerial(SERIAL)
-                .withVidPid(VID, PID).build();
+        testUsbDevice = new USBDevice()
+                .setSerial(SERIAL)
+                .setVidPid(VID, PID);
     }
 
     @Test
     @DisplayName("Копирование не нулевых полей")
     void copyNonNullProperties() {
-        USBDevice dst = USBDevice.getBuilder()
-                .withSerial("12345")
-                .withGuid(null)
-                .addVolumeLabel("oldVolumeName").build();
-        USBDevice src = USBDevice.getBuilder()
-                .withSerial("testSerial")
-                .withGuid("{1}")
-                .addVolumeLabel(null)
-                .build();
+        USBDevice dst = new USBDevice()
+                .setSerial("12345")
+//                .setGuid(null)
+                .addVolumeLabel("oldVolumeName");
+        USBDevice src = new USBDevice()
+                .setSerial(null)
+                .setGuid("{1}")
+                .addVolumeLabel(null);
 
         dst.copyNonBlankProperties(src);
 
         assertAll(                                                              //проверяем качество заполнения полей:
-                () -> assertEquals(dst.getSerial(), src.getSerial()),              //явный null и
+                () -> assertEquals("12345", dst.getSerial()),              //явный null и
                 () -> assertEquals("{1}", dst.getGuid()),                  //неявный null переписывается значением,
 //                () -> assertEquals("oldVolumeName", dst.getVolumeLabelList()),  //но значение НЕ переписывается null'ем.
                 () -> dst.setGuid("{2}"),                                         //Изменение одного из объектов
@@ -49,16 +48,15 @@ class USBDeviceTest {
     @Test
     @DisplayName("Создание объекта, передавая null-значения")
     void creatingUSBDeviceWithNullProperties() {
-        assertDoesNotThrow(() -> USBDevice.getBuilder()
-                        .withUserProfileList(null)
-                        .withFriendlyName(null)
-                        .withVidPid(null, null)
-                        .withGuid(null)
-                        .withSerial(null)
-                        .withDateTimeFirstInstall(null)
-                        .withRevision(null)
-                        .addVolumeLabel(null)
-                        .build()
+        assertDoesNotThrow(() -> new USBDevice()
+                        .setUserAccountsList(null)
+                        .setFriendlyName(null)
+                        .setVidPid(null, null)
+                        .setGuid(null)
+                        .setSerial(null)
+                        .setDateTimeFirstInstall(null)
+                        .setRevision(null)
+                        .addVolumeLabel(null) //FIXME вероятно надо setVolumeLabel
                 , "Исключения не должны возникать");
 
     }
@@ -74,10 +72,10 @@ class USBDeviceTest {
     @Test
     @DisplayName("Проверка алгоритма определения типа серийного номера (сгенерирован ОС или нет)")
     void isSerialOSGenerated() {
-        USBDevice OSGeneratedSerial1 = USBDevice.getBuilder().withSerial("0&123456789").build();
-        USBDevice OSGeneratedSerial2 = USBDevice.getBuilder().withSerial("0&123456789&0").build();
-        USBDevice vendorGeneratedSerial1 = USBDevice.getBuilder().withSerial("0123456789").build();
-        USBDevice vendorGeneratedSerial2 = USBDevice.getBuilder().withSerial("0123456789&0").build();
+        USBDevice OSGeneratedSerial1 = new USBDevice().setSerial("0&123456789");
+        USBDevice OSGeneratedSerial2 = new USBDevice().setSerial("0&123456789&0");
+        USBDevice vendorGeneratedSerial1 = new USBDevice().setSerial("0123456789");
+        USBDevice vendorGeneratedSerial2 = new USBDevice().setSerial("0123456789&0");
 
         assertAll(
                 () -> assertTrue(OSGeneratedSerial1.isSerialOSGenerated(), "Символ '&' ДОЛЖЕН стоять во второй позиции"),
@@ -91,12 +89,12 @@ class USBDeviceTest {
     @DisplayName("Проверка эквивалентности объектов")
     void testEquals() {
         USBDevice sameUsbDevice = testUsbDevice;
-        USBDevice copyOfTestUsbDevice = USBDevice.getBuilder()
-                .withSerial(SERIAL)
-                .withVidPid(VID, PID).build();
-        USBDevice otherUsbDevice = USBDevice.getBuilder()
-                .withSerial("other" + SERIAL)
-                .withVidPid(VID, PID).build();
+        USBDevice copyOfTestUsbDevice = new USBDevice()
+                .setSerial(SERIAL)
+                .setVidPid(VID, PID);
+        USBDevice otherUsbDevice = new USBDevice()
+                .setSerial("other" + SERIAL)
+                .setVidPid(VID, PID);
 
         assertAll(
                 () -> assertEquals(testUsbDevice, sameUsbDevice, "Переменные должны ссылаться на один объект"),

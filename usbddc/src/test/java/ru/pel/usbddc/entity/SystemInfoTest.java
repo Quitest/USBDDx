@@ -18,21 +18,21 @@ class SystemInfoTest {
 
     @BeforeAll
     static void init() {
-        USBDevice device1 = USBDevice.getBuilder()
-                .withDateTimeFirstInstall(LocalDateTime.MIN)
-                .withFriendlyName("ADATA USB Flash Drive USB Device")
-                .withGuid("{5405623b-31de-11e5-8295-54a0503930d0}")
-                .withVidPid("125f", "312b")
-                .withRevision("0.00")
-                .withSerial(SERIAL)
-                .addVolumeLabel("My flash").build();
+//        USBDevice device1 = USBDevice.getBuilder()
+        USBDevice device1 = new USBDevice()
+                .setDateTimeFirstInstall(LocalDateTime.MIN)
+                .setFriendlyName("ADATA USB Flash Drive USB Device")
+                .setGuid("{5405623b-31de-11e5-8295-54a0503930d0}")
+                .setVidPid("125f", "312b")
+                .setRevision("0.00")
+                .setSerial(SERIAL)
+                .addVolumeLabel("My flash");
         map1 = new HashMap<>();
         map1.put(SERIAL, device1);
 
-        USBDevice device2 = USBDevice.getBuilder()
-                .withDateTimeFirstInstall(INSTALL_DATE)
-                .withSerial(SERIAL)
-                .build();
+        USBDevice device2 = new USBDevice()
+                .setDateTimeFirstInstall(INSTALL_DATE)
+                .setSerial(SERIAL);
         map2 = new HashMap<>();
         map2.put(SERIAL, device2);
 
