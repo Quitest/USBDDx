@@ -49,7 +49,7 @@ public class USBDevice {
      * При форматировании, как правило, меняется. Источник: последняя (после символа "_") цифра каждого подраздела ветки
      * {@code HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\EMDMgmt}
      */
-    private List<Integer> volumeIdList = new ArrayList<>();
+    private List<Long> volumeIdList = new ArrayList<>();
     private LocalDateTime dateTimeFirstInstall = LocalDateTime.MIN;
     private boolean isSerialOSGenerated = true;
     private List<UserProfile> userAccountsList = new ArrayList<>();
@@ -65,7 +65,7 @@ public class USBDevice {
         userAccountsList.add(userProfile);
     }
 
-    public void addVolumeId(int volumeId) {
+    public void addVolumeId(long volumeId) {
         volumeIdList.add(volumeId);
     }
 
@@ -159,7 +159,7 @@ public class USBDevice {
          * @param volumeId ID (серийный номер) тома.
          * @return
          */
-        public Builder addVolumeId(int volumeId) {
+        public Builder addVolumeId(long volumeId) {
             newUsbDevice.volumeIdList.add(volumeId);
             return this;
         }
