@@ -75,7 +75,7 @@ public class RegistryAnalyzer implements Analyzer {
             //FIXME заменить код на метод копирования_ненулевых_свойств()
             USBDevice tmp = usbDeviceMap.get(serial);
             if (tmp == null) {
-                usbDeviceMap.put(serial, USBDevice.getBuilder().withSerial(serial).withGuid(deviceGuid).build());
+                usbDeviceMap.put(serial, new USBDevice().setSerial(serial).setGuid(deviceGuid));
             } else {
                 tmp.setGuid(deviceGuid);
                 usbDeviceMap.put(serial, tmp);
@@ -157,11 +157,10 @@ public class RegistryAnalyzer implements Analyzer {
                     String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
                     String diskId = WinRegReader.getValue(serialKey + "\\Device Parameters\\Partmgr", "DiskId").orElse("<не доступно>");
 
-                    USBDevice tmp = USBDevice.getBuilder()
-                            .withRevision(revision)
-                            .withFriendlyName(friendlyName)
-                            .withDiskId(diskId)
-                            .build();
+                    USBDevice tmp = new USBDevice()
+                            .setRevision(revision)
+                            .setFriendlyName(friendlyName)
+                            .setDiskId(diskId);
 
                     usbDeviceMap.merge(serial, tmp, (usbDevice, src) -> {
                         usbDevice.setFriendlyName(src.getFriendlyName());
@@ -252,7 +251,7 @@ public class RegistryAnalyzer implements Analyzer {
 //            VOL [диск:]
             for (String key : keyList) {
                 try {
-                    String pattern = ".*&Ven_(?<ven>\\p{Graph}*)&Prod_(?<prod>\\p{Graph}*)(&Rev_(?<rev>\\p{Graph}*))?#(?<serial>\\w&?\\w*)(&\\d)?.*}(?<volLabel>\\p{Print}*)_(?<volId>\\d*)";
+                    String pattern = ".*&Ven_(?<ven>\\p{Graph}*)&Prod_(?<prod>[\\p{Graph}&&[^&]]*)(&Rev_(?<rev>\\p{Graph}*))?#(?<serial>\\w&?\\w*)(&\\d)?.*}(?<volLabel>\\p{Print}*)_(?<volId>\\d*)";
                     Matcher matcher = Pattern.compile(pattern).matcher(key);
                     boolean matcherFindResult = matcher.find();
                     if (matcherFindResult) {
@@ -262,14 +261,13 @@ public class RegistryAnalyzer implements Analyzer {
                         String serial = matcher.group("serial");
                         String volLabel = matcher.group("volLabel");
                         long volumeId = Long.parseLong(matcher.group("volId"));
-                        USBDevice tmp = USBDevice.getBuilder()
-                                .withRevision(rev)
-                                .withSerial(serial)
+                        USBDevice tmp = new USBDevice()
+                                .setRevision(rev)
+                                .setSerial(serial)
+                                .setProductNameByRegistry(prod)
+                                .setVendorNameByRegistry(ven)
                                 .addVolumeLabel(volLabel)
-                                .addVolumeId(volumeId)
-                                .withProductNameByRegistry(prod)
-                                .withVendorNameByRegistry(ven)
-                                .build();
+                                .addVolumeId(volumeId);
 
                         usbDeviceMap.merge(serial,tmp,(dst,src)->{
                             dst.addVolumeLabel(volLabel);
@@ -316,35 +314,35 @@ public class RegistryAnalyzer implements Analyzer {
         return usbDeviceMap;
     }
 
-    /**
-     * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
-     * автоматически из полей реестра имеющих такие же наименования.
-     *
-     * @return Список USBDevice с полями заполненными из ветки реестра HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
-     * @deprecated использует рефлексию. Тесты на корректность работы не проходил.
-     */
-    @Deprecated(forRemoval = true)
-    public List<USBDevice> getUSBDevicesWithAutoFilling() {
-        List<USBDevice> usbDevices = new ArrayList<>();
-        try {
-            List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
-            USBDevice.setUsbIds("usb.ids");
-
-            for (String pidvid : subkeys) {
-                List<String> serials = WinRegReader.getSubkeys(pidvid);
-                for (String serial : serials) {
-                    Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
-                    USBDevice.Builder currDevice = USBDevice.getBuilder();
-                    valueList.forEach(currDevice::setField);
-                    usbDevices.add(currDevice.build());
-                }
-            }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            Thread.currentThread().interrupt();
-        }
-        return usbDevices;
-    }
+//    /**
+//     * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
+//     * автоматически из полей реестра имеющих такие же наименования.
+//     *
+//     * @return Список USBDevice с полями заполненными из ветки реестра HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
+//     * @deprecated использует рефлексию. Тесты на корректность работы не проходил.
+//     */
+//    @Deprecated(forRemoval = true)
+//    public List<USBDevice> getUSBDevicesWithAutoFilling() {
+//        List<USBDevice> usbDevices = new ArrayList<>();
+//        try {
+//            List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
+//            USBDevice.setUsbIds("usb.ids");
+//
+//            for (String pidvid : subkeys) {
+//                List<String> serials = WinRegReader.getSubkeys(pidvid);
+//                for (String serial : serials) {
+//                    Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
+//                    USBDevice.Builder currDevice = USBDevice.getBuilder();
+//                    valueList.forEach(currDevice::setField);
+//                    usbDevices.add(currDevice.build());
+//                }
+//            }
+//        } catch (IOException | InterruptedException e) {
+//            e.printStackTrace();
+//            Thread.currentThread().interrupt();
+//        }
+//        return usbDevices;
+//    }
 
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
@@ -364,10 +362,9 @@ public class RegistryAnalyzer implements Analyzer {
                     String[] tmpArr = serialKey.split("\\\\");
                     String serial = tmpArr[tmpArr.length - 1];
 
-                    USBDevice currUsbDev = USBDevice.getBuilder()
-                            .withSerial(serial)
-                            .withVidPid(vid, pid)
-                            .build();
+                    USBDevice currUsbDev = new USBDevice()
+                            .setSerial(serial)
+                            .setVidPid(vid, pid);
 
                     usbDeviceMap.merge(serial, currUsbDev, (dst, src) -> {
                         dst.setSerial(src.getSerial());
@@ -483,9 +480,9 @@ public class RegistryAnalyzer implements Analyzer {
                 }
                 if (serial.isPresent()) {
                     String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
-                    USBDevice tmp = USBDevice.getBuilder()
-                            .withSerial(serial.get())
-                            .addVolumeLabel(volumeName).build();
+                    USBDevice tmp = new USBDevice()
+                            .setSerial(serial.get())
+                            .addVolumeLabel(volumeName);
 
                     usbDeviceMap.merge(serial.get(), tmp, (dst, src) -> {
                         dst.addVolumeLabel(volumeName);
@@ -505,10 +502,10 @@ public class RegistryAnalyzer implements Analyzer {
                                 .findFirst().orElseThrow();
                         String newSerial = stringList.get(stringList.size() - 1);
                         String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
-                        USBDevice tmp = USBDevice.getBuilder()
-                                .withVidPid(newVid, newPid)
-                                .withSerial(newSerial)
-                                .addVolumeLabel(volumeName).build();
+                        USBDevice tmp = new USBDevice()
+                                .setVidPid(newVid, newPid)
+                                .setSerial(newSerial)
+                                .addVolumeLabel(volumeName);
                         //FIXME рассмотреть вариант использования ObjectMapper
                         usbDeviceMap.merge(newSerial, tmp, (dst, src) -> {
                             dst.setSerial(src.getSerial());

@@ -15,40 +15,37 @@ import static org.hamcrest.Matchers.equalTo;
 class IgnoreNullBeanUtilsBeanTest {
     private final ArrayList<UserProfile> userList = new ArrayList<>();
     private final LocalDateTime dateTime = LocalDateTime.now();
-    private final USBDevice control = USBDevice.getBuilder()
+    private final USBDevice control = new USBDevice()
             .addVolumeLabel("oldVolume")
-            .withSerial("1234Serial")
-            .withRevision("PSV")
-            .withDateTimeFirstInstall(dateTime)
-            .withVidPid("1234", "abcd")
-            .withGuid("12345678-1234-1234-1234-1234567890ab")
-            .withFriendlyName(null)
-            .withUserProfileList(userList)
-            .build();
-    private final USBDevice src = USBDevice.getBuilder()
+            .setSerial("1234Serial")
+            .setRevision("PSV")
+            .setDateTimeFirstInstall(dateTime)
+            .setVidPid("1234", "abcd")
+            .setGuid("12345678-1234-1234-1234-1234567890ab")
+            .setFriendlyName(null)
+            .setUserAccountsList(userList);
+    private final USBDevice src = new USBDevice()
             .addVolumeLabel("")
-            .withSerial("1234Serial")
-            .withRevision(null)
-            .withDateTimeFirstInstall(LocalDateTime.MIN)
-            .withVidPid("", "")
-            .withGuid(null)
-            .withFriendlyName(null)
-            .withUserProfileList(userList)
-            .build();
+            .setSerial("1234Serial")
+            .setRevision(null)
+            .setDateTimeFirstInstall(LocalDateTime.MIN)
+            .setVidPid("", "")
+            .setGuid(null)
+            .setFriendlyName(null)
+            .setUserAccountsList(userList);
 
     @Test
     @DisplayName("Проверка корректности копирования ненулевых, непустых свойств объекта")
     void copyProperty() throws InvocationTargetException, IllegalAccessException {
-        USBDevice dst = USBDevice.getBuilder()
+        USBDevice dst = new USBDevice()
                 .addVolumeLabel("oldVolume")
-                .withSerial(null)
-                .withRevision("PSV")
-                .withDateTimeFirstInstall(dateTime)
-                .withVidPid("1234", "abcd")
-                .withGuid("12345678-1234-1234-1234-1234567890ab")
-                .withFriendlyName(null)
-                .withUserProfileList(null)
-                .build();
+                .setSerial(null)
+                .setRevision("PSV")
+                .setDateTimeFirstInstall(dateTime)
+                .setVidPid("1234", "abcd")
+                .setGuid("12345678-1234-1234-1234-1234567890ab")
+                .setFriendlyName(null)
+                .setUserAccountsList(null);
 
 
         new IgnoreNullBeanUtilsBean().copyProperties(dst, src);

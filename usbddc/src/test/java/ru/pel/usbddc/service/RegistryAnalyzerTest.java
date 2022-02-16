@@ -1,6 +1,5 @@
 package ru.pel.usbddc.service;
 
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +17,8 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RegistryAnalyzerTest {
-    private static Map<String, USBDevice> usbDeviceMap;
+    private static Map<String, USBDevice> allUsbDeviceMap;
+    private static Map<String, USBDevice> readyBoostDeviceMap;
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
@@ -47,7 +47,8 @@ class RegistryAnalyzerTest {
 
     @BeforeAll
     static void beforeAll() {
-        usbDeviceMap = new RegistryAnalyzer().getAnalysis(true);
+        allUsbDeviceMap = new RegistryAnalyzer().getAnalysis(true);
+        readyBoostDeviceMap = new RegistryAnalyzer().getReadyBoostDevices();
     }
 
     @Test
@@ -56,7 +57,7 @@ class RegistryAnalyzerTest {
         USBDevice usbDevice = new RegistryAnalyzer().associateSerialToGuid().entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(USBDevice.getBuilder().build());
+                .findFirst().orElse(/*USBDevice.getBuilder().build()*/new USBDevice());
 
         assertEquals(expectedGuid, usbDevice.getGuid());
     }
@@ -64,7 +65,7 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Определение устройств, подключенных текущим пользователем")
     void determineDeviceUsers() {
-        List<UserProfile> userAccountsList = usbDeviceMap.get(expectedSerial).getUserAccountsList();
+        List<UserProfile> userAccountsList = allUsbDeviceMap.get(expectedSerial).getUserAccountsList();
         String currentUserHomedir = System.getProperty("user.home");
         UserProfile user = userAccountsList.stream()
                 .filter(userProfile -> currentUserHomedir.equals(userProfile.getProfileImagePath().toString()))
@@ -74,20 +75,27 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    void getReadyBoostDevices() {
-        Map<String, USBDevice> devices = new RegistryAnalyzer().getReadyBoostDevices();
-        System.err.println("Найдено устройств: " +devices.size());
-        assertThat(devices.size(), greaterThanOrEqualTo(126));
-        List<USBDevice> usbDevices = devices.values().stream()
-                .filter(d -> d.getVolumeLabelList().size() > 1)
+    @DisplayName("Наполнение серийными номерами томов [volumeIdList]")
+    void volumeIdListContainsManyIds() {
+        List<USBDevice> usbDevices = readyBoostDeviceMap.values().stream()
+                .filter(dev -> dev.getVolumeIdList().size() > 1)
                 .toList();
-//        assertThat(usbDevices,contains());
+        assertThat(usbDevices, not(emptyIterable()));
+    }
+
+    @Test
+    @DisplayName("Наполнение метками томов [volumeLabelList]")
+    void volumeLabelListContainsManyLabel(){
+        List<USBDevice> usbDeviceList = readyBoostDeviceMap.values().stream()
+                .filter(usbDevice -> usbDevice.getVolumeLabelList().size() > 1)
+                .toList();
+        assertThat(usbDeviceList,not(emptyIterable()));
     }
 
     @Test
     @DisplayName("Получение информации о всех пользователях устройств")
     void findDevicesWithManyUsers() {
-        List<USBDevice> collect = usbDeviceMap.values().stream()
+        List<USBDevice> collect = allUsbDeviceMap.values().stream()
                 .filter(usbDevice -> usbDevice.getUserAccountsList().size() > 1)
                 .collect(Collectors.toList());
 
@@ -104,10 +112,10 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Поиск правильного GUID'а. Ожидается успех.")
     void getMountedDevicesTest() {
-        USBDevice usbDevice = usbDeviceMap.entrySet().stream()
+        USBDevice usbDevice = allUsbDeviceMap.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(USBDevice.getBuilder().build());
+                .findFirst().orElse(/*USBDevice.getBuilder().build()*/new USBDevice());
 
         assertEquals(expectedGuid, usbDevice.getGuid());
     }
@@ -156,7 +164,7 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Заполненность всех полей")
     void getRegistryAnalysisTest() {
-        USBDevice usbDevice = usbDeviceMap.get(expectedSerial);
+        USBDevice usbDevice = allUsbDeviceMap.get(expectedSerial);
         assertAll(
                 () -> assertNotEquals("", usbDevice.getSerial()),
                 () -> assertNotEquals("", usbDevice.getPid()),
@@ -230,10 +238,10 @@ class RegistryAnalyzerTest {
         Map<String, USBDevice> registryAnalysis3 = registryAnalyzer3.getAnalysis(false);
 
         assertAll(
-                () -> assertEquals(usbDeviceMap, registryAnalysis),
-                () -> assertEquals(usbDeviceMap, registryAnalysis1),
-                () -> assertEquals(usbDeviceMap, registryAnalysis2),
-                () -> assertEquals(usbDeviceMap, registryAnalysis3)
+                () -> assertEquals(allUsbDeviceMap, registryAnalysis),
+                () -> assertEquals(allUsbDeviceMap, registryAnalysis1),
+                () -> assertEquals(allUsbDeviceMap, registryAnalysis2),
+                () -> assertEquals(allUsbDeviceMap, registryAnalysis3)
         );
     }
 
@@ -242,9 +250,9 @@ class RegistryAnalyzerTest {
 //        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
 
 
-//        List<USBDevice> notEmptyVolumeName = usbDeviceMap.values().stream()
+//        List<USBDevice> notEmptyVolumeName = allUsbDeviceMap.values().stream()
 //                .filter(val -> !val.getVolumeLabel().isEmpty())
 //                .collect(Collectors.toList());
-//        assertEquals(expectedVolumeName, usbDeviceMap.get(expectedSerial).getVolumeLabel());
+//        assertEquals(expectedVolumeName, allUsbDeviceMap.get(expectedSerial).getVolumeLabel());
     }
 }

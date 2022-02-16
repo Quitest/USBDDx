@@ -9,6 +9,7 @@
     </appender>
 
     <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>
+    <logger name="ru.pel.usbddc.service.IgnoreNullBeanUtilsBean" level="debug"/>
     <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>
     <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="debug"/>
     <logger name="ru.pel.usbddc.service.OSInfoCollector" level="debug"/>
