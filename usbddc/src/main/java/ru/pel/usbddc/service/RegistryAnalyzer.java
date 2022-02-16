@@ -2,6 +2,7 @@ package ru.pel.usbddc.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.entity.ProductName;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
@@ -131,6 +132,7 @@ public class RegistryAnalyzer implements Analyzer {
 //                        "Причина: {}", e.getLocalizedMessage());
 //                LOGGER.debug("{}", e.toString());
 //            }
+            getReadyBoostDevices();
             associateSerialToGuid();
             determineDeviceUsers();
             getFriendlyName();
@@ -250,29 +252,35 @@ public class RegistryAnalyzer implements Analyzer {
 //            VOL [диск:]
             for (String key : keyList) {
                 try {
-                    //.*&(Ven_(\w*)&Prod_(\w*)&Rev_(\w*)#(\w*)&.*}(\w*)_\d*)
-                    //.*&(Ven_(?<ven>\w*)&Prod_(?<prod>\w*)&Rev_(?<rev>\w*)#(?<serial>\w*)&.*}(?<vollabel>\w*)_(?<volId>\d*))
-                    String pattern = ".*&(Ven_(?<ven>\\w*)&Prod_(?<prod>\\w*)&Rev_(?<rev>\\w*)#(?<serial>\\w*)&.*}(?<volLabel>\\w*)_(?<volId>\\d*))";
+                    String pattern = ".*&Ven_(?<ven>\\p{Graph}*)&Prod_(?<prod>\\p{Graph}*)(&Rev_(?<rev>\\p{Graph}*))?#(?<serial>\\w&?\\w*)(&\\d)?.*}(?<volLabel>\\p{Print}*)_(?<volId>\\d*)";
                     Matcher matcher = Pattern.compile(pattern).matcher(key);
-                    if (matcher.find()) {
+                    boolean matcherFindResult = matcher.find();
+                    if (matcherFindResult) {
                         String ven = matcher.group("ven");
                         String prod = matcher.group("prod");
                         String rev = matcher.group("rev");
                         String serial = matcher.group("serial");
                         String volLabel = matcher.group("volLabel");
-                        int volumeId = Integer.parseInt(matcher.group("volId"));
+                        long volumeId = Long.parseLong(matcher.group("volId"));
                         USBDevice tmp = USBDevice.getBuilder()
                                 .withRevision(rev)
                                 .withSerial(serial)
                                 .addVolumeLabel(volLabel)
                                 .addVolumeId(volumeId)
+                                .withProductNameByRegistry(prod)
+                                .withVendorNameByRegistry(ven)
                                 .build();
 
                         usbDeviceMap.merge(serial,tmp,(dst,src)->{
                             dst.addVolumeLabel(volLabel);
                             dst.addVolumeId(volumeId);
+                            dst.setVendorNameByRegistry(src.getVendorNameByRegistry());
+                            dst.setProductNameByRegistry(src.getProductNameByRegistry());
                             return dst;
                         });
+                    }
+                    else{
+                        LOGGER.warn("Запись пропущена - не соответствует паттерну:\n\t\tKey = {}", key);
                     }
                 } catch (IllegalStateException | NoSuchElementException e) {
                     LOGGER.warn("Запись об устройстве не удалось распознать.\n\tЗапись: {}\n\tПричина: {}",key,e.getLocalizedMessage());
@@ -299,13 +307,7 @@ public class RegistryAnalyzer implements Analyzer {
     @Deprecated(forRemoval = true)
     public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
-//            try {
             getUsbDevices();
-//            } catch (InvocationTargetException | IllegalAccessException e) {
-//                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
-//                        "Причина: {}", e.getLocalizedMessage());
-//                LOGGER.debug("{}", e.toString());
-//            }
             associateSerialToGuid();
             determineDeviceUsers();
             getFriendlyName();
@@ -486,7 +488,6 @@ public class RegistryAnalyzer implements Analyzer {
                             .addVolumeLabel(volumeName).build();
 
                     usbDeviceMap.merge(serial.get(), tmp, (dst, src) -> {
-//                        dst.setVolumeLabel(src.getVolumeLabel());
                         dst.addVolumeLabel(volumeName);
                         return dst;
                     });

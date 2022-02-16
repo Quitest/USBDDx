@@ -2,6 +2,7 @@ package ru.pel.usbddc.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
@@ -20,7 +21,7 @@ import java.util.*;
  * Хранит в себе сведения об устройстве, полученные из:
  * <ul>
  *     <li>реестра</li>
- *     <li>setupapi.dev.log (прим.: в текущей версии сведения не берутся из него)</li>
+ *     <li>setupapi.dev.log</li>
  * </ul>
  */
 
@@ -35,10 +36,12 @@ public class USBDevice {
     private String guid = "";
     private String pid = "";
     private String productName = "";
+    private String productNameByRegistry = "";
     private String serial = "";
     private String vendorName = "";
+    private String vendorNameByRegistry = "";
     private String vid = "";
-    private List<String> volumeLabelList = new ArrayList<>();
+    private Set<String> volumeLabelList = new HashSet<>();
     private String revision = "";
     /**
      * Источник данных: {@code HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR\<XXX>\<SERIAL>\Device Parameters\Partmgr} параметр {@code DiskId}
@@ -83,10 +86,12 @@ public class USBDevice {
      */
     public USBDevice copyNonBlankProperties(USBDevice src) {
         try {
+            //TODO PropertyUtilsBean(), вроде бы, при отсутствии необходимости преобразования типов быстрее - изучить и,
+            // если это подходит в этой ситуации, то использовать его.
             new IgnoreNullBeanUtilsBean().copyProperties(this, src);
         } catch (IllegalAccessException | InvocationTargetException e) {
             LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("{}", e);
         }
         return this;
     }
@@ -252,6 +257,16 @@ public class USBDevice {
 
         public Builder withUserProfileList(List<UserProfile> userProfileList) {
             newUsbDevice.userAccountsList = Objects.requireNonNullElse(userProfileList, new ArrayList<>());
+            return this;
+        }
+
+        public Builder withProductNameByRegistry(String productName){
+            newUsbDevice.productNameByRegistry = productName;
+            return this;
+        }
+
+        public Builder withVendorNameByRegistry(String vendorName){
+            newUsbDevice.vendorNameByRegistry = vendorName;
             return this;
         }
 

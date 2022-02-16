@@ -1,5 +1,6 @@
 package ru.pel.usbddc.service;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RegistryAnalyzerTest {
@@ -72,7 +75,13 @@ class RegistryAnalyzerTest {
 
     @Test
     void getReadyBoostDevices() {
-        new RegistryAnalyzer().getReadyBoostDevices();
+        Map<String, USBDevice> devices = new RegistryAnalyzer().getReadyBoostDevices();
+        System.err.println("Найдено устройств: " +devices.size());
+        assertThat(devices.size(), greaterThanOrEqualTo(126));
+        List<USBDevice> usbDevices = devices.values().stream()
+                .filter(d -> d.getVolumeLabelList().size() > 1)
+                .toList();
+//        assertThat(usbDevices,contains());
     }
 
     @Test
