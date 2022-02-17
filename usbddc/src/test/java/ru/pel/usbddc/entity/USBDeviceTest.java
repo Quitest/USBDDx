@@ -26,12 +26,12 @@ class USBDeviceTest {
     void copyNonNullProperties() {
         USBDevice dst = new USBDevice()
                 .setSerial("12345")
-//                .setGuid(null)
+                .setGuid(null)
                 .addVolumeLabel("oldVolumeName");
         USBDevice src = new USBDevice()
                 .setSerial(null)
-                .setGuid("{1}")
                 .addVolumeLabel(null);
+                src.setGuid("{1}");
 
         dst.copyNonBlankProperties(src);
 
@@ -52,7 +52,7 @@ class USBDeviceTest {
                         .setUserAccountsList(null)
                         .setFriendlyName(null)
                         .setVidPid(null, null)
-                        .setGuid(null)
+//                        .setGuid(null)
                         .setSerial(null)
                         .setDateTimeFirstInstall(null)
                         .setRevision(null)

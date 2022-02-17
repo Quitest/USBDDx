@@ -5,13 +5,11 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
-import ru.pel.usbddc.service.IgnoreNullBeanUtilsBean;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -80,20 +78,82 @@ public class USBDevice {
      * Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
      * текущем объекте свойство остается неизменным.
      *
+     * <p><strong>ВНИМАНИЕ!</strong> В случае изменения состава свойств необходимо руками исправлять копирование.
+     * При использовании BeanUtilsBean и PropertyUtilsBean от org.apache.commons копирование свойств не происходит,
+     * т.к. используются цепные сеттеры (chain setters). При использовании сеттеров с возвращаемым типом viod они
+     * работают отлично.
+     * </p>
+     *
      * @param src Устройство, свойства которого необходимо скопировать.
      * @return текущее устройство со свойствами, обновленными из src, если не произошло ошибок, иначе возвращает объект
      * в исходном состоянии.
      */
     public USBDevice copyNonBlankProperties(USBDevice src) {
-        try {
-            //TODO PropertyUtilsBean(), вроде бы, при отсутствии необходимости преобразования типов быстрее - изучить и,
-            // если это подходит в этой ситуации, то использовать его.
-            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
-            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+
+//        try {
+//            //TODO PropertyUtilsBean(), вроде бы, при отсутствии необходимости преобразования типов быстрее - изучить и,
+//            // если это подходит в этой ситуации, то использовать его.
+////            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
+//            new IgnoreNullPropertyUtilsBean().copyProperties(this, src);
+//            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
+//        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+//            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
+//            LOGGER.debug("{}", e);
+//        }
+        //TODO сделать логгирование для дебага - что бы проще было отлавливать нескопированные вновь добавленные свойства в будущем.
+        String srcFriendlyName = src.getFriendlyName();
+        if (srcFriendlyName != null && !srcFriendlyName.isBlank()) {
+            friendlyName = srcFriendlyName;
         }
+        String srcGuid = src.getGuid();
+        if (srcGuid != null && !srcGuid.isBlank()) {
+            guid = srcGuid;
+        }
+        String srcPid = src.getPid();
+        if (srcPid != null && !srcPid.isBlank()) {
+            this.pid = srcPid;
+        }
+        String srcProductName = src.getProductName();
+        if (srcProductName != null && !srcProductName.isBlank()) {
+            this.productName = srcProductName;
+        }
+        String srcProductNameByRegistry = src.getProductNameByRegistry();
+        if (srcProductNameByRegistry != null && !srcProductNameByRegistry.isBlank()) {
+            this.productNameByRegistry = srcProductNameByRegistry;
+        }
+        String srcSerial = src.getSerial();
+        if (srcSerial != null && !srcSerial.isBlank()) {
+            this.serial = srcSerial;
+        }
+        String srcVendorName = src.getVendorName();
+        if (srcVendorName != null && !srcVendorName.isBlank()) {
+            this.vendorName = srcVendorName;
+        }
+        String srcVendorNameByRegistry = src.getVendorNameByRegistry();
+        if (srcVendorNameByRegistry != null && !srcVendorNameByRegistry.isBlank()) {
+            this.vendorNameByRegistry = srcVendorNameByRegistry;
+        }
+        String srcVid = src.getVid();
+        if (srcVid != null && !srcVid.isBlank()) {
+            this.vid = srcVid;
+        }
+        String srcRevision = src.getRevision();
+        if (srcRevision != null && !srcRevision.isBlank()) {
+            this.revision = srcRevision;
+        }
+        String srcDiskId = src.getDiskId();
+        if (srcDiskId != null && !srcDiskId.isBlank()) {
+            this.diskId = srcDiskId;
+        }
+        LocalDateTime srcDateTimeFirstInstall = src.getDateTimeFirstInstall();
+        if (srcProductName != null && !srcDateTimeFirstInstall.isEqual(LocalDateTime.MIN)) {
+            this.dateTimeFirstInstall = srcDateTimeFirstInstall;
+        }
+
+        isSerialOSGenerated = src.isSerialOSGenerated();
+        volumeIdList.addAll(src.getVolumeIdList());
+        userAccountsList.addAll(src.getUserAccountsList());
+        volumeLabelList.addAll(src.getVolumeLabelList());
         return this;
     }
 
@@ -191,7 +251,7 @@ public class USBDevice {
      * @return возвращает билдер
      */
     public USBDevice setSerial(String serial) {
-        this.serial = Objects.requireNonNullElse(serial,"");
+        this.serial = Objects.requireNonNullElse(serial, "");
         //бывает что серийника нет вообще или при чтении данных серийником выступает набор бит, что бы корректно
         // найти и сравнить символ '&' введена проверка.
         if (this.serial.isBlank()) {
