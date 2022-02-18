@@ -33,7 +33,7 @@ class USBDeviceTest {
                 .addVolumeLabel(null);
                 src.setGuid("{1}");
 
-        dst.copyNonBlankProperties(src);
+        dst.mergeProperties(src);
 
         assertAll(                                                              //проверяем качество заполнения полей:
                 () -> assertEquals("12345", dst.getSerial()),              //явный null и

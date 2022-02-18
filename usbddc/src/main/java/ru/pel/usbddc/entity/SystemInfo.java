@@ -30,7 +30,7 @@ public class SystemInfo {
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
-                        USBDevice::copyNonBlankProperties
+                        USBDevice::mergeProperties
                 ));
         return this;
     }

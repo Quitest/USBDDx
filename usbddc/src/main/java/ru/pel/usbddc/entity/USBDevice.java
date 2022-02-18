@@ -75,103 +75,6 @@ public class USBDevice {
         return this;
     }
 
-    /**
-     * Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
-     * текущем объекте свойство остается неизменным.
-     *
-     * <p><strong>ВНИМАНИЕ!</strong> В случае изменения состава свойств необходимо руками исправлять копирование.
-     * При использовании BeanUtilsBean и PropertyUtilsBean от org.apache.commons копирование свойств не происходит,
-     * т.к. используются цепные сеттеры (chain setters). При использовании сеттеров с возвращаемым типом viod они
-     * работают отлично.
-     * </p>
-     *
-     * @param src Устройство, свойства которого необходимо скопировать.
-     * @return текущее устройство со свойствами, обновленными из src, если не произошло ошибок, иначе возвращает объект
-     * в исходном состоянии.
-     */
-    public USBDevice copyNonBlankProperties(USBDevice src) {
-
-//        try {
-//            //TODO PropertyUtilsBean(), вроде бы, при отсутствии необходимости преобразования типов быстрее - изучить и,
-//            // если это подходит в этой ситуации, то использовать его.
-////            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
-//            new IgnoreNullPropertyUtilsBean().copyProperties(this, src);
-//            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
-//        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-//            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
-//            LOGGER.debug("{}", e);
-//        }
-        //TODO сделать логгирование для дебага - что бы проще было отлавливать нескопированные вновь добавленные свойства в будущем.
-        String srcFriendlyName = src.getFriendlyName();
-        if (isNecessaryMerge(srcFriendlyName)) {
-            friendlyName = srcFriendlyName;
-        }
-        String srcGuid = src.getGuid();
-        if (isNecessaryMerge(srcGuid)) {
-            guid = srcGuid;
-        }
-        String srcPid = src.getPid();
-        if (isNecessaryMerge(srcPid)) {
-            this.pid = srcPid;
-        }
-        String srcProductName = src.getProductName();
-        if (isNecessaryMerge(srcProductName)) {
-            this.productName = srcProductName;
-        }
-        String srcProductNameByRegistry = src.getProductNameByRegistry();
-        if (isNecessaryMerge(srcProductNameByRegistry)) {
-            this.productNameByRegistry = srcProductNameByRegistry;
-        }
-        String srcSerial = src.getSerial();
-        if (isNecessaryMerge(srcSerial)) {
-            this.serial = srcSerial;
-        }
-        String srcVendorName = src.getVendorName();
-        if (isNecessaryMerge(srcVendorName)) {
-            this.vendorName = srcVendorName;
-        }
-        String srcVendorNameByRegistry = src.getVendorNameByRegistry();
-        if (isNecessaryMerge(srcVendorNameByRegistry)) {
-            this.vendorNameByRegistry = srcVendorNameByRegistry;
-        }
-        String srcVid = src.getVid();
-        if (isNecessaryMerge(srcVid)) {
-            this.vid = srcVid;
-        }
-        String srcRevision = src.getRevision();
-        if (isNecessaryMerge(srcRevision)) {
-            this.revision = srcRevision;
-        }
-        String srcDiskId = src.getDiskId();
-        if (isNecessaryMerge(srcDiskId)) {
-            this.diskId = srcDiskId;
-        }
-        LocalDateTime srcDateTimeFirstInstall = src.getDateTimeFirstInstall();
-        if (isNecessaryMerge(srcDateTimeFirstInstall)) {
-            this.dateTimeFirstInstall = srcDateTimeFirstInstall;
-        }
-
-        isSerialOSGenerated = src.isSerialOSGenerated();
-        //Выполняется прямое добавление элементов, потому что согласно документации на метод addAll(Collection c):
-        // 1. NPE выбрасывается, если src == null
-        // 2. NPE выбрасывается, если в src есть элементы равные null, а приемник не допускает наличие null-элементов.
-        volumeIdList.addAll(src.getVolumeIdList());
-        userAccountsList.addAll(src.getUserAccountsList());
-        volumeLabelList.addAll(src.getVolumeLabelList());
-        return this;
-    }
-
-    private boolean isNecessaryMerge(@NotNull String src){
-        return /*src != null &&*/ !src.isBlank();
-    }
-
-    private boolean isNecessaryMerge(@NotNull LocalDateTime src){
-        return src.isBefore(dateTimeFirstInstall) &&
-//                src != null &&
-                dateTimeFirstInstall.isEqual(LocalDateTime.MIN) &&
-                !src.isEqual(LocalDateTime.MIN);
-    }
-
     //См. https://github.com/Quitest/USBDDx/issues/47
     @Override
     public boolean equals(Object o) {
@@ -336,12 +239,116 @@ public class USBDevice {
         return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeLabelList, revision, isSerialOSGenerated, userAccountsList);
     }
 
+    private boolean isNecessaryMerge(@NotNull String src) {
+        return /*src != null &&*/ !src.isBlank();
+    }
+
+    private boolean isNecessaryMerge(@NotNull LocalDateTime src) {
+        return src.isBefore(dateTimeFirstInstall) &&
+//                src != null &&
+                dateTimeFirstInstall.isEqual(LocalDateTime.MIN) &&
+                !src.isEqual(LocalDateTime.MIN);
+    }
+
     public boolean isSerialOSGenerated() {
         return isSerialOSGenerated;
     }
 
     public USBDevice setSerialOSGenerated(boolean serialOSGenerated) {
         isSerialOSGenerated = serialOSGenerated;
+        return this;
+    }
+
+    /**
+     * <p>Выполняет копирование свойств из src в текущий объект. Свойства равные null в источнике игнорируются - в
+     * текущем объекте свойство остается неизменным.</p>
+     *
+     * <p><strong>ВНИМАНИЕ!</strong> В случае изменения состава свойств необходимо руками исправлять копирование.
+     * При использовании BeanUtilsBean и PropertyUtilsBean от org.apache.commons копирование свойств не происходит,
+     * т.к. используются цепные сеттеры (chain setters). При использовании сеттеров с возвращаемым типом viod они
+     * работают отлично.
+     * </p>
+     *
+     * @param src Устройство, свойства которого необходимо скопировать.
+     * @return текущее устройство со свойствами, обновленными из src, если не произошло ошибок, иначе возвращает объект
+     * в исходном состоянии.
+     *
+     * @throws UnsupportedOperationException if the addAll operation is not supported by this list
+     * @throws ClassCastException            if the class of an element of the specified collection prevents it from being added to this list
+     * @throws NullPointerException          if the specified collection contains one or more null elements and this list does not permit null elements, or if the specified collection is null
+     * @throws IllegalArgumentException      if some property of an element of the specified collection prevents it from being added to this list
+     * @throws IllegalStateException         if not all the elements can be added at this time due to insertion restrictions
+     * <p><strong>Примечание:</strong> выше упомянутые исключения относятся к операциям добавления элементов в коллекции.</p>
+     */
+    public USBDevice mergeProperties(USBDevice src) {
+
+//        try {
+//            //TODO PropertyUtilsBean(), вроде бы, при отсутствии необходимости преобразования типов быстрее - изучить и,
+//            // если это подходит в этой ситуации, то использовать его.
+////            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
+//            new IgnoreNullPropertyUtilsBean().copyProperties(this, src);
+//            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
+//        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+//            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
+//            LOGGER.debug("{}", e);
+//        }
+        //TODO сделать логгирование для дебага - что бы проще было отлавливать нескопированные вновь добавленные свойства в будущем.
+        String srcFriendlyName = src.getFriendlyName();
+        if (isNecessaryMerge(srcFriendlyName)) {
+            friendlyName = srcFriendlyName;
+        }
+        String srcGuid = src.getGuid();
+        if (isNecessaryMerge(srcGuid)) {
+            guid = srcGuid;
+        }
+        String srcPid = src.getPid();
+        if (isNecessaryMerge(srcPid)) {
+            this.pid = srcPid;
+        }
+        String srcProductName = src.getProductName();
+        if (isNecessaryMerge(srcProductName)) {
+            this.productName = srcProductName;
+        }
+        String srcProductNameByRegistry = src.getProductNameByRegistry();
+        if (isNecessaryMerge(srcProductNameByRegistry)) {
+            this.productNameByRegistry = srcProductNameByRegistry;
+        }
+        String srcSerial = src.getSerial();
+        if (isNecessaryMerge(srcSerial)) {
+            this.serial = srcSerial;
+        }
+        String srcVendorName = src.getVendorName();
+        if (isNecessaryMerge(srcVendorName)) {
+            this.vendorName = srcVendorName;
+        }
+        String srcVendorNameByRegistry = src.getVendorNameByRegistry();
+        if (isNecessaryMerge(srcVendorNameByRegistry)) {
+            this.vendorNameByRegistry = srcVendorNameByRegistry;
+        }
+        String srcVid = src.getVid();
+        if (isNecessaryMerge(srcVid)) {
+            this.vid = srcVid;
+        }
+        String srcRevision = src.getRevision();
+        if (isNecessaryMerge(srcRevision)) {
+            this.revision = srcRevision;
+        }
+        String srcDiskId = src.getDiskId();
+        if (isNecessaryMerge(srcDiskId)) {
+            this.diskId = srcDiskId;
+        }
+        LocalDateTime srcDateTimeFirstInstall = src.getDateTimeFirstInstall();
+        if (isNecessaryMerge(srcDateTimeFirstInstall)) {
+            this.dateTimeFirstInstall = srcDateTimeFirstInstall;
+        }
+
+        isSerialOSGenerated = src.isSerialOSGenerated();
+        //Выполняется прямое добавление элементов, потому что согласно документации на метод addAll(Collection c):
+        // 1. NPE выбрасывается, если src == null
+        // 2. NPE выбрасывается, если в src есть элементы равные null, а приемник не допускает наличие null-элементов.
+        volumeIdList.addAll(src.getVolumeIdList());
+        userAccountsList.addAll(src.getUserAccountsList());
+        volumeLabelList.addAll(src.getVolumeLabelList());
         return this;
     }
 
