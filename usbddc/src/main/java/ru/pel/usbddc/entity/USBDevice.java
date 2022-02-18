@@ -265,90 +265,113 @@ public class USBDevice {
      *
      * <p><strong>ВНИМАНИЕ!</strong> В случае изменения состава свойств необходимо руками исправлять копирование.
      * При использовании BeanUtilsBean и PropertyUtilsBean от org.apache.commons копирование свойств не происходит,
-     * т.к. используются цепные сеттеры (chain setters). При использовании сеттеров с возвращаемым типом viod они
+     * т.к. используются цепные сеттеры (chain setters). При использовании сеттеров с возвращаемым типом void они
      * работают отлично.
      * </p>
      *
      * @param src Устройство, свойства которого необходимо скопировать.
      * @return текущее устройство со свойствами, обновленными из src, если не произошло ошибок, иначе возвращает объект
      * в исходном состоянии.
-     *
      * @throws UnsupportedOperationException if the addAll operation is not supported by this list
      * @throws ClassCastException            if the class of an element of the specified collection prevents it from being added to this list
      * @throws NullPointerException          if the specified collection contains one or more null elements and this list does not permit null elements, or if the specified collection is null
      * @throws IllegalArgumentException      if some property of an element of the specified collection prevents it from being added to this list
      * @throws IllegalStateException         if not all the elements can be added at this time due to insertion restrictions
-     * <p><strong>Примечание:</strong> выше упомянутые исключения относятся к операциям добавления элементов в коллекции.</p>
+     *                                       <p><strong>Примечание:</strong> выше упомянутые исключения относятся к операциям добавления элементов в коллекции.</p>
      */
     public USBDevice mergeProperties(USBDevice src) {
+        LOGGER.debug("Начата процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
+/*        try {
+            // PropertyUtilsBean() при отсутствии необходимости преобразования типов быстрее
+//            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
+            new IgnoreNullPropertyUtilsBean().copyProperties(this, src);
+            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
+            LOGGER.debug("{}", e);
+        }
+        */
 
-//        try {
-//            //TODO PropertyUtilsBean(), вроде бы, при отсутствии необходимости преобразования типов быстрее - изучить и,
-//            // если это подходит в этой ситуации, то использовать его.
-////            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
-//            new IgnoreNullPropertyUtilsBean().copyProperties(this, src);
-//            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
-//        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-//            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
-//            LOGGER.debug("{}", e);
-//        }
-        //TODO сделать логгирование для дебага - что бы проще было отлавливать нескопированные вновь добавленные свойства в будущем.
+        //TODO в следующий подход к методу или с ростом навыков эту лапшу заменить на более грамотный код.
+        //Далее идет лапша из однотипных блоков кода:
+        // 1. Получаем значение свойства из источника.
+        // 2. Проверяем его на необходимость слияния с приемником (текущий объект).
+        // 3. Выполняем слияние: для примитивов - замена значения, для коллекций - добавление всех элементов из источника в приемник.
+        // 4. Логирование с уровнем TRACE
         String srcFriendlyName = src.getFriendlyName();
         if (isNecessaryMerge(srcFriendlyName)) {
             friendlyName = srcFriendlyName;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "friendlyName", srcFriendlyName);
         }
         String srcGuid = src.getGuid();
         if (isNecessaryMerge(srcGuid)) {
             guid = srcGuid;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "guid", srcGuid);
         }
         String srcPid = src.getPid();
         if (isNecessaryMerge(srcPid)) {
             this.pid = srcPid;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "pid", srcPid);
         }
         String srcProductName = src.getProductName();
         if (isNecessaryMerge(srcProductName)) {
             this.productName = srcProductName;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "productName", srcProductName);
         }
         String srcProductNameByRegistry = src.getProductNameByRegistry();
         if (isNecessaryMerge(srcProductNameByRegistry)) {
             this.productNameByRegistry = srcProductNameByRegistry;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "productNameByRegistry", srcProductNameByRegistry);
         }
         String srcSerial = src.getSerial();
         if (isNecessaryMerge(srcSerial)) {
             this.serial = srcSerial;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "serial", srcSerial);
         }
         String srcVendorName = src.getVendorName();
         if (isNecessaryMerge(srcVendorName)) {
             this.vendorName = srcVendorName;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "vendorName", srcVendorName);
         }
         String srcVendorNameByRegistry = src.getVendorNameByRegistry();
         if (isNecessaryMerge(srcVendorNameByRegistry)) {
             this.vendorNameByRegistry = srcVendorNameByRegistry;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "vendorNameByRegistry", srcVendorNameByRegistry);
         }
         String srcVid = src.getVid();
         if (isNecessaryMerge(srcVid)) {
             this.vid = srcVid;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "vid", srcVid);
         }
         String srcRevision = src.getRevision();
         if (isNecessaryMerge(srcRevision)) {
             this.revision = srcRevision;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "revision", srcRevision);
         }
         String srcDiskId = src.getDiskId();
         if (isNecessaryMerge(srcDiskId)) {
             this.diskId = srcDiskId;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "diskId", srcDiskId);
         }
         LocalDateTime srcDateTimeFirstInstall = src.getDateTimeFirstInstall();
         if (isNecessaryMerge(srcDateTimeFirstInstall)) {
             this.dateTimeFirstInstall = srcDateTimeFirstInstall;
+            LOGGER.trace("Добавлено в свойство {} значение {}", "dateTimeFirstInstall", srcDateTimeFirstInstall);
         }
 
         isSerialOSGenerated = src.isSerialOSGenerated();
-        //Выполняется прямое добавление элементов, потому что согласно документации на метод addAll(Collection c):
+        LOGGER.trace("Добавлено в свойство {} значение {}", "isSerialGenerated", src.isSerialOSGenerated());
+        //Выполняется прямое добавление элементов без проверки, потому что согласно документации на метод addAll(Collection c):
         // 1. NPE выбрасывается, если src == null
         // 2. NPE выбрасывается, если в src есть элементы равные null, а приемник не допускает наличие null-элементов.
+        // 3. Реализация метода ArrayList.addAll предусматривает раннее прекращение работы src.size == 0.
         volumeIdList.addAll(src.getVolumeIdList());
+        LOGGER.trace("Добавлено в свойство {} значение {}", "volumeIdList", src.getVolumeIdList());
         userAccountsList.addAll(src.getUserAccountsList());
+        LOGGER.trace("Добавлено в свойство {} значение {}", "userAccountList", src.getUserAccountsList());
         volumeLabelList.addAll(src.getVolumeLabelList());
+        LOGGER.trace("Добавлено в свойство {} значение {}", "volumeLabelList", src.getVolumeLabelList());
+        LOGGER.debug("Закончена процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
         return this;
     }
 

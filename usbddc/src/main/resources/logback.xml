@@ -13,6 +13,7 @@
     <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>
     <logger name="ru.pel.usbddc.service.SystemInfoCollector" level="debug"/>
     <logger name="ru.pel.usbddc.service.OSInfoCollector" level="debug"/>
+    <logger name="ru.pel.usbddc.entity.USBDevice" level="debug"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT"/>
