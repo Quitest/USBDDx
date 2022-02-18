@@ -244,10 +244,10 @@ public class USBDevice {
     }
 
     private boolean isNecessaryMerge(@NotNull LocalDateTime src) {
-        return src.isBefore(dateTimeFirstInstall) &&
+        return !src.isEqual(LocalDateTime.MIN) &&
+                (src.isBefore(dateTimeFirstInstall) ||
+                dateTimeFirstInstall.isEqual(LocalDateTime.MIN));
 //                src != null &&
-                dateTimeFirstInstall.isEqual(LocalDateTime.MIN) &&
-                !src.isEqual(LocalDateTime.MIN);
     }
 
     public boolean isSerialOSGenerated() {
