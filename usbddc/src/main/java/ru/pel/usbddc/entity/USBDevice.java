@@ -2,6 +2,7 @@ package ru.pel.usbddc.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
@@ -102,59 +103,73 @@ public class USBDevice {
 //        }
         //TODO сделать логгирование для дебага - что бы проще было отлавливать нескопированные вновь добавленные свойства в будущем.
         String srcFriendlyName = src.getFriendlyName();
-        if (srcFriendlyName != null && !srcFriendlyName.isBlank()) {
+        if (isNecessaryMerge(srcFriendlyName)) {
             friendlyName = srcFriendlyName;
         }
         String srcGuid = src.getGuid();
-        if (srcGuid != null && !srcGuid.isBlank()) {
+        if (isNecessaryMerge(srcGuid)) {
             guid = srcGuid;
         }
         String srcPid = src.getPid();
-        if (srcPid != null && !srcPid.isBlank()) {
+        if (isNecessaryMerge(srcPid)) {
             this.pid = srcPid;
         }
         String srcProductName = src.getProductName();
-        if (srcProductName != null && !srcProductName.isBlank()) {
+        if (isNecessaryMerge(srcProductName)) {
             this.productName = srcProductName;
         }
         String srcProductNameByRegistry = src.getProductNameByRegistry();
-        if (srcProductNameByRegistry != null && !srcProductNameByRegistry.isBlank()) {
+        if (isNecessaryMerge(srcProductNameByRegistry)) {
             this.productNameByRegistry = srcProductNameByRegistry;
         }
         String srcSerial = src.getSerial();
-        if (srcSerial != null && !srcSerial.isBlank()) {
+        if (isNecessaryMerge(srcSerial)) {
             this.serial = srcSerial;
         }
         String srcVendorName = src.getVendorName();
-        if (srcVendorName != null && !srcVendorName.isBlank()) {
+        if (isNecessaryMerge(srcVendorName)) {
             this.vendorName = srcVendorName;
         }
         String srcVendorNameByRegistry = src.getVendorNameByRegistry();
-        if (srcVendorNameByRegistry != null && !srcVendorNameByRegistry.isBlank()) {
+        if (isNecessaryMerge(srcVendorNameByRegistry)) {
             this.vendorNameByRegistry = srcVendorNameByRegistry;
         }
         String srcVid = src.getVid();
-        if (srcVid != null && !srcVid.isBlank()) {
+        if (isNecessaryMerge(srcVid)) {
             this.vid = srcVid;
         }
         String srcRevision = src.getRevision();
-        if (srcRevision != null && !srcRevision.isBlank()) {
+        if (isNecessaryMerge(srcRevision)) {
             this.revision = srcRevision;
         }
         String srcDiskId = src.getDiskId();
-        if (srcDiskId != null && !srcDiskId.isBlank()) {
+        if (isNecessaryMerge(srcDiskId)) {
             this.diskId = srcDiskId;
         }
         LocalDateTime srcDateTimeFirstInstall = src.getDateTimeFirstInstall();
-        if (srcProductName != null && !srcDateTimeFirstInstall.isEqual(LocalDateTime.MIN)) {
+        if (isNecessaryMerge(srcDateTimeFirstInstall)) {
             this.dateTimeFirstInstall = srcDateTimeFirstInstall;
         }
 
         isSerialOSGenerated = src.isSerialOSGenerated();
+        //Выполняется прямое добавление элементов, потому что согласно документации на метод addAll(Collection c):
+        // 1. NPE выбрасывается, если src == null
+        // 2. NPE выбрасывается, если в src есть элементы равные null, а приемник не допускает наличие null-элементов.
         volumeIdList.addAll(src.getVolumeIdList());
         userAccountsList.addAll(src.getUserAccountsList());
         volumeLabelList.addAll(src.getVolumeLabelList());
         return this;
+    }
+
+    private boolean isNecessaryMerge(@NotNull String src){
+        return /*src != null &&*/ !src.isBlank();
+    }
+
+    private boolean isNecessaryMerge(@NotNull LocalDateTime src){
+        return src.isBefore(dateTimeFirstInstall) &&
+//                src != null &&
+                dateTimeFirstInstall.isEqual(LocalDateTime.MIN) &&
+                !src.isEqual(LocalDateTime.MIN);
     }
 
     //См. https://github.com/Quitest/USBDDx/issues/47
