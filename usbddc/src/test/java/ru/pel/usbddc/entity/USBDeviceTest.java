@@ -4,6 +4,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class USBDeviceTest {
@@ -31,7 +34,7 @@ class USBDeviceTest {
         USBDevice src = new USBDevice()
                 .setSerial(null)
                 .addVolumeLabel(null);
-                src.setGuid("{1}");
+        src.setGuid("{1}");
 
         dst.mergeProperties(src);
 
@@ -70,6 +73,31 @@ class USBDeviceTest {
     }
 
     @Test
+    @DisplayName("Сравнение разных объектов")
+    void equalsOnNotEqualsObjects() {
+        USBDevice otherUsbDevice = new USBDevice()
+                .setSerial("other" + SERIAL)
+                .setVidPid(VID, PID);
+        assertThat(otherUsbDevice, not(equalTo(testUsbDevice)));
+    }
+
+    @Test
+    @DisplayName("Сравнение двух ссылок на один объект")
+    void equalsOnSameObject() {
+        USBDevice sameUsbDevice = testUsbDevice;
+        assertThat(sameUsbDevice, equalTo(testUsbDevice));
+    }
+
+    @Test
+    @DisplayName("Сравнение одинаковых объектов")
+    void equalsOnDifferentObj(){
+        USBDevice equalUSBDevice = new USBDevice()
+                .setSerial(SERIAL)
+                .setVidPid(VID, PID);
+        assertThat(equalUSBDevice,equalTo(testUsbDevice));
+    }
+
+    @Test
     @DisplayName("Проверка алгоритма определения типа серийного номера (сгенерирован ОС или нет)")
     void isSerialOSGenerated() {
         USBDevice OSGeneratedSerial1 = new USBDevice().setSerial("0&123456789");
@@ -82,25 +110,6 @@ class USBDeviceTest {
                 () -> assertTrue(OSGeneratedSerial2.isSerialOSGenerated(), "Символ '&' ДОЛЖЕН стоять во второй позиции"),
                 () -> assertFalse(vendorGeneratedSerial1.isSerialOSGenerated(), "Символ '&' НЕ должен стоять во второй позиции"),
                 () -> assertFalse(vendorGeneratedSerial2.isSerialOSGenerated(), "Символ '&' НЕ должен стоять во второй позиции")
-        );
-    }
-
-    @Test
-    @DisplayName("Проверка эквивалентности объектов")
-    void testEquals() {
-        USBDevice sameUsbDevice = testUsbDevice;
-        USBDevice copyOfTestUsbDevice = new USBDevice()
-                .setSerial(SERIAL)
-                .setVidPid(VID, PID);
-        USBDevice otherUsbDevice = new USBDevice()
-                .setSerial("other" + SERIAL)
-                .setVidPid(VID, PID);
-
-        assertAll(
-                () -> assertEquals(testUsbDevice, sameUsbDevice, "Переменные должны ссылаться на один объект"),
-                () -> assertEquals(testUsbDevice, copyOfTestUsbDevice, "Переменные должны указывать на разные, но идентичные объекты"),
-                () -> assertNotEquals(testUsbDevice, otherUsbDevice, "Переменные должны указывать на разные и не идентичные объекты"),
-                () -> assertNotEquals("", testUsbDevice, "Должна происходить попытка сравнения объектов разного типа")
         );
     }
 }

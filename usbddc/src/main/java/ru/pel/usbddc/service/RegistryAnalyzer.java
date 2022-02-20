@@ -2,7 +2,6 @@ package ru.pel.usbddc.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.pel.usbddc.entity.ProductName;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
@@ -21,6 +20,7 @@ public class RegistryAnalyzer implements Analyzer {
     private static final String REG_KEY_USB = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB";
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
     private static final String REG_KEY_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
+    private static final String REG_KEY_USBSTOR = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
     /**
      * Ветка службы ReadyBoost
      */
@@ -53,19 +53,12 @@ public class RegistryAnalyzer implements Analyzer {
                 continue;
             }
             String decodedValue = decodeHexToString(encodedValue);
-
-
-            String serial = Arrays.stream(decodedValue.split("#"))
-                    .skip(2)
-                    .map(s -> s.charAt(s.length() - 2) == '&' ? // если на предпоследней позиции символ "&", то
-                            s.substring(0, s.length() - 2) : s) //отбрасываем его и последний (например &0), иначе целиком забираем серийник.
-                    .findFirst().orElse(decodedValue);
-//            if(serial.matches(".*[^\\w\\s&#_.]+.*")){
-//            if(serial.contains("(") && !serial.contains(")")){
-//                LOGGER.warn("[W] При анализе HKLM\\SYSTEM\\MountedDevices пропущен серийник: {} - содержит только открывающую скобку", serial);
-//                continue;
-//            }
+            Matcher matcher = Pattern.compile(".*#(?<serial>\\w&?\\w*\\w+)(&\\d)?#").matcher(decodedValue);
+            String serial = "";
             entry.setValue(decodedValue);
+            if (matcher.find()) {
+                serial = matcher.group("serial");
+            }
 
             String key = entry.getKey();
             String deviceGuid = Arrays.stream(key.split(""))
@@ -122,16 +115,17 @@ public class RegistryAnalyzer implements Analyzer {
         return counter;
     }
 
+    /**
+     * Выполняет анализ реестра на наличие записей о USB устройствах и данных о них.
+     *
+     * @param doNewAnalysis определяет необходимость выполнения нового анализа.
+     * @return если doNewAnalysis задан true, то возвращается результат нового анализа, если false - возвращает результат предыдущего
+     * анализа.
+     */
     @Override
     public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) {
         if (doNewAnalysis) {
-//            try {
             getUsbDevices();
-//            } catch (InvocationTargetException | IllegalAccessException e) {
-//                LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
-//                        "Причина: {}", e.getLocalizedMessage());
-//                LOGGER.debug("{}", e.toString());
-//            }
             getReadyBoostDevices();
             associateSerialToGuid();
             determineDeviceUsers();
@@ -143,9 +137,8 @@ public class RegistryAnalyzer implements Analyzer {
 
     //TODO кроме FriendlyName метод еще и revision заполняет - имя не в полной мере соответствует.
     public Map<String, USBDevice> getFriendlyName() {
-        String regKeyUsbstor = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
         try {
-            List<String> deviceGroupList = WinRegReader.getSubkeys(regKeyUsbstor);
+            List<String> deviceGroupList = WinRegReader.getSubkeys(REG_KEY_USBSTOR);
             for (String deviceGroupKey : deviceGroupList) {
                 String revision = deviceGroupKey.substring(deviceGroupKey.lastIndexOf('_') + 1);
                 List<String> serialList = WinRegReader.getSubkeys(deviceGroupKey);
@@ -172,7 +165,7 @@ public class RegistryAnalyzer implements Analyzer {
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить поле Friendly name. Причина {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("Не удалось обработать {}", REG_KEY_USBSTOR, e);
             Thread.currentThread().interrupt();
         }
         return usbDeviceMap;
@@ -190,11 +183,11 @@ public class RegistryAnalyzer implements Analyzer {
             result = WinRegReader.getSubkeys(mountPoints2).stream()
                     .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
                     .map(e -> e.substring(e.lastIndexOf("{")))
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых ТЕКУЩИМ пользователем. Причина: {}",
                     e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("Не удалось обработать {}", mountPoints2, e);
             Thread.currentThread().interrupt();
         }
         return result;
@@ -225,8 +218,7 @@ public class RegistryAnalyzer implements Analyzer {
             guidList = WinRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
                     .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
                     .map(e -> e.substring(e.lastIndexOf("{")))
-                    .collect(Collectors.toList());
-
+                    .toList();
             WinRegReader.unloadHive(nodeName);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -269,26 +261,26 @@ public class RegistryAnalyzer implements Analyzer {
                                 .addVolumeLabel(volLabel)
                                 .addVolumeId(volumeId);
 
-                        usbDeviceMap.merge(serial,tmp,(dst,src)->{
+                        usbDeviceMap.merge(serial, tmp, (dst, src) -> {
                             dst.addVolumeLabel(volLabel);
                             dst.addVolumeId(volumeId);
                             dst.setVendorNameByRegistry(src.getVendorNameByRegistry());
                             dst.setProductNameByRegistry(src.getProductNameByRegistry());
+                            dst.setRevision(src.getRevision());
                             return dst;
                         });
-                    }
-                    else{
+                    } else {
                         LOGGER.warn("Запись пропущена - не соответствует паттерну:\n\t\tKey = {}", key);
                     }
                 } catch (IllegalStateException | NoSuchElementException e) {
-                    LOGGER.warn("Запись об устройстве не удалось распознать.\n\tЗапись: {}\n\tПричина: {}",key,e.getLocalizedMessage());
-                    LOGGER.debug("{}", e);
+                    LOGGER.warn("Запись об устройстве не удалось распознать.\n\tЗапись: {}\n\tПричина: {}", key, e.getLocalizedMessage());
+                    LOGGER.debug("Запись об устройстве не удалось распознать.\n\tЗапись: {}", key, e);
                 }
             }
 
         } catch (IOException | InterruptedException e) {
             LOGGER.error("Анализ ветки {} прерван: {}", REG_KEY_EMDMGMT, e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("Анализ ветки {} прерван", REG_KEY_EMDMGMT, e);
             Thread.currentThread().interrupt();
         }
         return usbDeviceMap;
@@ -313,36 +305,6 @@ public class RegistryAnalyzer implements Analyzer {
         }
         return usbDeviceMap;
     }
-
-//    /**
-//     * Позволяет получить список USB устройств, когда-либо подключаемых к системе. Заполнение полей USBDevice происходит
-//     * автоматически из полей реестра имеющих такие же наименования.
-//     *
-//     * @return Список USBDevice с полями заполненными из ветки реестра HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
-//     * @deprecated использует рефлексию. Тесты на корректность работы не проходил.
-//     */
-//    @Deprecated(forRemoval = true)
-//    public List<USBDevice> getUSBDevicesWithAutoFilling() {
-//        List<USBDevice> usbDevices = new ArrayList<>();
-//        try {
-//            List<String> subkeys = WinRegReader.getSubkeys(REG_KEY_USB);
-//            USBDevice.setUsbIds("usb.ids");
-//
-//            for (String pidvid : subkeys) {
-//                List<String> serials = WinRegReader.getSubkeys(pidvid);
-//                for (String serial : serials) {
-//                    Map<String, String> valueList = WinRegReader.getAllValuesInKey(serial).orElseThrow();
-//                    USBDevice.Builder currDevice = USBDevice.getBuilder();
-//                    valueList.forEach(currDevice::setField);
-//                    usbDevices.add(currDevice.build());
-//                }
-//            }
-//        } catch (IOException | InterruptedException e) {
-//            e.printStackTrace();
-//            Thread.currentThread().interrupt();
-//        }
-//        return usbDevices;
-//    }
 
     /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
@@ -379,7 +341,7 @@ public class RegistryAnalyzer implements Analyzer {
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. " +
                     "Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("ОШИБКА. Не удалось получить список устройств из HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USB. ", e);
             Thread.currentThread().interrupt();
         }
         return usbDeviceMap;
@@ -413,10 +375,10 @@ public class RegistryAnalyzer implements Analyzer {
                                 .withUsername(username)
                                 .build();
                     })
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить список профилей в системе. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("ОШИБКА. Не удалось получить список профилей в системе.", e);
             Thread.currentThread().interrupt();
         }
         return userProfileList;
@@ -448,7 +410,6 @@ public class RegistryAnalyzer implements Analyzer {
      */
     private Optional<String> parseVid(String pidvid) {
         Matcher matcher = Pattern.compile("(?i)vid_(.{4})").matcher(pidvid);
-//        return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
     }
 
@@ -476,7 +437,7 @@ public class RegistryAnalyzer implements Analyzer {
                             .filter(s -> deviceEntry.contains("#" + s))
                             .findFirst();
                     LOGGER.warn("[W] При определении метки тома {} использовался метод contains() вместо matches", serial.orElse("***"));
-                    LOGGER.debug("{}", e);
+                    LOGGER.debug("[D] При определении метки тома {} использовался метод contains() вместо matches", serial.orElse("***"), e);
                 }
                 if (serial.isPresent()) {
                     String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
@@ -491,38 +452,41 @@ public class RegistryAnalyzer implements Analyzer {
                 } else {
                     //FIXME код говно. переписать.
                     List<String> stringList = Arrays.stream(deviceEntry.split("#")).toList();
+                    String newPid = "";
+                    String newVid = "";
                     try {
-                        String newVid = stringList.stream()
+                        newVid = stringList.stream()
                                 .filter(elem -> elem.matches("(?i).*vid_.*"))
                                 .map(elem -> parseVid(elem).orElseThrow())
                                 .findFirst().orElseThrow();
-                        String newPid = stringList.stream()
+                        newPid = stringList.stream()
                                 .filter(elem -> elem.matches("(?i).*pid_.*"))
                                 .map(elem -> parsePid(elem).orElseThrow())
                                 .findFirst().orElseThrow();
-                        String newSerial = stringList.get(stringList.size() - 1);
-                        String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
-                        USBDevice tmp = new USBDevice()
-                                .setVidPid(newVid, newPid)
-                                .setSerial(newSerial)
-                                .addVolumeLabel(volumeName);
-                        //FIXME рассмотреть вариант использования ObjectMapper
-                        usbDeviceMap.merge(newSerial, tmp, (dst, src) -> {
-                            dst.setSerial(src.getSerial());
-                            dst.setPid(src.getPid());
-                            dst.setVid(src.getVid());
-                            dst.setProductName(src.getProductName());
-                            dst.setVendorName(src.getVendorName());
-                            return dst;
-                        });
                     } catch (NoSuchElementException e) {
-                        e.printStackTrace();
+                        LOGGER.warn("Не удалось определить VID/PID в записи {}", deviceEntry);
+                        LOGGER.debug("Не удалось определить VID/PID в записи {}", deviceEntry, e);
                     }
+                    String newSerial = stringList.get(stringList.size() - 1);
+                    String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
+                    USBDevice tmp = new USBDevice()
+                            .setVidPid(newVid, newPid)
+                            .setSerial(newSerial)
+                            .addVolumeLabel(volumeName);
+                    usbDeviceMap.merge(newSerial, tmp, (dst, src) -> {
+                        dst.setSerial(src.getSerial());
+                        dst.setPid(src.getPid());
+                        dst.setVid(src.getVid());
+                        dst.setProductName(src.getProductName());
+                        dst.setVendorName(src.getVendorName());
+                        return dst;
+                    });
+
                 }
             }
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить метку для устройства. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("ОШИБКА. Не удалось получить метку для устройства.", e);
             Thread.currentThread().interrupt();
         }
 

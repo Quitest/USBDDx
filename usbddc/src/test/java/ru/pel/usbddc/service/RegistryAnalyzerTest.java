@@ -75,24 +75,6 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    @DisplayName("Наполнение серийными номерами томов [volumeIdList]")
-    void volumeIdListContainsManyIds() {
-        List<USBDevice> usbDevices = readyBoostDeviceMap.values().stream()
-                .filter(dev -> dev.getVolumeIdList().size() > 1)
-                .toList();
-        assertThat(usbDevices, not(emptyIterable()));
-    }
-
-    @Test
-    @DisplayName("Наполнение метками томов [volumeLabelList]")
-    void volumeLabelListContainsManyLabel(){
-        List<USBDevice> usbDeviceList = readyBoostDeviceMap.values().stream()
-                .filter(usbDevice -> usbDevice.getVolumeLabelList().size() > 1)
-                .toList();
-        assertThat(usbDeviceList,not(emptyIterable()));
-    }
-
-    @Test
     @DisplayName("Получение информации о всех пользователях устройств")
     void findDevicesWithManyUsers() {
         List<USBDevice> collect = allUsbDeviceMap.values().stream()
@@ -200,59 +182,20 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
-    void orderInvokingRegistryAnalysisMethod() {
-        //Вариант 0
-        RegistryAnalyzer registryAnalyzer = new RegistryAnalyzer();
-            registryAnalyzer.getUsbDevices();
-        registryAnalyzer.associateSerialToGuid();
-        registryAnalyzer.getFriendlyName();
-        registryAnalyzer.determineDeviceUsers();
-        registryAnalyzer.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis = registryAnalyzer.getAnalysis(false);
-
-        //Вариант 1
-        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
-        registryAnalyzer1.associateSerialToGuid();
-            registryAnalyzer1.getUsbDevices();
-        registryAnalyzer1.determineDeviceUsers();
-        registryAnalyzer1.getFriendlyName();
-        registryAnalyzer1.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis1 = registryAnalyzer1.getAnalysis(false);
-
-        //Вариант 2
-        RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
-        registryAnalyzer2.associateSerialToGuid();
-        registryAnalyzer2.determineDeviceUsers();
-        registryAnalyzer2.getFriendlyName();
-        registryAnalyzer2.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis2 = registryAnalyzer2.getAnalysis(false);
-
-        //Вариант 3
-        RegistryAnalyzer registryAnalyzer3 = new RegistryAnalyzer();
-        registryAnalyzer3.associateSerialToGuid();
-            registryAnalyzer3.getUsbDevices();
-        registryAnalyzer3.parseWindowsPortableDevice();
-        registryAnalyzer3.getFriendlyName();
-        registryAnalyzer3.determineDeviceUsers();
-        Map<String, USBDevice> registryAnalysis3 = registryAnalyzer3.getAnalysis(false);
-
-        assertAll(
-                () -> assertEquals(allUsbDeviceMap, registryAnalysis),
-                () -> assertEquals(allUsbDeviceMap, registryAnalysis1),
-                () -> assertEquals(allUsbDeviceMap, registryAnalysis2),
-                () -> assertEquals(allUsbDeviceMap, registryAnalysis3)
-        );
+    @DisplayName("Наполнение серийными номерами томов [volumeIdList]")
+    void volumeIdListContainsManyIds() {
+        List<USBDevice> usbDevices = readyBoostDeviceMap.values().stream()
+                .filter(dev -> dev.getVolumeIdList().size() > 1)
+                .toList();
+        assertThat(usbDevices, not(emptyIterable()));
     }
 
     @Test
-    void parseWindowsPortableDevice() {
-//        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
-
-
-//        List<USBDevice> notEmptyVolumeName = allUsbDeviceMap.values().stream()
-//                .filter(val -> !val.getVolumeLabel().isEmpty())
-//                .collect(Collectors.toList());
-//        assertEquals(expectedVolumeName, allUsbDeviceMap.get(expectedSerial).getVolumeLabel());
+    @DisplayName("Наполнение метками томов [volumeLabelList]")
+    void volumeLabelListContainsManyLabel() {
+        List<USBDevice> usbDeviceList = readyBoostDeviceMap.values().stream()
+                .filter(usbDevice -> usbDevice.getVolumeLabelList().size() > 1)
+                .toList();
+        assertThat(usbDeviceList, not(emptyIterable()));
     }
 }

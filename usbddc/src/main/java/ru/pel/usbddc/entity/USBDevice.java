@@ -54,11 +54,8 @@ public class USBDevice {
     private Set<String> volumeLabelList = new HashSet<>();
 
     public USBDevice() {
+        //Что бы случайно не потерять конструктор по умолчанию, если надумаю использовать конструктор с параметрами.
     }
-
-//    public static Builder getBuilder() {
-//        return new Builder();
-//    }
 
     public USBDevice addUserProfile(UserProfile userProfile) {
         userAccountsList.add(userProfile);
@@ -73,15 +70,6 @@ public class USBDevice {
     public USBDevice addVolumeLabel(String volumeLabel) {
         volumeLabelList.add(volumeLabel);
         return this;
-    }
-
-    //См. https://github.com/Quitest/USBDDx/issues/47
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        USBDevice usbDevice = (USBDevice) o;
-        return isSerialOSGenerated == usbDevice.isSerialOSGenerated && Objects.equals(friendlyName, usbDevice.friendlyName) && Objects.equals(guid, usbDevice.guid) && Objects.equals(pid, usbDevice.pid) && Objects.equals(productName, usbDevice.productName) && Objects.equals(serial, usbDevice.serial) && Objects.equals(vendorName, usbDevice.vendorName) && Objects.equals(vid, usbDevice.vid) && Objects.equals(volumeLabelList, usbDevice.volumeLabelList) && Objects.equals(revision, usbDevice.revision) && Objects.equals(userAccountsList, usbDevice.userAccountsList);
     }
 
     public LocalDateTime getDateTimeFirstInstall() {
@@ -235,8 +223,31 @@ public class USBDevice {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        USBDevice device = (USBDevice) o;
+        return isSerialOSGenerated() == device.isSerialOSGenerated() &&
+                Objects.equals(getFriendlyName(), device.getFriendlyName()) &&
+                Objects.equals(getGuid(), device.getGuid()) &&
+                Objects.equals(getPid(), device.getPid()) &&
+                Objects.equals(getProductName(), device.getProductName()) &&
+                Objects.equals(getProductNameByRegistry(), device.getProductNameByRegistry()) &&
+                Objects.equals(getSerial(), device.getSerial()) &&
+                Objects.equals(getVendorName(), device.getVendorName()) &&
+                Objects.equals(getVendorNameByRegistry(), device.getVendorNameByRegistry()) &&
+                Objects.equals(getVid(), device.getVid()) &&
+                Objects.equals(getRevision(), device.getRevision()) &&
+                Objects.equals(getDiskId(), device.getDiskId()) &&
+                Objects.equals(getDateTimeFirstInstall(), device.getDateTimeFirstInstall()) &&
+                Objects.equals(getVolumeIdList(), device.getVolumeIdList()) &&
+                Objects.equals(getUserAccountsList(), device.getUserAccountsList()) &&
+                Objects.equals(getVolumeLabelList(), device.getVolumeLabelList());
+    }
+
+    @Override
     public int hashCode() {
-        return Objects.hash(friendlyName, guid, pid, productName, serial, vendorName, vid, volumeLabelList, revision, isSerialOSGenerated, userAccountsList);
+        return Objects.hash(getFriendlyName(), getGuid(), getPid(), getProductName(), getProductNameByRegistry(), getSerial(), getVendorName(), getVendorNameByRegistry(), getVid(), getRevision(), getDiskId(), getDateTimeFirstInstall(), isSerialOSGenerated(), getVolumeIdList(), getUserAccountsList(), getVolumeLabelList());
     }
 
     private boolean isNecessaryMerge(@NotNull String src) {
@@ -280,18 +291,8 @@ public class USBDevice {
      *                                       <p><strong>Примечание:</strong> выше упомянутые исключения относятся к операциям добавления элементов в коллекции.</p>
      */
     public USBDevice mergeProperties(USBDevice src) {
+        final String traceMsg = "Добавлено в свойство {} значение {}";
         LOGGER.debug("Начата процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
-/*        try {
-            // PropertyUtilsBean() при отсутствии необходимости преобразования типов быстрее
-//            new IgnoreNullBeanUtilsBean().copyProperties(this, src);
-            new IgnoreNullPropertyUtilsBean().copyProperties(this, src);
-            LOGGER.debug("Поля объекта {} скопированы в объект {}", src, this);
-        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            LOGGER.error("ОШИБКА копирования свойств. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
-        }
-        */
-
         //TODO в следующий подход к методу или с ростом навыков эту лапшу заменить на более грамотный код.
         //Далее идет лапша из однотипных блоков кода:
         // 1. Получаем значение свойства из источника.
@@ -301,76 +302,76 @@ public class USBDevice {
         String srcFriendlyName = src.getFriendlyName();
         if (isNecessaryMerge(srcFriendlyName)) {
             friendlyName = srcFriendlyName;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "friendlyName", srcFriendlyName);
+            LOGGER.trace(traceMsg, "friendlyName", srcFriendlyName);
         }
         String srcGuid = src.getGuid();
         if (isNecessaryMerge(srcGuid)) {
             guid = srcGuid;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "guid", srcGuid);
+            LOGGER.trace(traceMsg, "guid", srcGuid);
         }
         String srcPid = src.getPid();
         if (isNecessaryMerge(srcPid)) {
             this.pid = srcPid;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "pid", srcPid);
+            LOGGER.trace(traceMsg, "pid", srcPid);
         }
         String srcProductName = src.getProductName();
         if (isNecessaryMerge(srcProductName)) {
             this.productName = srcProductName;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "productName", srcProductName);
+            LOGGER.trace(traceMsg, "productName", srcProductName);
         }
         String srcProductNameByRegistry = src.getProductNameByRegistry();
         if (isNecessaryMerge(srcProductNameByRegistry)) {
             this.productNameByRegistry = srcProductNameByRegistry;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "productNameByRegistry", srcProductNameByRegistry);
+            LOGGER.trace(traceMsg, "productNameByRegistry", srcProductNameByRegistry);
         }
         String srcSerial = src.getSerial();
         if (isNecessaryMerge(srcSerial)) {
             this.serial = srcSerial;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "serial", srcSerial);
+            LOGGER.trace(traceMsg, "serial", srcSerial);
         }
         String srcVendorName = src.getVendorName();
         if (isNecessaryMerge(srcVendorName)) {
             this.vendorName = srcVendorName;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "vendorName", srcVendorName);
+            LOGGER.trace(traceMsg, "vendorName", srcVendorName);
         }
         String srcVendorNameByRegistry = src.getVendorNameByRegistry();
         if (isNecessaryMerge(srcVendorNameByRegistry)) {
             this.vendorNameByRegistry = srcVendorNameByRegistry;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "vendorNameByRegistry", srcVendorNameByRegistry);
+            LOGGER.trace(traceMsg, "vendorNameByRegistry", srcVendorNameByRegistry);
         }
         String srcVid = src.getVid();
         if (isNecessaryMerge(srcVid)) {
             this.vid = srcVid;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "vid", srcVid);
+            LOGGER.trace(traceMsg, "vid", srcVid);
         }
         String srcRevision = src.getRevision();
         if (isNecessaryMerge(srcRevision)) {
             this.revision = srcRevision;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "revision", srcRevision);
+            LOGGER.trace(traceMsg, "revision", srcRevision);
         }
         String srcDiskId = src.getDiskId();
         if (isNecessaryMerge(srcDiskId)) {
             this.diskId = srcDiskId;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "diskId", srcDiskId);
+            LOGGER.trace(traceMsg, "diskId", srcDiskId);
         }
         LocalDateTime srcDateTimeFirstInstall = src.getDateTimeFirstInstall();
         if (isNecessaryMerge(srcDateTimeFirstInstall)) {
             this.dateTimeFirstInstall = srcDateTimeFirstInstall;
-            LOGGER.trace("Добавлено в свойство {} значение {}", "dateTimeFirstInstall", srcDateTimeFirstInstall);
+            LOGGER.trace(traceMsg, "dateTimeFirstInstall", srcDateTimeFirstInstall);
         }
 
         isSerialOSGenerated = src.isSerialOSGenerated();
-        LOGGER.trace("Добавлено в свойство {} значение {}", "isSerialGenerated", src.isSerialOSGenerated());
+        LOGGER.trace(traceMsg, "isSerialGenerated", src.isSerialOSGenerated());
         //Выполняется прямое добавление элементов без проверки, потому что согласно документации на метод addAll(Collection c):
         // 1. NPE выбрасывается, если src == null
         // 2. NPE выбрасывается, если в src есть элементы равные null, а приемник не допускает наличие null-элементов.
         // 3. Реализация метода ArrayList.addAll предусматривает раннее прекращение работы src.size == 0.
         volumeIdList.addAll(src.getVolumeIdList());
-        LOGGER.trace("Добавлено в свойство {} значение {}", "volumeIdList", src.getVolumeIdList());
+        LOGGER.trace(traceMsg, "volumeIdList", src.getVolumeIdList());
         userAccountsList.addAll(src.getUserAccountsList());
-        LOGGER.trace("Добавлено в свойство {} значение {}", "userAccountList", src.getUserAccountsList());
+        LOGGER.trace(traceMsg, "userAccountList", src.getUserAccountsList());
         volumeLabelList.addAll(src.getVolumeLabelList());
-        LOGGER.trace("Добавлено в свойство {} значение {}", "volumeLabelList", src.getVolumeLabelList());
+        LOGGER.trace(traceMsg, "volumeLabelList", src.getVolumeLabelList());
         LOGGER.debug("Закончена процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
         return this;
     }
@@ -451,179 +452,4 @@ public class USBDevice {
         }
         return sb.toString();
     }
-
-//    /**
-//     * "Строитель" объектов типа USBDevice. Особенность строителя - при передаче в качестве аргументов значений null, в
-//     * поля записываются не нулевые значения (пустые строки, списки нулевой длинны, дата и время минимального значения).
-//     */
-//    public static class Builder {
-//        private final USBDevice newUsbDevice;
-
-//        private Builder() {
-//            newUsbDevice = new USBDevice();
-//        }
-
-//        /**
-//         * Добавить дополнительный ID (серийный номер) тома диска.
-//         *
-//         * @param volumeId ID (серийный номер) тома.
-//         * @return
-//         */
-//        public Builder addVolumeId(long volumeId) {
-//            newUsbDevice.volumeIdList.add(volumeId);
-//            return this;
-//        }
-//
-//        public Builder addVolumeLabel(String volumeName) {
-//            newUsbDevice.volumeLabelList.add(Objects.requireNonNullElse(volumeName, ""));
-//            return this;
-//        }
-
-//        public USBDevice build() {
-//            return newUsbDevice;
-//        }
-
-//        /**
-//         * @param fieldName
-//         * @param value
-//         * @deprecated Рефлексия в данном случае = выстрел в ногу.
-//         */
-//        @Deprecated(forRemoval = true)
-//        public void setField(String fieldName, Object value) {
-//            //Инфа: https://javarush.ru/groups/posts/513-reflection-api-refleksija-temnaja-storona-java
-//            //try-catch навалены друг на друга, надо переделать в более простую логику.
-//            char[] chars = fieldName.toCharArray();
-//            chars[0] = Character.toLowerCase(chars[0]);
-//            fieldName = new String(chars);
-//
-//            Field field = null;
-//            try {
-//                field = USBDevice.Builder.class.getDeclaredField(fieldName);
-//            } catch (NoSuchFieldException e) {
-//                LOGGER.warn("WARN: {} = {}", e, value);
-//            }
-//            if (field != null) {
-//                field.setAccessible(true);
-//                try {
-//                    field.set(this, value);
-//                } catch (IllegalAccessException illegalAccessException) {
-//                    illegalAccessException.printStackTrace();
-//                }
-//            }
-//        }
-
-//        public Builder withDateTimeFirstInstall(LocalDateTime dateTime) {
-//            newUsbDevice.dateTimeFirstInstall = Objects.requireNonNullElse(dateTime, LocalDateTime.MIN);
-//            return this;
-//        }
-//
-//        //TODO Скорее всего логику по определению poductName и vendorName разумно вынести во вне, что бы за одно чтение
-//        // файла можно было получить все необходимые PID/VID. Неплохое место, на первый взгляд - серверная часть.
-//
-//        public Builder withDiskId(String diskId) {
-//            newUsbDevice.diskId = Objects.requireNonNullElse(diskId, "");
-//            return this;
-//        }
-//
-//        public Builder withFriendlyName(String friendlyName) {
-//            newUsbDevice.friendlyName = Objects.requireNonNullElse(friendlyName, "");
-//            return this;
-//        }
-//
-//        public Builder withGuid(String guid) {
-//            newUsbDevice.guid = Objects.requireNonNullElse(guid, "");
-//            return this;
-//        }
-//
-//        public Builder withProductNameByRegistry(String productName) {
-//            newUsbDevice.productNameByRegistry = productName;
-//            return this;
-//        }
-//
-//        public Builder withRevision(String rev) {
-//            newUsbDevice.revision = Objects.requireNonNullElse(rev, "");
-//            return this;
-//        }
-
-//        /**
-//         * Устанавливает значение serial (серийный номер), а также isSerialOSGenerated в значение false, если второй
-//         * символ & (признак того что значение сгенерировано ОС и оно уникально только в рамках текущей ОС), true - в
-//         * противном случае.
-//         *
-//         * @param serial серийный номер устройства
-//         * @return возвращает билдер
-//         */
-//        public Builder withSerial(String serial) {
-//            newUsbDevice.serial = Objects.requireNonNullElse(serial, "");
-//            //бывает что серийника нет вообще или при чтении данных серийником выступает набор бит, что бы корректно
-//            // найти и сравнить символ '&' введена проверка.
-//            if (newUsbDevice.serial.isBlank()) {
-//                newUsbDevice.isSerialOSGenerated = false;
-//            } else {
-//                newUsbDevice.isSerialOSGenerated = serial.charAt(1) == '&';
-//            }
-//            return this;
-//        }
-
-//        public Builder withUserProfileList(List<UserProfile> userProfileList) {
-//            newUsbDevice.userAccountsList = Objects.requireNonNullElse(userProfileList, new ArrayList<>());
-//            return this;
-//        }
-//
-//        public Builder withVendorNameByRegistry(String vendorName) {
-//            newUsbDevice.vendorNameByRegistry = vendorName;
-//            return this;
-//        }
-
-//        /**
-//         * Устанавливает значения VID/PID. При наличии файла usb.ids автоматически заполняет vendorName и productName
-//         *
-//         * @param vid Vendor ID
-//         * @param pid Product ID
-//         * @return возвращает билдер.
-//         */
-//        public Builder withVidPid(String vid, String pid) {
-//            //WTF почему если использовать две строки ниже вместо двух IF'ов выше, то null прорывается до vid.matches()?
-//            newUsbDevice.vid = Objects.requireNonNullElse(vid, "");
-//            newUsbDevice.pid = Objects.requireNonNullElse(pid, "");
-//            String regexVidPid = "[0-9a-fA-F]{4}";
-//            if (!newUsbDevice.vid.matches(regexVidPid) || !newUsbDevice.pid.matches(regexVidPid)) {
-//                return this;
-//            }
-//            newUsbDevice.productName = "";
-//            newUsbDevice.vendorName = "";
-//
-//            try (BufferedReader usbIdsReader = new BufferedReader(new FileReader(USBDevice.usbIds))) {
-//                String currStr = "";
-//                boolean vendorFound = false;
-//                //TODO код лажа - переписать на нормальный.
-//                while (currStr != null) {
-//                    if (currStr.matches("(?i)^" + newUsbDevice.vid + ".+")) { //текущая строка содержит VendorID? Т.о. отслеживаем начало блока вендора
-//                        newUsbDevice.vendorName = currStr.split(" {2}")[1];// делитель - два пробела, т.о.:
-//                        // [0] - vid
-//                        // [1] - vendor name (имя производителя)
-//                        vendorFound = true;
-//                        currStr = usbIdsReader.readLine();
-//                        continue;
-//                    }
-//                    if (vendorFound && currStr.matches("(?i)\\t" + newUsbDevice.pid + ".+")) {//блок вендора начат и строка содержит ProductID?
-//                        newUsbDevice.productName = currStr.split(" {2}")[1];
-//                        break;
-//                    }
-//                    if (vendorFound && currStr.matches("\\[0-9a-fA-F]{4}\\s+.+")) { //начался блок следующего вендора?
-//                        newUsbDevice.productName = "";
-//                        break;
-//                    }
-//                    currStr = usbIdsReader.readLine();
-//                }
-//            } catch (IOException e) {
-//                LOGGER.warn("Не удалось определить название производителя и имя продукта для {}/{} по причине: {}",
-//                        newUsbDevice.vid, newUsbDevice.vid, e.getLocalizedMessage());
-//                LOGGER.debug("{}", e.toString());
-//                newUsbDevice.productName = "undef.";
-//                newUsbDevice.vendorName = "undef.";
-//            }
-//            return this;
-//        }
-//    }
 }
