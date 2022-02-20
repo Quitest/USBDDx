@@ -12,10 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RegistryAnalyzerTest {
-    private static Map<String, USBDevice> usbDeviceMap;
+    private static Map<String, USBDevice> allUsbDeviceMap;
+    private static Map<String, USBDevice> readyBoostDeviceMap;
     private final String testFailedMsg = "Возможно, тест запущен на другом ПК? Проверьте константы.";
 
     //Вариант 1
@@ -44,7 +47,8 @@ class RegistryAnalyzerTest {
 
     @BeforeAll
     static void beforeAll() {
-        usbDeviceMap = new RegistryAnalyzer().getRegistryAnalysis(true);
+        allUsbDeviceMap = new RegistryAnalyzer().getAnalysis(true);
+        readyBoostDeviceMap = new RegistryAnalyzer().getReadyBoostDevices();
     }
 
     @Test
@@ -53,7 +57,7 @@ class RegistryAnalyzerTest {
         USBDevice usbDevice = new RegistryAnalyzer().associateSerialToGuid().entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(USBDevice.getBuilder().build());
+                .findFirst().orElse(/*USBDevice.getBuilder().build()*/new USBDevice());
 
         assertEquals(expectedGuid, usbDevice.getGuid());
     }
@@ -61,7 +65,7 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Определение устройств, подключенных текущим пользователем")
     void determineDeviceUsers() {
-        List<UserProfile> userAccountsList = usbDeviceMap.get(expectedSerial).getUserAccountsList();
+        List<UserProfile> userAccountsList = allUsbDeviceMap.get(expectedSerial).getUserAccountsList();
         String currentUserHomedir = System.getProperty("user.home");
         UserProfile user = userAccountsList.stream()
                 .filter(userProfile -> currentUserHomedir.equals(userProfile.getProfileImagePath().toString()))
@@ -73,11 +77,11 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Получение информации о всех пользователях устройств")
     void findDevicesWithManyUsers() {
-        List<USBDevice> collect = usbDeviceMap.values().stream()
+        List<USBDevice> collect = allUsbDeviceMap.values().stream()
                 .filter(usbDevice -> usbDevice.getUserAccountsList().size() > 1)
                 .collect(Collectors.toList());
 
-        assertTrue(collect.size() > 0, "В системе есть USB-устройство, использовавшееся несколькими пользователями?");
+        assertTrue(collect.size() > 0, "В системе есть USB-устройство, использовавшееся несколькими пользователями? Права админа есть?");
     }
 
     @Test
@@ -89,11 +93,11 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Поиск правильного GUID'а. Ожидается успех.")
-    void getMountedDevicesTest2() {
-        USBDevice usbDevice = usbDeviceMap.entrySet().stream()
+    void getMountedDevicesTest() {
+        USBDevice usbDevice = allUsbDeviceMap.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(USBDevice.getBuilder().build());
+                .findFirst().orElse(/*USBDevice.getBuilder().build()*/new USBDevice());
 
         assertEquals(expectedGuid, usbDevice.getGuid());
     }
@@ -122,7 +126,7 @@ class RegistryAnalyzerTest {
                 .filter(mp -> mp.equals(expectedMountPoints2))
                 .findFirst().orElse("<NOT FOUND>");
 
-        assertEquals(expectedMountPoints2, actualGuid, "Не найдено устройств с GUID " + expectedGuid + "Временный профиль существует?");
+        assertEquals(expectedMountPoints2, actualGuid, "Устройств не найдено. Временный профиль существует? Права админа есть?");
     }
 
     @Test
@@ -142,7 +146,7 @@ class RegistryAnalyzerTest {
     @Test
     @DisplayName("Заполненность всех полей")
     void getRegistryAnalysisTest() {
-        USBDevice usbDevice = usbDeviceMap.get(expectedSerial);
+        USBDevice usbDevice = allUsbDeviceMap.get(expectedSerial);
         assertAll(
                 () -> assertNotEquals("", usbDevice.getSerial()),
                 () -> assertNotEquals("", usbDevice.getPid()),
@@ -151,7 +155,7 @@ class RegistryAnalyzerTest {
                 () -> assertNotEquals("", usbDevice.getVid()),
                 () -> assertNotEquals("", usbDevice.getGuid()),
                 () -> assertNotEquals("", usbDevice.getFriendlyName()),
-                () -> assertNotEquals("", usbDevice.getVolumeName()),
+                () -> assertNotEquals(0, usbDevice.getVolumeLabelList().size()),
                 () -> assertNotEquals("", usbDevice.getRevision()),
                 () -> assertFalse(usbDevice.getUserAccountsList().isEmpty())
         );
@@ -178,74 +182,20 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    @DisplayName("Порядок вызова анализирующих методов не влияет на результат?")
-    void orderInvokingRegistryAnalysisMethod() {
-        //Вариант
-        RegistryAnalyzer registryAnalyzer = new RegistryAnalyzer();
-        try {
-            registryAnalyzer.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        registryAnalyzer.associateSerialToGuid();
-        registryAnalyzer.getFriendlyName();
-        registryAnalyzer.determineDeviceUsers();
-        registryAnalyzer.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis = registryAnalyzer.getRegistryAnalysis(false);
-
-        //Вариант1
-        RegistryAnalyzer registryAnalyzer1 = new RegistryAnalyzer();
-        registryAnalyzer1.associateSerialToGuid();
-        try {
-            registryAnalyzer1.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        registryAnalyzer1.determineDeviceUsers();
-        registryAnalyzer1.getFriendlyName();
-        registryAnalyzer1.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis1 = registryAnalyzer1.getRegistryAnalysis(false);
-
-        //Вариант2
-        RegistryAnalyzer registryAnalyzer2 = new RegistryAnalyzer();
-        registryAnalyzer2.associateSerialToGuid();
-        try {
-            registryAnalyzer2.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        registryAnalyzer2.determineDeviceUsers();
-        registryAnalyzer2.getFriendlyName();
-        registryAnalyzer2.parseWindowsPortableDevice();
-        Map<String, USBDevice> registryAnalysis2 = registryAnalyzer2.getRegistryAnalysis(false);
-
-        //Вариант2
-        RegistryAnalyzer registryAnalyzer3 = new RegistryAnalyzer();
-        registryAnalyzer3.associateSerialToGuid();
-        try {
-            registryAnalyzer3.getUsbDevices();
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        registryAnalyzer3.parseWindowsPortableDevice();
-        registryAnalyzer3.getFriendlyName();
-        registryAnalyzer3.determineDeviceUsers();
-        Map<String, USBDevice> registryAnalysis3 = registryAnalyzer3.getRegistryAnalysis(false);
-
-        assertAll(
-                () -> assertEquals(usbDeviceMap, registryAnalysis),
-                () -> assertEquals(usbDeviceMap, registryAnalysis1),
-                () -> assertEquals(usbDeviceMap, registryAnalysis2),
-                () -> assertEquals(usbDeviceMap, registryAnalysis3)
-        );
+    @DisplayName("Наполнение серийными номерами томов [volumeIdList]")
+    void volumeIdListContainsManyIds() {
+        List<USBDevice> usbDevices = readyBoostDeviceMap.values().stream()
+                .filter(dev -> dev.getVolumeIdList().size() > 1)
+                .toList();
+        assertThat(usbDevices, not(emptyIterable()));
     }
 
     @Test
-    void parseWindowsPortableDevice() {
-//        Map<String, USBDevice> stringUSBDeviceMap = new RegistryAnalyzer().parseWindowsPortableDevice();
-        List<USBDevice> collect = usbDeviceMap.values().stream()
-                .filter(val -> !val.getVolumeName().isEmpty())
-                .collect(Collectors.toList());
-        assertEquals(expectedVolumeName, usbDeviceMap.get(expectedSerial).getVolumeName());
+    @DisplayName("Наполнение метками томов [volumeLabelList]")
+    void volumeLabelListContainsManyLabel() {
+        List<USBDevice> usbDeviceList = readyBoostDeviceMap.values().stream()
+                .filter(usbDevice -> usbDevice.getVolumeLabelList().size() > 1)
+                .toList();
+        assertThat(usbDeviceList, not(emptyIterable()));
     }
 }

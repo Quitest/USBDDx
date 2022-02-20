@@ -20,7 +20,7 @@ public class USBDeviceDto {
     @JsonProperty("dateTimeFirstInstall")
     private LocalDateTime dateTimeFirstInstall;
 
-    @JsonProperty("volumeName")
+    @JsonProperty("volumeLabel")
     private String volumeName;
 
     @JsonProperty("serialOSGenerated")
