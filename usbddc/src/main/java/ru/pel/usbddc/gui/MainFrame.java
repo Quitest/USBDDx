@@ -36,9 +36,9 @@ import java.util.regex.PatternSyntaxException;
 
 public class MainFrame extends JFrame {
     private static final Logger logger = LoggerFactory.getLogger(MainFrame.class);
+    private static final String SERIAL_TRASH = ".*[^\\w#{}&?\\-:]+";
     private final TableRowSorter<DefaultTableModel> sorter;
     private final boolean isSkipSerialTrash = UsbddcConfig.getInstance().isSkipSerialTrash();
-    private final String serialTrash = ".*[^\\w#{}&?\\-:]+";
     private JTable devicesTable;
     private JButton collectInfoButton;
     private JButton showOsInfoButton;
@@ -51,6 +51,8 @@ public class MainFrame extends JFrame {
     private JPanel statusPanel;
     private JLabel localStatusLabel;
     private JLabel remoteStatusLabel;
+    private JTextArea commentTextArea;
+    private JLabel commentLabel;
     private SystemInfo systemInfo;
     private DefaultTableModel tableModel = new DefaultTableModel(0, 0);
 
@@ -60,7 +62,7 @@ public class MainFrame extends JFrame {
 
         this.setContentPane(mainPanel);
         String[] header = new String[]{"№", "Serial", "Generated", "Friendly name", "PID", "VID",
-                "Product name","Product name by Registry", "Vendor name", "Vendor name by Registry", "Volume name", "Volume ID", "Revision", "First install",
+                "Product name", "Product name by Registry", "Vendor name", "Vendor name by Registry", "Volume name", "Volume ID", "Revision", "First install",
                 "User accounts list", "GUID"};
         tableModel.setColumnIdentifiers(header);
         devicesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -125,7 +127,7 @@ public class MainFrame extends JFrame {
                 for (int count = 0; count < usbDeviceList.size(); count++) {
                     USBDevice device = usbDeviceList.get(count);
                     String serial = device.getSerial();
-                    if (isSkipSerialTrash && serial.matches(serialTrash)) {
+                    if (isSkipSerialTrash && serial.matches(SERIAL_TRASH)) {
                         continue;
                     }
                     Vector<Object> data = new Vector<>();
@@ -190,6 +192,10 @@ public class MainFrame extends JFrame {
         }
     }
 
+    private void saveComment() {
+        systemInfo.setComment(commentTextArea.getText());
+    }
+
     private void sendReport() {
         URL url;
         localStatusLabel.setText("Идет отправка отчета...");
@@ -201,6 +207,7 @@ public class MainFrame extends JFrame {
             con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
 
+            saveComment();
             SystemInfoDto dto = new SystemInfoDto(systemInfo);
             ObjectWriter ow = new ObjectMapper().findAndRegisterModules().writer().withDefaultPrettyPrinter();
             String jsonInputString = ow.writeValueAsString(dto);

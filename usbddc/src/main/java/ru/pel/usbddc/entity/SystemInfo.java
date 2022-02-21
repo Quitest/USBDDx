@@ -13,9 +13,12 @@ import java.util.stream.Stream;
 public class SystemInfo {
     private OSInfo osInfo = new OSInfo();
     private String uuid = "";
+    private String comment = "";
     private Map<String, USBDevice> usbDeviceMap = new HashMap<>();
 
-    public SystemInfo() {}
+    public SystemInfo() {
+        //Во избежание утраты конструктора по умолчанию при создании в будущем конструктора с параметрами.
+    }
 
     /**
      * Выполнить слияние информации о USBDevice. Свойства, не равные null и не пустые, копируются в текущий объект из
