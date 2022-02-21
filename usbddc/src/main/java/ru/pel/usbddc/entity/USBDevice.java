@@ -58,7 +58,7 @@ public class USBDevice {
     }
 
     public USBDevice addUserProfile(UserProfile userProfile) {
-        userAccountsList.add(userProfile);
+        userAccountsList.add(Objects.requireNonNullElse(userProfile, UserProfile.getBuilder().build()));
         return this;
     }
 
@@ -68,7 +68,7 @@ public class USBDevice {
     }
 
     public USBDevice addVolumeLabel(String volumeLabel) {
-        volumeLabelList.add(volumeLabel);
+        volumeLabelList.add(Objects.requireNonNullElse(volumeLabel,""));
         return this;
     }
 
@@ -77,7 +77,7 @@ public class USBDevice {
     }
 
     public USBDevice setDateTimeFirstInstall(LocalDateTime dateTimeFirstInstall) {
-        this.dateTimeFirstInstall = dateTimeFirstInstall;
+        this.dateTimeFirstInstall = Objects.requireNonNullElse(dateTimeFirstInstall, LocalDateTime.MIN);
         return this;
     }
 
@@ -86,7 +86,7 @@ public class USBDevice {
     }
 
     public USBDevice setDiskId(String diskId) {
-        this.diskId = diskId;
+        this.diskId = Objects.requireNonNullElse(diskId, "");
         return this;
     }
 
@@ -95,7 +95,7 @@ public class USBDevice {
     }
 
     public USBDevice setFriendlyName(String friendlyName) {
-        this.friendlyName = friendlyName;
+        this.friendlyName = Objects.requireNonNullElse(friendlyName, "");
         return this;
     }
 
@@ -104,7 +104,7 @@ public class USBDevice {
     }
 
     public USBDevice setGuid(String guid) {
-        this.guid = guid;
+        this.guid = Objects.requireNonNullElse(guid, "");
         return this;
     }
 
@@ -113,7 +113,7 @@ public class USBDevice {
     }
 
     public USBDevice setPid(String pid) {
-        this.pid = pid;
+        this.pid = Objects.requireNonNullElse(pid, "");
         return this;
     }
 
@@ -122,7 +122,7 @@ public class USBDevice {
     }
 
     public USBDevice setProductName(String productName) {
-        this.productName = productName;
+        this.productName = Objects.requireNonNullElse(productName, "");
         return this;
     }
 
@@ -131,7 +131,7 @@ public class USBDevice {
     }
 
     public USBDevice setProductNameByRegistry(String productNameByRegistry) {
-        this.productNameByRegistry = productNameByRegistry;
+        this.productNameByRegistry = Objects.requireNonNullElse(productNameByRegistry, "");
         return this;
     }
 
@@ -140,7 +140,7 @@ public class USBDevice {
     }
 
     public USBDevice setRevision(String revision) {
-        this.revision = revision;
+        this.revision = Objects.requireNonNullElse(revision, "");
         return this;
     }
 
@@ -173,7 +173,7 @@ public class USBDevice {
     }
 
     public USBDevice setUserAccountsList(List<UserProfile> userAccountsList) {
-        this.userAccountsList = userAccountsList;
+        this.userAccountsList = Objects.requireNonNullElse(userAccountsList, new ArrayList<>());
         return this;
     }
 
@@ -182,7 +182,7 @@ public class USBDevice {
     }
 
     public USBDevice setVendorName(String vendorName) {
-        this.vendorName = vendorName;
+        this.vendorName = Objects.requireNonNullElse(vendorName, "");
         return this;
     }
 
@@ -191,7 +191,7 @@ public class USBDevice {
     }
 
     public USBDevice setVendorNameByRegistry(String vendorNameByRegistry) {
-        this.vendorNameByRegistry = vendorNameByRegistry;
+        this.vendorNameByRegistry = Objects.requireNonNullElse(vendorNameByRegistry, "");
         return this;
     }
 
@@ -200,7 +200,7 @@ public class USBDevice {
     }
 
     public USBDevice setVid(String vid) {
-        this.vid = vid;
+        this.vid = Objects.requireNonNullElse(vid, "");
         return this;
     }
 
@@ -209,7 +209,7 @@ public class USBDevice {
     }
 
     public USBDevice setVolumeIdList(List<Long> volumeIdList) {
-        this.volumeIdList = volumeIdList;
+        this.volumeIdList = Objects.requireNonNullElse(volumeIdList, new ArrayList<>());
         return this;
     }
 
@@ -218,7 +218,7 @@ public class USBDevice {
     }
 
     public USBDevice setVolumeLabelList(Set<String> volumeLabelList) {
-        this.volumeLabelList = volumeLabelList;
+        this.volumeLabelList = Objects.requireNonNullElse(volumeLabelList, new HashSet<>());
         return this;
     }
 
@@ -266,7 +266,7 @@ public class USBDevice {
     }
 
     public USBDevice setSerialOSGenerated(boolean serialOSGenerated) {
-        isSerialOSGenerated = serialOSGenerated;
+        isSerialOSGenerated = Objects.requireNonNullElse(serialOSGenerated, true);
         return this;
     }
 
