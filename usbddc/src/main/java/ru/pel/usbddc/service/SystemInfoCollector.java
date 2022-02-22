@@ -30,17 +30,28 @@ import java.util.concurrent.*;
 public class SystemInfoCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemInfoCollector.class);
     private static final int THREAD_POOL_SIZE;
+    private static final ExecutorService executorService;
 
     static {
         //TODO Вероятно, в данном случае размер пула потоков стоило бы определять исходя из количества запускаемых анализаторов?
         THREAD_POOL_SIZE = UsbddcConfig.getInstance().getThreadPoolSize();
+        executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         LOGGER.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
     }
 
+    private List<Callable<Map<String, USBDevice>>> analyzerTaskList = new ArrayList<>();
     private SystemInfo systemInfo;
+    //TODO #52
+    // private String scannedWithAdminPrivileges;
 
     public SystemInfoCollector() {
         systemInfo = new SystemInfo();
+    }
+
+    private int addAnalyzer(Analyzer analyzer, boolean doNewAnalysis) {
+        Callable<Map<String, USBDevice>> task = () -> analyzer.getAnalysis(doNewAnalysis);
+        analyzerTaskList.add(task);
+        return analyzerTaskList.size();
     }
 
     /**
@@ -50,24 +61,27 @@ public class SystemInfoCollector {
      */
     public SystemInfoCollector collectSystemInfo() {
         long startTime = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+//        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
         Future<OSInfo> osInfoFuture = executorService.submit(() -> new OSInfoCollector().collectInfo());
         Future<String> uuidFuture = executorService.submit(this::getSystemUUID);
 
-        List<Callable<Map<String, USBDevice>>> taskList = new ArrayList<>();
-        Callable<Map<String, USBDevice>> registryAnalysisCallable = () -> new RegistryAnalyzer().getAnalysis(true);
+//        List<Callable<Map<String, USBDevice>>> taskList = new ArrayList<>();
+//        Callable<Map<String, USBDevice>> registryAnalysisCallable = () -> new RegistryAnalyzer().getAnalysis(true);
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
-        Callable<Map<String, USBDevice>> logAnalysisCallable = () -> new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
+//        Callable<Map<String, USBDevice>> logAnalysisCallable = () -> new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
 
-        taskList.add(logAnalysisCallable);
-        taskList.add(registryAnalysisCallable);
+//        taskList.add(logAnalysisCallable);
+//        taskList.add(registryAnalysisCallable);
+        addAnalyzer(new RegistryAnalyzer(), true);
+        addAnalyzer(new SetupapiDevLogAnalyzer(logList),true);
         try {
-            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(taskList);
-            for (Future<Map<String, USBDevice>> future : futures) {
-                Map<String, USBDevice> usbDeviceMap = future.get();
-                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
-            }
+//            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(taskList);
+//            for (Future<Map<String, USBDevice>> future : futures) {
+//                Map<String, USBDevice> usbDeviceMap = future.get();
+//                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
+//            }
+            executeAnalysis();
             systemInfo.setUuid(uuidFuture.get());
             systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
 
@@ -80,6 +94,33 @@ public class SystemInfoCollector {
         executorService.shutdown();
         LOGGER.trace("Время работы общее - {}мс", System.currentTimeMillis() - startTime);
         return this;
+    }
+
+    private void executeAnalysis() throws InterruptedException, ExecutionException {
+        try {
+            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(analyzerTaskList);
+            for (Future<Map<String, USBDevice>> future : futures) {
+                Map<String, USBDevice> usbDeviceMap = future.get();
+                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
+            }
+//            systemInfo.setUuid(uuidFuture.get());
+//            systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
+
+        } catch (InterruptedException e) {
+            String msg = "Текущий поток был прерван во время ожидания.";
+            LOGGER.error(msg + "Причина: {}", e.getLocalizedMessage());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(msg, e);
+            }
+            throw new InterruptedException(msg);
+        } catch (ExecutionException e) {
+            String msg = "Во время выполнения (вычисления) анализа возникло исключение.";
+            LOGGER.error(msg + "Причина: {}", e.getLocalizedMessage());
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(msg, e);
+            }
+            throw new ExecutionException(msg, e);
+        }
     }
 
     private String getSystemUUID() {
@@ -96,7 +137,7 @@ public class SystemInfoCollector {
             return uuid;
         } catch (IOException e) {
             String error = "error";
-            LOGGER.error("ОШИБКА при попытке получить UUID. Присвоено значение \"{}\". {}",error, e.getLocalizedMessage());
+            LOGGER.error("ОШИБКА при попытке получить UUID. Присвоено значение \"{}\". {}", error, e.getLocalizedMessage());
             return error;
         }
     }
