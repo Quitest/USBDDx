@@ -20,38 +20,30 @@ import java.util.regex.Pattern;
 
 @Getter
 @Setter
-public class SetupapiDevLogAnalyzer implements Analyzer{
+public class SetupapiDevLogAnalyzer implements Analyzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(SetupapiDevLogAnalyzer.class);
     private static final String NOT_PARSED = "<SERIAL IS NOT PARSED IN LOG>";
     @Setter
     private static Path pathToLog;
     private List<Path> setupapiDevLogList;
     private Map<String, USBDevice> usbDeviceMap;
+    private boolean doNewAnalysis;
 
     /**
-     * Позволяет существующую мапу насытить (дополнить) новыми данными, содержащими результаты анализа лог файлов.
-     *
-     * @param usbDeviceMap мапа, которую надо насытить (дополнить).
-     */
-    public SetupapiDevLogAnalyzer(Map<String, USBDevice> usbDeviceMap) {
-        this(usbDeviceMap, new OSInfoCollector().getSetupapiDevLogList());
-    }
-
-    public SetupapiDevLogAnalyzer(List<Path> setupapiDevLogList) {
-        this(new HashMap<>(), setupapiDevLogList);
-    }
-
-    public SetupapiDevLogAnalyzer(@NonNull Map<String, USBDevice> usbDeviceMap, List<Path> setupapiDevLogList) {
-        this.usbDeviceMap = usbDeviceMap;
-        this.setupapiDevLogList = setupapiDevLogList;
-    }
-
-    /**
-     * Создается новая мапа, в последствии заполняется результатом анализа (парсинга) лог файлов.
+     * Создается пустая мапа USB устройств, пустой список лог файлов, флаг "выполнить новый анализ" установлен в false.
      */
     public SetupapiDevLogAnalyzer() {
-        usbDeviceMap = new HashMap<>();
-        setupapiDevLogList = new OSInfoCollector().getSetupapiDevLogList();
+        this(new HashMap<>(), new ArrayList<>(), false);
+    }
+
+    public SetupapiDevLogAnalyzer(List<Path> setupapiDevLogList, boolean doNewAnalysis) {
+        this(new HashMap<>(), setupapiDevLogList, doNewAnalysis);
+    }
+
+    public SetupapiDevLogAnalyzer(@NonNull Map<String, USBDevice> usbDeviceMap, List<Path> setupapiDevLogList, boolean doNewAnalysis) {
+        this.usbDeviceMap = usbDeviceMap;
+        this.setupapiDevLogList = setupapiDevLogList;
+        this.doNewAnalysis = doNewAnalysis;
     }
 
     /**
@@ -59,9 +51,6 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
      * строки, начинающиеся на "{@code >>>  [Device Install (Hardware initiated)}" и следующая за ней - содержит дату
      * и время установки.
      *
-     * @param doNewAnalysis {@code true} - выполняет анализ файла заново, данные полученные предыдущим вызовом теряются,
-     *                      при этом если исходная мапа непустая, то она дополняется данными; если пустая, то создается новая.
-     *                      {@code false} - возвращает результаты предыдущего анализа.
      * @return мапу, содержащую результат в виде пары значений {@code серийный номер - объект типа USBDevice}.
      * @throws IOException              If an I/O error occurs.
      * @throws FileNotFoundException    - if the named file does not exist, is a directory rather than a regular file, or
@@ -71,11 +60,11 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
      *                                  default provider, the checkRead method is invoked to check read access to the directory.
      */
     @Override
-    public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) throws IOException {
+    public Map<String, USBDevice> getAnalysis() throws IOException {
         if (doNewAnalysis) {
-            if (usbDeviceMap.isEmpty()) {
-                usbDeviceMap = new HashMap<>();
-            }
+//            if (usbDeviceMap.isEmpty()) {
+            usbDeviceMap = new HashMap<>();
+//            }
             parseAllSetupapiDevLogs();
         }
         return usbDeviceMap;
@@ -108,9 +97,18 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
 
         } catch (IOException e) {
             LOGGER.error("ОШИБКА. Не удалось найти дату первого подключения устройства. Причина: {}", e.getLocalizedMessage());
-            LOGGER.debug("{}",e.toString());
+            LOGGER.debug("{}", e.toString());
         }
         return timeStamp;
+    }
+
+    public boolean isDoNewAnalysis() {
+        return doNewAnalysis;
+    }
+
+    public SetupapiDevLogAnalyzer setDoNewAnalysis(boolean doNewAnalysis) {
+        this.doNewAnalysis = doNewAnalysis;
+        return this;
     }
 
     /**
@@ -156,9 +154,9 @@ public class SetupapiDevLogAnalyzer implements Analyzer{
                     }
                     currStr = reader.readLine();
                 }
-            }catch (IOException e){
+            } catch (IOException e) {
                 LOGGER.error("Ошибка парсинга лога {}", e.getLocalizedMessage());
-                LOGGER.debug("{}",e.toString());
+                LOGGER.debug("{}", e.toString());
                 throw e;
             }
         }

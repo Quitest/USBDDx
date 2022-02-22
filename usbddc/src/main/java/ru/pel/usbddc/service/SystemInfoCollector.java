@@ -48,8 +48,8 @@ public class SystemInfoCollector {
         systemInfo = new SystemInfo();
     }
 
-    private int addAnalyzer(Analyzer analyzer, boolean doNewAnalysis) {
-        Callable<Map<String, USBDevice>> task = () -> analyzer.getAnalysis(doNewAnalysis);
+    private int addAnalyzer(Analyzer analyzer) {
+        Callable<Map<String, USBDevice>> task = analyzer::getAnalysis;
         analyzerTaskList.add(task);
         return analyzerTaskList.size();
     }
@@ -67,8 +67,8 @@ public class SystemInfoCollector {
 
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
 
-        addAnalyzer(new RegistryAnalyzer(), true);
-        addAnalyzer(new SetupapiDevLogAnalyzer(logList), true);
+        addAnalyzer(new RegistryAnalyzer(true));
+        addAnalyzer(new SetupapiDevLogAnalyzer(logList, true));
         try {
             executeAnalysis();
             systemInfo.setUuid(uuidFuture.get());
