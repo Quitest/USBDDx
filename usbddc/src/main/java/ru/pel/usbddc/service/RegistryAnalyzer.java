@@ -299,26 +299,6 @@ public class RegistryAnalyzer implements Analyzer {
     }
 
     /**
-     * Получить результат анализа реестра. Результат содержит в себе все данные, которые удалось получить путем чтения
-     * реестра.
-     *
-     * @param doNewAnalysis true - собирает все данные об устройствах из реестра заново, false - возвращает ранее полученные
-     *                      данные
-     * @return результаты предыдущего или нового анализа в зависимости от аргумента.
-     */
-    @Deprecated(forRemoval = true)
-    public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
-        if (doNewAnalysis) {
-            getUsbDevices();
-            associateSerialToGuid();
-            determineDeviceUsers();
-            getFriendlyName();
-            parseWindowsPortableDevice();
-        }
-        return usbDeviceMap;
-    }
-
-    /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
      *
