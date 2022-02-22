@@ -20,8 +20,14 @@ class SystemInfoCollectorTest {
     @BeforeAll
     static void init() throws IOException {
         systemInfoCollector = new SystemInfoCollector().collectSystemInfo();
-        json = systemInfoCollector.systemInfoToJSON();
         systemInfo = systemInfoCollector.getSystemInfo();
+        systemInfo.setComment("test comment");
+        json = systemInfoCollector.systemInfoToJSON();
+    }
+
+    @Test
+    void whenJsonContainsComment_thenTrue(){
+        assertThat(json, containsString("\"comment\" : \"test comment\""));
     }
 
     @Test
