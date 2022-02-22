@@ -61,33 +61,26 @@ public class SystemInfoCollector {
      */
     public SystemInfoCollector collectSystemInfo() {
         long startTime = System.currentTimeMillis();
-//        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
         Future<OSInfo> osInfoFuture = executorService.submit(() -> new OSInfoCollector().collectInfo());
         Future<String> uuidFuture = executorService.submit(this::getSystemUUID);
 
-//        List<Callable<Map<String, USBDevice>>> taskList = new ArrayList<>();
-//        Callable<Map<String, USBDevice>> registryAnalysisCallable = () -> new RegistryAnalyzer().getAnalysis(true);
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
-//        Callable<Map<String, USBDevice>> logAnalysisCallable = () -> new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
 
-//        taskList.add(logAnalysisCallable);
-//        taskList.add(registryAnalysisCallable);
         addAnalyzer(new RegistryAnalyzer(), true);
-        addAnalyzer(new SetupapiDevLogAnalyzer(logList),true);
+        addAnalyzer(new SetupapiDevLogAnalyzer(logList), true);
         try {
-//            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(taskList);
-//            for (Future<Map<String, USBDevice>> future : futures) {
-//                Map<String, USBDevice> usbDeviceMap = future.get();
-//                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
-//            }
             executeAnalysis();
             systemInfo.setUuid(uuidFuture.get());
             systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
 
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LOGGER.error("Exception occurred: {}", e.getLocalizedMessage());
-            LOGGER.debug("Exception occurred: {}", e.toString());
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Текущий поток был прерван во время работы анализатора. Причина: {}", e.getLocalizedMessage());
+            LOGGER.debug("Текущий поток был прерван во время работы анализатора.", e);
+            Thread.currentThread().interrupt();
+        } catch (TimeoutException e) {
+            LOGGER.error("Анализатор работал слишком долго. {}", e.getLocalizedMessage());
+            LOGGER.debug("Анализатор работал слишком долго. ", e);
             Thread.currentThread().interrupt();
         }
 
@@ -96,30 +89,18 @@ public class SystemInfoCollector {
         return this;
     }
 
-    private void executeAnalysis() throws InterruptedException, ExecutionException {
+    private void executeAnalysis() {
+        List<Future<Map<String, USBDevice>>> futures;
         try {
-            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(analyzerTaskList);
+            futures = executorService.invokeAll(analyzerTaskList);
             for (Future<Map<String, USBDevice>> future : futures) {
                 Map<String, USBDevice> usbDeviceMap = future.get();
                 systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
             }
-//            systemInfo.setUuid(uuidFuture.get());
-//            systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
-
-        } catch (InterruptedException e) {
-            String msg = "Текущий поток был прерван во время ожидания.";
-            LOGGER.error(msg + "Причина: {}", e.getLocalizedMessage());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(msg, e);
-            }
-            throw new InterruptedException(msg);
-        } catch (ExecutionException e) {
-            String msg = "Во время выполнения (вычисления) анализа возникло исключение.";
-            LOGGER.error(msg + "Причина: {}", e.getLocalizedMessage());
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(msg, e);
-            }
-            throw new ExecutionException(msg, e);
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Текущий поток был прерван во время работы анализатора. Причина: {}", e.getLocalizedMessage());
+            LOGGER.debug("Текущий поток был прерван во время работы анализатора.", e);
+            Thread.currentThread().interrupt();
         }
     }
 
