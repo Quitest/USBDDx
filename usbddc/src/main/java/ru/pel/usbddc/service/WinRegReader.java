@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -92,8 +89,13 @@ public class WinRegReader {
     public static Optional<String> getValue(String key, String value) {
         Optional<String> valueOptional = Optional.empty();
         try {
-            String output = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"").getBody();
-
+//            String output = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"").getBody();
+            WinComExecutor.Result<Integer, String> result = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
+            String output = result.getBody();
+            int exitCode = result.getExitCode();
+            if (exitCode == 1){
+                throw new NoSuchElementException(output.trim());
+            }
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
             //не пойму его назначения оригинального условия if(!output.contains("\t")){
