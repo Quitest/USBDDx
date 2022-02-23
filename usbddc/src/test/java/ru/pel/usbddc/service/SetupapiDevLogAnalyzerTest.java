@@ -1,5 +1,10 @@
 package ru.pel.usbddc.service;
 
+import org.apache.tomcat.jni.OS;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
@@ -8,6 +13,10 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SetupapiDevLogAnalyzerTest {
@@ -22,38 +31,49 @@ class SetupapiDevLogAnalyzerTest {
     @Test
     @DisplayName("Выполнение нового анализа")
     void getNewAnalysis() throws IOException {
-        Map<String, USBDevice> analysis = new SetupapiDevLogAnalyzer().getAnalysis(true);
+        Map<String, USBDevice> analysis = new SetupapiDevLogAnalyzer(new OSInfoCollector().getSetupapiDevLogList(),true)
+                .getAnalysis();
 
         assertTrue(analysis.size() > 0);
     }
 
     @Test
-    @DisplayName("Получение ранее выполненного анализа")
-    void getPrevAnalysis() throws IOException {
-        SetupapiDevLogAnalyzer setupapiDevLogAnalyzer = new SetupapiDevLogAnalyzer();
-        Map<String, USBDevice> newAnalysis = setupapiDevLogAnalyzer.getAnalysis(true);
-        Map<String, USBDevice> prevAnalysis = setupapiDevLogAnalyzer.getAnalysis(false);
+    @DisplayName("Когда doNewAnalysis = false возвращается прежний результат")
+    void whenDoNewAnalysisIsFALSEGetAnalysisReturnOLDResult() throws IOException {
+        SetupapiDevLogAnalyzer setupapiDevLogAnalyzer = new SetupapiDevLogAnalyzer(new OSInfoCollector().getSetupapiDevLogList(),
+                true);
+        Map<String, USBDevice> newAnalysis = setupapiDevLogAnalyzer.getAnalysis();
+        setupapiDevLogAnalyzer.setDoNewAnalysis(false);
+        Map<String, USBDevice> prevAnalysis = setupapiDevLogAnalyzer.getAnalysis();
 
         assertSame(newAnalysis, prevAnalysis);
     }
 
     @Test
-    void parse() throws IOException {
-//        SetupapiDevLogAnalyzer setupapiDevLogAnalyzer = new SetupapiDevLogAnalyzer();
-//        setupapiDevLogAnalyzer.parseAllSetupapiDevLogs();
-//        Map<String, USBDevice> usbDeviceMap = setupapiDevLogAnalyzer.getUsbDeviceMap();
-        Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer().parseAllSetupapiDevLogs();
+    void whenDoNewAnalysisIsTRUEGetAnalysisReturnNEWResult() throws IOException {
+        SetupapiDevLogAnalyzer setupapiDevLogAnalyzer = new SetupapiDevLogAnalyzer(new OSInfoCollector().getSetupapiDevLogList(),
+                true);
+        Map<String, USBDevice> newAnalysis = setupapiDevLogAnalyzer.getAnalysis();
+        setupapiDevLogAnalyzer.setDoNewAnalysis(true);
+        Map<String, USBDevice> prevAnalysis = setupapiDevLogAnalyzer.getAnalysis();
 
-        assertAll(
-                () -> assertEquals(expectedDateTimeInstall, usbDeviceMap.get(SERIAL).getDateTimeFirstInstall())
-//                () -> assertEquals(LocalDateTime.of(2020,4,13, 14,49,24),
-//                        usbDeviceMap.get("00000000000E07").getDateTimeFirstInstall())
-        );
+        assertThat(newAnalysis, not(sameInstance(prevAnalysis)));
+    }
+
+    @Test
+    void whenDateTimeFirstInstallNotMIN_thenTrue() throws IOException {
+        Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer(new OSInfoCollector().getSetupapiDevLogList(),true)
+                .parseAllSetupapiDevLogs();
+
+        assertThat(usbDeviceMap, hasEntry(
+                anyOf(is(SERIAL)),
+                hasProperty("dateTimeFirstInstall", is(not(LocalDateTime.MIN)))));
     }
 
     @Test
     void parseDateTimeFirstInstallOfSerial() throws IOException {
-        Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer().parseAllSetupapiDevLogs();
+        Map<String, USBDevice> usbDeviceMap = new SetupapiDevLogAnalyzer(new OSInfoCollector().getSetupapiDevLogList(),true)
+                .parseAllSetupapiDevLogs();
 
         assertEquals(LocalDateTime.of(2016,11,28,11,3,24),
                 usbDeviceMap.get("00000").getDateTimeFirstInstall());

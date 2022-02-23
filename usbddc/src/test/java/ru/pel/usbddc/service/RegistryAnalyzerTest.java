@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.List;
@@ -47,7 +48,7 @@ class RegistryAnalyzerTest {
 
     @BeforeAll
     static void beforeAll() {
-        allUsbDeviceMap = new RegistryAnalyzer().getAnalysis(true);
+        allUsbDeviceMap = new RegistryAnalyzer(true).getAnalysis();
         readyBoostDeviceMap = new RegistryAnalyzer().getReadyBoostDevices();
     }
 
@@ -197,5 +198,22 @@ class RegistryAnalyzerTest {
                 .filter(usbDevice -> usbDevice.getVolumeLabelList().size() > 1)
                 .toList();
         assertThat(usbDeviceList, not(emptyIterable()));
+    }
+
+    @Test
+    void whenDoNewAnalysisIsTRUEGetAnalysisReturnNEWResult() throws IOException {
+        Analyzer analyzer = new RegistryAnalyzer(true);
+        Map<String, USBDevice> firstAnalysis = analyzer.getAnalysis();
+        Map<String, USBDevice> secondAnalysis = analyzer.getAnalysis();
+        assertThat(firstAnalysis, not(sameInstance(secondAnalysis)));
+    }
+
+    @Test
+    void whenDoNewAnalysisIsFALSEGetAnalysisReturnOLDResult() throws IOException {
+        Analyzer analyzer = new RegistryAnalyzer(true);
+        Map<String, USBDevice> firstAnalysis = analyzer.getAnalysis();
+        analyzer.setDoNewAnalysis(false);
+        Map<String, USBDevice> secondAnalysis = analyzer.getAnalysis();
+        assertThat(firstAnalysis,sameInstance(secondAnalysis));
     }
 }

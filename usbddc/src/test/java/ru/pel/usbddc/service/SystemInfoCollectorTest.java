@@ -20,8 +20,14 @@ class SystemInfoCollectorTest {
     @BeforeAll
     static void init() throws IOException {
         systemInfoCollector = new SystemInfoCollector().collectSystemInfo();
-        json = systemInfoCollector.systemInfoToJSON();
         systemInfo = systemInfoCollector.getSystemInfo();
+        systemInfo.setComment("test comment");
+        json = systemInfoCollector.systemInfoToJSON();
+    }
+
+    @Test
+    void whenJsonContainsComment_thenTrue(){
+        assertThat(json, containsString("\"comment\" : \"test comment\""));
     }
 
     @Test
@@ -30,11 +36,11 @@ class SystemInfoCollectorTest {
         double osVersion = systemInfo.getOsInfo().getOsVersion();
 
         assertThat(systemInfo.getUsbDeviceMap(), anyOf(hasKey("EFF732B1"), hasKey("1492710242260098")));
-        assertThat(osVersion, is(10.0));
+        assertThat(osVersion, anyOf(is(10.0), is(6.3)));
     }
 
     @Test
-    void systemInfoJSONContainsOsId() throws JsonProcessingException {
+    void convertingSystemInfoToJSONContainsOsId() throws JsonProcessingException {
         String osId = systemInfo.getOsInfo().getOsId();
         assertThat(systemInfoCollector.systemInfoToJSON(), containsString(osId));
     }
@@ -45,9 +51,11 @@ class SystemInfoCollectorTest {
     }
 
     @Test
-    void gettingUUID() {
+    void whenGettingUUID_thenTrue() {
         //паттерн для UUID XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX, где X - символ один из A-Fa-f0-9
         String pattern = ".*[A-Fa-f\\d]{8}-([A-Fa-f\\d-]{5}){3}[A-Fa-f\\d]{12}.*";
         assertThat(systemInfo.getUuid(), matchesRegex(pattern));
     }
+
+    //TODO подсчет количества запускаемых потоков. См. https://stackoverflow.com/questions/11642630/junit-test-the-correct-number-of-threads-has-started
 }

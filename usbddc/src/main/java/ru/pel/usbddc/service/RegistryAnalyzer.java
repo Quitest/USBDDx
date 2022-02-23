@@ -26,10 +26,20 @@ public class RegistryAnalyzer implements Analyzer {
      */
     private static final String REG_KEY_EMDMGMT = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt";
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistryAnalyzer.class);
-    private final Map<String, USBDevice> usbDeviceMap;
+    private Map<String, USBDevice> usbDeviceMap;
+    private boolean doNewAnalysis;
 
     public RegistryAnalyzer() {
-        this.usbDeviceMap = new HashMap<>();
+        this(true, new HashMap<>());
+    }
+
+    public RegistryAnalyzer(boolean doNewAnalysis) {
+        this(doNewAnalysis, new HashMap<>());
+    }
+
+    public RegistryAnalyzer(boolean doNewAnalysis, Map<String, USBDevice> usbDeviceMap) {
+        this.usbDeviceMap = usbDeviceMap;
+        this.doNewAnalysis = doNewAnalysis;
     }
 
     /**
@@ -118,13 +128,15 @@ public class RegistryAnalyzer implements Analyzer {
     /**
      * Выполняет анализ реестра на наличие записей о USB устройствах и данных о них.
      *
-     * @param doNewAnalysis определяет необходимость выполнения нового анализа.
      * @return если doNewAnalysis задан true, то возвращается результат нового анализа, если false - возвращает результат предыдущего
      * анализа.
      */
     @Override
-    public Map<String, USBDevice> getAnalysis(boolean doNewAnalysis) {
-        if (doNewAnalysis) {
+    public Map<String, USBDevice> getAnalysis() {
+        if (!doNewAnalysis) {
+            return usbDeviceMap;
+        } else {
+            usbDeviceMap = new HashMap<>();
             getUsbDevices();
             getReadyBoostDevices();
             associateSerialToGuid();
@@ -287,26 +299,6 @@ public class RegistryAnalyzer implements Analyzer {
     }
 
     /**
-     * Получить результат анализа реестра. Результат содержит в себе все данные, которые удалось получить путем чтения
-     * реестра.
-     *
-     * @param doNewAnalysis true - собирает все данные об устройствах из реестра заново, false - возвращает ранее полученные
-     *                      данные
-     * @return результаты предыдущего или нового анализа в зависимости от аргумента.
-     */
-    @Deprecated(forRemoval = true)
-    public Map<String, USBDevice> getRegistryAnalysis(boolean doNewAnalysis) {
-        if (doNewAnalysis) {
-            getUsbDevices();
-            associateSerialToGuid();
-            determineDeviceUsers();
-            getFriendlyName();
-            parseWindowsPortableDevice();
-        }
-        return usbDeviceMap;
-    }
-
-    /**
      * Получить список USB устройств когда-либо подключенных к АРМ.
      * Информация берется из HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Enum\USB
      *
@@ -382,6 +374,15 @@ public class RegistryAnalyzer implements Analyzer {
             Thread.currentThread().interrupt();
         }
         return userProfileList;
+    }
+
+    public boolean isDoNewAnalysis() {
+        return doNewAnalysis;
+    }
+
+    public RegistryAnalyzer setDoNewAnalysis(boolean doNewAnalysis) {
+        this.doNewAnalysis = doNewAnalysis;
+        return this;
     }
 
     /**

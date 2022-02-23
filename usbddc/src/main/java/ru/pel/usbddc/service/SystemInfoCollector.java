@@ -30,17 +30,28 @@ import java.util.concurrent.*;
 public class SystemInfoCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemInfoCollector.class);
     private static final int THREAD_POOL_SIZE;
+    private static final ExecutorService executorService;
 
     static {
         //TODO Вероятно, в данном случае размер пула потоков стоило бы определять исходя из количества запускаемых анализаторов?
         THREAD_POOL_SIZE = UsbddcConfig.getInstance().getThreadPoolSize();
+        executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         LOGGER.debug("Размер пула потоков = {}", THREAD_POOL_SIZE);
     }
 
+    private List<Callable<Map<String, USBDevice>>> analyzerTaskList = new ArrayList<>();
     private SystemInfo systemInfo;
+    //TODO #52
+    // private String scannedWithAdminPrivileges;
 
     public SystemInfoCollector() {
         systemInfo = new SystemInfo();
+    }
+
+    private int addAnalyzer(Analyzer analyzer) {
+        Callable<Map<String, USBDevice>> task = analyzer::getAnalysis;
+        analyzerTaskList.add(task);
+        return analyzerTaskList.size();
     }
 
     /**
@@ -50,36 +61,47 @@ public class SystemInfoCollector {
      */
     public SystemInfoCollector collectSystemInfo() {
         long startTime = System.currentTimeMillis();
-        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
         Future<OSInfo> osInfoFuture = executorService.submit(() -> new OSInfoCollector().collectInfo());
         Future<String> uuidFuture = executorService.submit(this::getSystemUUID);
 
-        List<Callable<Map<String, USBDevice>>> taskList = new ArrayList<>();
-        Callable<Map<String, USBDevice>> registryAnalysisCallable = () -> new RegistryAnalyzer().getAnalysis(true);
         List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
-        Callable<Map<String, USBDevice>> logAnalysisCallable = () -> new SetupapiDevLogAnalyzer(logList).getAnalysis(true);
 
-        taskList.add(logAnalysisCallable);
-        taskList.add(registryAnalysisCallable);
+        addAnalyzer(new RegistryAnalyzer(true));
+        addAnalyzer(new SetupapiDevLogAnalyzer(logList, true));
         try {
-            List<Future<Map<String, USBDevice>>> futures = executorService.invokeAll(taskList);
-            for (Future<Map<String, USBDevice>> future : futures) {
-                Map<String, USBDevice> usbDeviceMap = future.get();
-                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
-            }
+            executeAnalysis();
             systemInfo.setUuid(uuidFuture.get());
             systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
 
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            LOGGER.error("Exception occurred: {}", e.getLocalizedMessage());
-            LOGGER.debug("Exception occurred: {}", e.toString());
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Текущий поток был прерван во время работы анализатора. Причина: {}", e.getLocalizedMessage());
+            LOGGER.debug("Текущий поток был прерван во время работы анализатора.", e);
+            Thread.currentThread().interrupt();
+        } catch (TimeoutException e) {
+            LOGGER.error("Анализатор работал слишком долго. {}", e.getLocalizedMessage());
+            LOGGER.debug("Анализатор работал слишком долго. ", e);
             Thread.currentThread().interrupt();
         }
 
         executorService.shutdown();
         LOGGER.trace("Время работы общее - {}мс", System.currentTimeMillis() - startTime);
         return this;
+    }
+
+    private void executeAnalysis() {
+        List<Future<Map<String, USBDevice>>> futures;
+        try {
+            futures = executorService.invokeAll(analyzerTaskList);
+            for (Future<Map<String, USBDevice>> future : futures) {
+                Map<String, USBDevice> usbDeviceMap = future.get();
+                systemInfo.mergeUsbDeviceInfo(usbDeviceMap);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Текущий поток был прерван во время работы анализатора. Причина: {}", e.getLocalizedMessage());
+            LOGGER.debug("Текущий поток был прерван во время работы анализатора.", e);
+            Thread.currentThread().interrupt();
+        }
     }
 
     private String getSystemUUID() {
@@ -96,7 +118,7 @@ public class SystemInfoCollector {
             return uuid;
         } catch (IOException e) {
             String error = "error";
-            LOGGER.error("ОШИБКА при попытке получить UUID. Присвоено значение \"{}\". {}",error, e.getLocalizedMessage());
+            LOGGER.error("ОШИБКА при попытке получить UUID. Присвоено значение \"{}\". {}", error, e.getLocalizedMessage());
             return error;
         }
     }
