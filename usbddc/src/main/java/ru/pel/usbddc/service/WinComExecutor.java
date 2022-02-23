@@ -22,8 +22,8 @@ public class WinComExecutor {
      */
     public static Result<Integer, String> exec(String command) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command);
-
-        StreamReader reader = new StreamReader(process.getInputStream());
+//FIXME инфа по Error Stream https://stackoverflow.com/questions/5711084/java-runtime-getruntime-getting-output-from-executing-a-command-line-program
+        StreamReader reader = new StreamReader(process.getInputStream(), process.getErrorStream());
         reader.start();
         int exitCode = process.waitFor();
         reader.join();
@@ -34,11 +34,13 @@ public class WinComExecutor {
     private static class StreamReader extends Thread {
         private static final Logger LOGGER = LoggerFactory.getLogger(WinComExecutor.StreamReader.class);
         private final StringWriter sw = new StringWriter();
-        private InputStreamReader isr;
+        private InputStreamReader inputStreamReader;
+        private InputStreamReader errorStreamReader;
 
-        public StreamReader(InputStream is) {
+        public StreamReader(InputStream is, InputStream err) {
             try {
-                this.isr = new InputStreamReader(is, "866");
+                this.inputStreamReader = new InputStreamReader(is, "866");
+                this.errorStreamReader = new InputStreamReader(err, "866");
             } catch (UnsupportedEncodingException e) {
                 LOGGER.error("{}", e.getLocalizedMessage());
                 LOGGER.debug("{}", e.toString());
@@ -53,7 +55,11 @@ public class WinComExecutor {
         public void run() {
             try {
                 int c;
-                while ((c = isr.read()) != -1) {
+                while ((c = inputStreamReader.read()) != -1) {
+                    sw.write(c);
+                }
+
+                while ((c = errorStreamReader.read()) != -1){
                     sw.write(c);
                 }
             } catch (IOException e) {
