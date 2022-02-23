@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -186,9 +187,16 @@ public class OSInfoCollector {
     //Подробности о месте расположения логов см. https://docs.microsoft.com/ru-ru/windows-hardware/drivers/install/setting-the-directory-path-of-the-text-logs
     //FIXME приблизить к типовому интерфейсу - переименовать в getPathToLogs.
     public Path getPathToSetupapiDevLog() {
-        String logPath = WinRegReader
-                .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
-                .orElse(getSystemRoot().toString());
+        String logPath;
+        try {
+            logPath = WinRegReader
+                    .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
+                    .orElse(getSystemRoot().toString());
+        }catch (NoSuchElementException e){
+            logPath = getSystemRoot().toString();
+            LOGGER.info("Произошла ошибка в результате поиска нестандартного пути к setupapi.dev.log в реестре : \n\t{}\n" +
+                    "Используется путь по умолчанию для данной ОС: {}",e.getLocalizedMessage(), logPath); //FIXME logPath теряет суффикс \inf
+        }
         return getOsVersion() >= 6.0 ? Path.of(logPath, "\\inf") : Path.of(logPath);
     }
 
