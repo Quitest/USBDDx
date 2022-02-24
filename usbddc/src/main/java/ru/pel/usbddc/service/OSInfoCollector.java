@@ -84,7 +84,7 @@ public class OSInfoCollector {
      * Собирает минимальный объем информации о сетевых интерфейсах: имена интерфейсов, сетевые адреса и соответствующие сетевые имена
      *
      * @return самописный более примитивный аналог java.net.NetworkInterface, содержащий только интересующую информацию.
-     * @throws SocketException if an I/O error occurs, or if the platform does not have at least one configured network interface.
+     * @throws SocketException      if an I/O error occurs, or if the platform does not have at least one configured network interface.
      * @throws InterruptedException if interrupted while waiting, in which case unfinished tasks are cancelled
      */
     public List<ru.pel.usbddc.entity.NetworkInterface> getNetworkInterfaceList() throws SocketException, InterruptedException {
@@ -187,17 +187,21 @@ public class OSInfoCollector {
     //Подробности о месте расположения логов см. https://docs.microsoft.com/ru-ru/windows-hardware/drivers/install/setting-the-directory-path-of-the-text-logs
     //FIXME приблизить к типовому интерфейсу - переименовать в getPathToLogs.
     public Path getPathToSetupapiDevLog() {
-        String logPath;
+        //Подозреваю, что в абсолютном большинстве случаев блок try будет сыпаться с исключением - редко меняется стандартное расположение
+        // лог файлов - инициализируем переменную сразу.
+        Path logPath = getOsVersion() >= 6.0 ? Path.of(getSystemRoot().toString(), "\\inf") : getSystemRoot();
         try {
-            logPath = WinRegReader
+            logPath = Path.of(WinRegReader
                     .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
-                    .orElse(getSystemRoot().toString());
-        }catch (NoSuchElementException e){
-            logPath = getSystemRoot().toString();
-            LOGGER.info("Произошла ошибка в результате поиска нестандартного пути к setupapi.dev.log в реестре : \n\t{}\n" +
-                    "Используется путь по умолчанию для данной ОС: {}",e.getLocalizedMessage(), logPath); //FIXME logPath теряет суффикс \inf
+                    .orElseThrow());
+        } catch (NoSuchElementException e) {
+            LOGGER.info("""
+                    Произошла ошибка в результате поиска нестандартного пути к setupapi.dev.log в реестре :
+                    \t\t{}
+                    \tИспользуется путь по умолчанию для {}: {}
+                    """, e.getLocalizedMessage(), getOsName(), logPath);
         }
-        return getOsVersion() >= 6.0 ? Path.of(logPath, "\\inf") : Path.of(logPath);
+        return logPath;
     }
 
     /**
