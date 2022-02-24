@@ -1,11 +1,17 @@
 package ru.pel.usbddc.service;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WinRegReaderTest {
@@ -46,5 +52,12 @@ class WinRegReaderTest {
                 ()-> assertTrue(subkeys.size()>0),
                 ()->assertTrue(subkeys.contains("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet"))
         );
+    }
+
+    @Test
+    @DisplayName("Чтение всех параметров раздела, в том числе кирилицы")
+    void whenGetAllCyrillicValuesInKey_thenReadable(){
+        Optional<Map<String, String>> allValuesInKey = WinRegReader.getAllValuesInKey("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WinSAT");
+        assertThat(allValuesInKey.get(), hasEntry("Новый параметр #1", "значение нового параметра"));
     }
 }
