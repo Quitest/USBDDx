@@ -53,17 +53,11 @@ public class WinRegReader {
         try {
             String output = WinComExecutor.exec("reg query \"" + key + "\"").getBody();
 
-//            String cyr = new String(output.getBytes("cp866"), "windows-1251");
-
-//            String cp = new String("фбвс".getBytes(), "866");
-//            String utf = new String(cp.getBytes("866"), StandardCharsets.UTF_8);
-
             if (output.matches("\\s+")) {
                 return Optional.empty();
             }
 
             String[] outputLines = output.split(System.lineSeparator());
-            //FIXME в мапу падают абракадабры вместо нормальных русских слов, если они есть.
             Map<String, String> values = Arrays.stream(outputLines)
                     .filter(l -> !l.isEmpty() && l.matches("\\s{4}.+")) //отбрасываем пустые строки и строки с именами ключей
                     .map(l -> l.split("\\s{4}")) //оставшиеся строки делим на элементы по признаку "4 пробела"
