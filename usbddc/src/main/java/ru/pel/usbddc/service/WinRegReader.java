@@ -89,12 +89,15 @@ public class WinRegReader {
     public static Optional<String> getValue(String key, String value) {
         Optional<String> valueOptional = Optional.empty();
         try {
-//            String output = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"").getBody();
             WinComExecutor.Result<Integer, String> result = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
             String output = result.getBody();
             int exitCode = result.getExitCode();
             if (exitCode == 1){
-                throw new NoSuchElementException(output.trim());
+                String msg = String.format("""
+                        %s
+                        \tРаздел: %s
+                        \tПараметр: %s""", output.trim(), key, value);
+                throw new NoSuchElementException(msg);
             }
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
@@ -107,12 +110,11 @@ public class WinRegReader {
 
             String[] parsed = output.split("\\s{4}"); //в оригинале регулярка была "\t", что давало неверный результат,
             // т.к. в output деление идет четырьмя символами пробела
-//            return Optional.of(parsed[parsed.length - 1]);
             valueOptional = Optional.of(parsed[parsed.length - 1]);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
-            return Optional.empty();
+            LOGGER.debug("{}", e);
+            Thread.currentThread().interrupt();
         }
         return valueOptional;
     }
@@ -156,72 +158,4 @@ public class WinRegReader {
         boolean s = !result.getBody().isEmpty();
         return b && s;
     }
-    /*
-     *//**
-     * Выполняет указанную команду в отдельном процессе, ждет окончания ее работы и возвращает результат.
-     *
-     * @param command команда для выполнения
-     * @return кортеж (пару значений): первое - код, с которым завершилась команда; второе - сам результат выполнения в
-     * виде строки.
-     * @throws IOException
-     * @throws InterruptedException
-     *//*
-    private static ExecResult<Integer, String> execCommand(String command) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(command);
-
-        StreamReader reader = new StreamReader(process.getInputStream());
-        reader.start();
-        int exitCode = process.waitFor();
-        reader.join();
-        String body = reader.getBody();
-        return new ExecResult<>(exitCode, body);
-    }
-
-    private static class StreamReader extends Thread {
-        private static Logger logger = LoggerFactory.getLogger(StreamReader.class);
-        private final StringWriter sw = new StringWriter();
-        private InputStreamReader isr;
-
-        public StreamReader(InputStream is) {
-            try {
-                this.isr = new InputStreamReader(is, "866");
-            } catch (UnsupportedEncodingException e) {
-                logger.error("{}", e.getLocalizedMessage());
-                logger.debug("{}", e.toString());
-            }
-        }
-
-        public String getBody() {
-            return sw.toString();
-        }
-
-        @Override
-        public void run() {
-            try {
-                int c;
-                while ((c = isr.read()) != -1) {
-                    sw.write(c);
-                }
-            } catch (IOException e) {
-                logger.error("{}", e.getLocalizedMessage());
-                logger.debug("{}", e.toString());
-            }
-
-        }
-    }
-
-    @Getter
-    @Setter
-    public static class ExecResult<C, R> {
-        private C exitCode;
-        private R body;
-
-        public ExecResult(C exitCode, R body) {
-            this.exitCode = exitCode;
-            this.body = body;
-        }
-
-        public ExecResult() {
-        }
-    }*/
 }
