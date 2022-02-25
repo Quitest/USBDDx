@@ -54,7 +54,8 @@ class WinComExecutorTest {
     void whenExecCommandSuccessfulExitCodeEqualToZero() throws IOException, InterruptedException {
         try {
             WinComExecutor.Result<Integer, String> result = winComExecutor.exec(LOAD_HIVE_COMMAND);
-            assertThat("Запуск с правами админа был?", result.getExitCode(), equalTo(0));
+            String reason = result.getBody().trim();
+            assertThat(reason, result.getExitCode(), equalTo(0));
         } finally {
             winComExecutor.exec(UNLOAD_HIVE);
         }
