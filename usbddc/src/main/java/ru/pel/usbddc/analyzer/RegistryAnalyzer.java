@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
-import ru.pel.usbddc.service.WinRegReader;
+import ru.pel.usbddc.utility.WinRegReader;
 
 import java.io.IOException;
 import java.nio.file.Path;

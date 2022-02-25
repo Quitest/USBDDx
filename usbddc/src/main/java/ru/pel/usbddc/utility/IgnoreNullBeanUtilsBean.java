@@ -1,4 +1,4 @@
-package ru.pel.usbddc.service;
+package ru.pel.usbddc.utility;
 
 import org.apache.commons.beanutils.BeanUtilsBean;
 import org.slf4j.Logger;

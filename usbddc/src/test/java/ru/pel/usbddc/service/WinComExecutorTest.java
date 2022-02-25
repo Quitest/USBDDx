@@ -2,6 +2,7 @@ package ru.pel.usbddc.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.pel.usbddc.utility.WinComExecutor;
 
 import java.io.IOException;
 

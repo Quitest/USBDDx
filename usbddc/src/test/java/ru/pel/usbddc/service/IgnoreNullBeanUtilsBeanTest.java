@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
+import ru.pel.usbddc.utility.IgnoreNullBeanUtilsBean;
 
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;

@@ -1,4 +1,4 @@
-package ru.pel.usbddc.service;
+package ru.pel.usbddc.utility;
 
 import lombok.Getter;
 import lombok.Setter;

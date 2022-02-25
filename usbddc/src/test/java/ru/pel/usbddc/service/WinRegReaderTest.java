@@ -2,6 +2,8 @@ package ru.pel.usbddc.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.pel.usbddc.utility.WinComExecutor;
+import ru.pel.usbddc.utility.WinRegReader;
 
 import java.io.IOException;
 import java.util.List;
@@ -15,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WinRegReaderTest {
     private static final String NODE_NAME = "HKEY_LOCAL_MACHINE\\tempHive";
     private static final String HIVE = "C:\\Users\\Default\\ntuser.dat";
-    private final  WinRegReader winRegReader = new WinRegReader();
+    private final WinRegReader winRegReader = new WinRegReader();
 
     @Test
     @DisplayName("Проверка НЕ существующей ветки реестра. Ожидается FALSE")
