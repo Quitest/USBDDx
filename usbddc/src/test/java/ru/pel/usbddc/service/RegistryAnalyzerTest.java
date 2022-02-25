@@ -3,6 +3,8 @@ package ru.pel.usbddc.service;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.pel.usbddc.analyzer.Analyzer;
+import ru.pel.usbddc.analyzer.RegistryAnalyzer;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
 

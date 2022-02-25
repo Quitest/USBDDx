@@ -1,12 +1,8 @@
 package ru.pel.usbddc.service;
 
-import org.apache.tomcat.jni.OS;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.pel.usbddc.analyzer.SetupapiDevLogAnalyzer;
 import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.IOException;

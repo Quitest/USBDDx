@@ -2,27 +2,18 @@ package ru.pel.usbddc.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@ExtendWith(MockitoExtension.class)
 class WinComExecutorTest {
     private final String NODE_NAME = "HKEY_LOCAL_MACHINE\\tempHive";
     private final String HIVE = "C:\\Users\\Default\\ntuser.dat";
     private final String LOAD_HIVE_COMMAND = String.format("reg load %s %s", NODE_NAME, HIVE);
     private final String UNLOAD_HIVE = String.format("reg unload %s", NODE_NAME);
-    @Mock
-    private Runtime runtimeMock;
-    private final WinComExecutor winComExecutor = new WinComExecutor(runtimeMock);
+    private final WinComExecutor winComExecutor = new WinComExecutor();
 
     @Test
     @DisplayName("Команда выполнена с ошибкой - body содержит описание ошибки")
@@ -62,7 +53,7 @@ class WinComExecutorTest {
     void whenExecCommandSuccessfulExitCodeEqualToZero() throws IOException, InterruptedException {
         try {
             WinComExecutor.Result<Integer, String> result = winComExecutor.exec(LOAD_HIVE_COMMAND);
-            assertThat(result.getExitCode(), equalTo(0));
+            assertThat("Запуск с правами админа был?", result.getExitCode(), equalTo(0));
         } finally {
             winComExecutor.exec(UNLOAD_HIVE);
         }

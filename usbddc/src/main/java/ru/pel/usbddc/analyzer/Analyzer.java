@@ -1,4 +1,4 @@
-package ru.pel.usbddc.service;
+package ru.pel.usbddc.analyzer;
 
 import ru.pel.usbddc.entity.USBDevice;
 

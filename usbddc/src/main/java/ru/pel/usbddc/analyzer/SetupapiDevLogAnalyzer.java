@@ -1,4 +1,4 @@
-package ru.pel.usbddc.service;
+package ru.pel.usbddc.analyzer;
 
 import lombok.Getter;
 import lombok.NonNull;
