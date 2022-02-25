@@ -3,6 +3,7 @@ package ru.pel.usbddc.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.analyzer.SetupapiDevLogAnalyzer;
+import ru.pel.usbddc.collector.OSInfoCollector;
 import ru.pel.usbddc.entity.USBDevice;
 
 import java.io.IOException;

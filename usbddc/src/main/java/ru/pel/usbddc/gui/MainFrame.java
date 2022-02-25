@@ -9,7 +9,7 @@ import ru.pel.usbddc.config.UsbddcConfig;
 import ru.pel.usbddc.dto.SystemInfoDto;
 import ru.pel.usbddc.entity.SystemInfo;
 import ru.pel.usbddc.entity.USBDevice;
-import ru.pel.usbddc.service.SystemInfoCollector;
+import ru.pel.usbddc.collector.SystemInfoCollector;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

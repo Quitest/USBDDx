@@ -2,6 +2,7 @@ package ru.pel.usbddc.service;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import ru.pel.usbddc.collector.OSInfoCollector;
 import ru.pel.usbddc.entity.OSInfo;
 
 import java.nio.file.Path;

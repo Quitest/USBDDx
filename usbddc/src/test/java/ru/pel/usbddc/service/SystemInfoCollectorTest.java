@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import ru.pel.usbddc.collector.SystemInfoCollector;
 import ru.pel.usbddc.entity.SystemInfo;
 
 import java.io.IOException;

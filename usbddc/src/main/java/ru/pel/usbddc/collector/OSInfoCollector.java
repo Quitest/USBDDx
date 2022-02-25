@@ -1,9 +1,10 @@
-package ru.pel.usbddc.service;
+package ru.pel.usbddc.collector;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.config.UsbddcConfig;
 import ru.pel.usbddc.entity.OSInfo;
+import ru.pel.usbddc.service.WinRegReader;
 
 import java.io.IOException;
 import java.net.InetAddress;
