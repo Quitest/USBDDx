@@ -122,7 +122,7 @@ public class OSInfoCollector {
     }
 
     public String getOsId() {
-        return WinRegReader.getValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "MachineGuid").orElseThrow();
+        return new WinRegReader().getValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography", "MachineGuid").orElseThrow();
     }
 
     /**
@@ -191,7 +191,7 @@ public class OSInfoCollector {
         // лог файлов - инициализируем переменную сразу.
         Path logPath = getOsVersion() >= 6.0 ? Path.of(getSystemRoot().toString(), "\\inf") : getSystemRoot();
         try {
-            logPath = Path.of(WinRegReader
+            logPath = Path.of(new WinRegReader()
                     .getValue("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup", "LogPath")
                     .orElseThrow());
         } catch (NoSuchElementException e) {

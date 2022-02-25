@@ -17,29 +17,9 @@ import java.util.stream.Collectors;
 public class WinRegReader {
     private static final Logger LOGGER = LoggerFactory.getLogger(WinRegReader.class);
 
-    private WinRegReader() {
-        //все методы статические - нет необходимости создавать объект.
-    }
+    private final WinComExecutor winComExecutor = new WinComExecutor();
 
-    /**
-     * Возвращает список подразделов (подключей) указанного раздела (ключа) реестра
-     *
-     * @param key раздел (ключ) реестра, подразделы (подключи) которого необходимо получить
-     * @return список подразделов (подключей). Если подразделов нет, то возращается список с размером 0.
-     */
-    public static List<String> getSubkeys(String key) throws IOException, InterruptedException {
-        //Вывод имеет следующий формат
-        //<key>\subkey1 - первая строка, в моем случае вседга пустая.
-        //<key>\subkey2
-        //<key>\subkeyN
-        String output = WinComExecutor.exec("reg query \"" + key + "\"").getBody();
-
-        return Arrays.stream(output.split(System.lineSeparator()))
-                .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
-                        s.matches("HKEY.+") &&    //строки с параметрами
-                        !s.matches(Pattern.quote(key)))  //отбстроку с именем раздела, в котором ищем подразделы
-                .toList();
-    }
+    public WinRegReader() {}
 
     /**
      * Служит для чтения всех параметров из указанного ключа реестра.
@@ -48,10 +28,10 @@ public class WinRegReader {
      * @return Возвращает Optional пару параметр=значение. Если параметров нет или что-то пошло не так, то возыращается
      * Optional.empty()
      */
-    public static Optional<Map<String, String>> getAllValuesInKey(String key) {
+    public Optional<Map<String, String>> getAllValuesInKey(String key) {
         Optional<Map<String, String>> valuesOptional = Optional.empty();
         try {
-            String output = WinComExecutor.exec("reg query \"" + key + "\"").getBody();
+            String output = winComExecutor.exec("reg query \"" + key + "\"").getBody();
 
             if (output.matches("\\s+")) {
                 return Optional.empty();
@@ -74,19 +54,39 @@ public class WinRegReader {
     }
 
     /**
+     * Возвращает список подразделов (подключей) указанного раздела (ключа) реестра
+     *
+     * @param key раздел (ключ) реестра, подразделы (подключи) которого необходимо получить
+     * @return список подразделов (подключей). Если подразделов нет, то возращается список с размером 0.
+     */
+    public List<String> getSubkeys(String key) throws IOException, InterruptedException {
+        //Вывод имеет следующий формат
+        //<key>\subkey1 - первая строка, в моем случае вседга пустая.
+        //<key>\subkey2
+        //<key>\subkeyN
+        String output = winComExecutor.exec("reg query \"" + key + "\"").getBody();
+
+        return Arrays.stream(output.split(System.lineSeparator()))
+                .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
+                        s.matches("HKEY.+") &&    //строки с параметрами
+                        !s.matches(Pattern.quote(key)))  //отбстроку с именем раздела, в котором ищем подразделы
+                .toList();
+    }
+
+    /**
      * Получает значение указанного параметра реестра.
      *
      * @param key   путь к ключу в реестре
      * @param value параметр реестра
      * @return {@code Optional<String>}, содержащий значение параметра
      */
-    public static Optional<String> getValue(String key, String value) {
+    public Optional<String> getValue(String key, String value) {
         Optional<String> valueOptional = Optional.empty();
         try {
-            WinComExecutor.Result<Integer, String> result = WinComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
+            WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg query " + '"' + key + "\" /v \"" + value + "\"");
             String output = result.getBody();
             int exitCode = result.getExitCode();
-            if (exitCode == 1){
+            if (exitCode == 1) {
                 String msg = String.format("""
                         %s
                         \tРаздел: %s
@@ -114,6 +114,22 @@ public class WinRegReader {
     }
 
     /**
+     * Определяет существование раздела реестра путем получения значения по умолчанию. Если значение имеется, то считается, что
+     * раздел существует.
+     *
+     * @param key раздел, существование которого необходимо проверить.
+     * @return true - раздел реестра существует, false - указанного раздела нет.
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    public boolean isKeyExists(String key) throws IOException, InterruptedException {
+        WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg query \"" + key + "\" /ve ");
+        boolean b = result.getExitCode() == 0;
+        boolean s = !result.getBody().isEmpty();
+        return b && s;
+    }
+
+    /**
      * <p>Загружает в куст реестра для дальнейшей работы с ним.</p>
      * <u>Внимание!</u> Требует наличие прав администратора!
      *
@@ -121,8 +137,8 @@ public class WinRegReader {
      * @param hive     Имя файла куста, подлежащего загрузке.
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
-        return WinComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
+    public WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
+        return winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
     }
 
     /**
@@ -132,24 +148,8 @@ public class WinRegReader {
      * @param nodeName выгружаемый куст реестра
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      */
-    public static WinComExecutor.Result<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
+    public WinComExecutor.Result<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
         //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
-        return WinComExecutor.exec("reg unload " + nodeName);
-    }
-
-    /**
-     * Определяет существование раздела реестра путем получения значения по умолчанию. Если значение имеется, то считается, что
-     * раздел существует.
-     *
-     * @param key раздел, существование которого необходимо проверить.
-     * @return true - раздел реестра существует, false - указанного раздела нет.
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public static boolean isKeyExists(String key) throws IOException, InterruptedException {
-        WinComExecutor.Result<Integer, String> result = WinComExecutor.exec("reg query \"" + key + "\" /ve ");
-        boolean b = result.getExitCode() == 0;
-        boolean s = !result.getBody().isEmpty();
-        return b && s;
+        return winComExecutor.exec("reg unload " + nodeName);
     }
 }

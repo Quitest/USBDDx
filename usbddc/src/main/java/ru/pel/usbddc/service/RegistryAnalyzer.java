@@ -28,6 +28,7 @@ public class RegistryAnalyzer implements Analyzer {
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistryAnalyzer.class);
     private Map<String, USBDevice> usbDeviceMap;
     private boolean doNewAnalysis;
+    private final WinRegReader winRegReader = new WinRegReader();
 
     public RegistryAnalyzer() {
         this(true, new HashMap<>());
@@ -53,7 +54,7 @@ public class RegistryAnalyzer implements Analyzer {
      * нем на текущий момент.
      */
     public Map<String, USBDevice> associateSerialToGuid() {
-        Map<String, String> mountedDevices = WinRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
+        Map<String, String> mountedDevices = winRegReader.getAllValuesInKey(REG_KEY_MOUNTED_DEVICES).orElseThrow();
 
         for (Map.Entry<String, String> entry : mountedDevices.entrySet()) {
             String encodedValue = entry.getValue();
@@ -150,17 +151,17 @@ public class RegistryAnalyzer implements Analyzer {
     //TODO кроме FriendlyName метод еще и revision заполняет - имя не в полной мере соответствует.
     public Map<String, USBDevice> getFriendlyName() {
         try {
-            List<String> deviceGroupList = WinRegReader.getSubkeys(REG_KEY_USBSTOR);
+            List<String> deviceGroupList = winRegReader.getSubkeys(REG_KEY_USBSTOR);
             for (String deviceGroupKey : deviceGroupList) {
                 String revision = deviceGroupKey.substring(deviceGroupKey.lastIndexOf('_') + 1);
-                List<String> serialList = WinRegReader.getSubkeys(deviceGroupKey);
+                List<String> serialList = winRegReader.getSubkeys(deviceGroupKey);
                 for (String serialKey : serialList) {
                     int lastIndexOfSlash = serialKey.lastIndexOf('\\') + 1;
                     String serial = serialKey.charAt(serialKey.length() - 2) == '&' ?       //Имеется ли суффикс по типу "&0" у раздела реестра?
                             serialKey.substring(lastIndexOfSlash, serialKey.length() - 2) : //Если да - отбрасываем его и префикс в виде пути
                             serialKey.substring(lastIndexOfSlash);                          //иначе просто отбрасываем префикс в виде пути.
-                    String friendlyName = WinRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
-                    String diskId = WinRegReader.getValue(serialKey + "\\Device Parameters\\Partmgr", "DiskId").orElse("<не доступно>");
+                    String friendlyName = winRegReader.getValue(serialKey, "FriendlyName").orElse("<не доступно>");
+                    String diskId = winRegReader.getValue(serialKey + "\\Device Parameters\\Partmgr", "DiskId").orElse("<не доступно>");
 
                     USBDevice tmp = new USBDevice()
                             .setRevision(revision)
@@ -192,7 +193,7 @@ public class RegistryAnalyzer implements Analyzer {
         String mountPoints2 = "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2";
         List<String> result = new ArrayList<>();
         try {
-            result = WinRegReader.getSubkeys(mountPoints2).stream()
+            result = winRegReader.getSubkeys(mountPoints2).stream()
                     .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
                     .map(e -> e.substring(e.lastIndexOf("{")))
                     .toList();
@@ -225,13 +226,13 @@ public class RegistryAnalyzer implements Analyzer {
         String nodeName = "HKEY_LOCAL_MACHINE\\userHive_" + username;
         String userHive = userProfile.getProfileImagePath().toString() + "\\NTUSER.DAT";
         try {
-            WinRegReader.loadHive(nodeName, userHive);
+            winRegReader.loadHive(nodeName, userHive);
 
-            guidList = WinRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
+            guidList = winRegReader.getSubkeys(nodeName + "\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MountPoints2").stream()
                     .filter(e -> e.matches(".+\\{[a-fA-F0-9-]+}"))
                     .map(e -> e.substring(e.lastIndexOf("{")))
                     .toList();
-            WinRegReader.unloadHive(nodeName);
+            winRegReader.unloadHive(nodeName);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             LOGGER.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых пользователем {}. Причина: {}",
@@ -247,11 +248,11 @@ public class RegistryAnalyzer implements Analyzer {
      * В нее записывается информация о всех подключаемых к системе устройствах, что служит неплохим источником данных для дальнейшего анализа.
      * Анализ ветки выполняется на случай, если лог файлы или другие ветки были почищены - получим хоть какую-то информацию об устройствах.
      *
-     * @return
+     * @return мапу устройств, когда-либо подключенных к системе и опрошенных/протестированных службой ReadyBoost.
      */
     public Map<String, USBDevice> getReadyBoostDevices() {
         try {
-            List<String> keyList = WinRegReader.getSubkeys(REG_KEY_EMDMGMT);
+            List<String> keyList = winRegReader.getSubkeys(REG_KEY_EMDMGMT);
 //            VOL [диск:]
             for (String key : keyList) {
                 try {
@@ -306,10 +307,10 @@ public class RegistryAnalyzer implements Analyzer {
      */
     public Map<String, USBDevice> getUsbDevices() {
         try {
-            List<String> pidVidList = WinRegReader.getSubkeys(REG_KEY_USB);
+            List<String> pidVidList = winRegReader.getSubkeys(REG_KEY_USB);
 
             for (String pidvid : pidVidList) {
-                List<String> listSerialKeys = WinRegReader.getSubkeys(pidvid);
+                List<String> listSerialKeys = winRegReader.getSubkeys(pidvid);
                 for (String serialKey : listSerialKeys) {
                     String pid = parsePid(pidvid.toLowerCase()).orElse("<N/A>");
                     String vid = parseVid(pidvid.toLowerCase()).orElse("<N/A>");
@@ -353,10 +354,10 @@ public class RegistryAnalyzer implements Analyzer {
     public List<UserProfile> getUserProfileList() {
         List<UserProfile> userProfileList = new ArrayList<>();
         try {
-            List<String> profileRegKeys = WinRegReader.getSubkeys(REG_KEY_PROFILE_LIST);
+            List<String> profileRegKeys = winRegReader.getSubkeys(REG_KEY_PROFILE_LIST);
             userProfileList = profileRegKeys.stream()
                     .map(profile -> {
-                        String profileImagePath = WinRegReader.getValue(profile, "ProfileImagePath").orElseThrow();
+                        String profileImagePath = winRegReader.getValue(profile, "ProfileImagePath").orElseThrow();
                         String username = profileImagePath.substring(profileImagePath.lastIndexOf("\\") + 1);
                         String sid = profile.substring(profile.lastIndexOf("\\") + 1);
 
@@ -423,7 +424,7 @@ public class RegistryAnalyzer implements Analyzer {
     public Map<String, USBDevice> parseWindowsPortableDevice() {
         String wpdKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Portable Devices\\Devices";
         try {
-            List<String> deviceList = WinRegReader.getSubkeys(wpdKey);
+            List<String> deviceList = winRegReader.getSubkeys(wpdKey);
             for (String deviceEntry : deviceList) {
                 Optional<String> serial = Optional.empty();
                 try {
@@ -441,7 +442,7 @@ public class RegistryAnalyzer implements Analyzer {
                     LOGGER.debug("[D] При определении метки тома {} использовался метод contains() вместо matches", serial.orElse("***"), e);
                 }
                 if (serial.isPresent()) {
-                    String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
+                    String volumeName = winRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
                     USBDevice tmp = new USBDevice()
                             .setSerial(serial.get())
                             .addVolumeLabel(volumeName);
@@ -469,7 +470,7 @@ public class RegistryAnalyzer implements Analyzer {
                         LOGGER.debug("Не удалось определить VID/PID в записи {}", deviceEntry, e);
                     }
                     String newSerial = stringList.get(stringList.size() - 1);
-                    String volumeName = WinRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
+                    String volumeName = winRegReader.getValue(deviceEntry, "FriendlyName").orElseThrow();
                     USBDevice tmp = new USBDevice()
                             .setVidPid(newVid, newPid)
                             .setSerial(newSerial)

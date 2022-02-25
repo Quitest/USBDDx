@@ -8,7 +8,13 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 
 public class WinComExecutor {
-    private WinComExecutor() {
+    private static Runtime runtime;
+    public WinComExecutor() {
+        this(Runtime.getRuntime());
+    }
+
+    public WinComExecutor(Runtime runtime){
+        WinComExecutor.runtime = runtime;
     }
 
     /**
@@ -20,8 +26,9 @@ public class WinComExecutor {
      * @throws IOException          If an I/O error occurs
      * @throws InterruptedException if the current thread is interrupted by another thread while it is waiting, then the wait is ended and an InterruptedException is thrown.
      */
-    public static Result<Integer, String> exec(String command) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(command);
+    public Result<Integer, String> exec(String command) throws IOException, InterruptedException {
+//        Process process = Runtime.getRuntime().exec(command);
+        Process process = runtime.exec(command);
 //FIXME инфа по Error Stream https://stackoverflow.com/questions/5711084/java-runtime-getruntime-getting-output-from-executing-a-command-line-program
         StreamReader reader = new StreamReader(process.getInputStream(), process.getErrorStream());
         reader.start();
