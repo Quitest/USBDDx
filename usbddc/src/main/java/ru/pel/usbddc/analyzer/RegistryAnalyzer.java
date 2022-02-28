@@ -27,9 +27,9 @@ public class RegistryAnalyzer implements Analyzer {
      */
     private static final String REG_KEY_EMDMGMT = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\EMDMgmt";
     private static final Logger LOGGER = LoggerFactory.getLogger(RegistryAnalyzer.class);
+    private final WinRegReader winRegReader = new WinRegReader();
     private Map<String, USBDevice> usbDeviceMap;
     private boolean doNewAnalysis;
-    private final WinRegReader winRegReader = new WinRegReader();
 
     public RegistryAnalyzer() {
         this(true, new HashMap<>());
@@ -256,40 +256,7 @@ public class RegistryAnalyzer implements Analyzer {
             List<String> keyList = winRegReader.getSubkeys(REG_KEY_EMDMGMT);
 //            VOL [диск:]
             for (String key : keyList) {
-                try {
-                    String pattern = ".*&Ven_(?<ven>\\p{Graph}*)&Prod_(?<prod>[\\p{Graph}&&[^&]]*)(&Rev_(?<rev>\\p{Graph}*))?#(?<serial>\\w&?\\w*)(&\\d)?.*}(?<volLabel>\\p{Print}*)_(?<volId>\\d*)";
-                    Matcher matcher = Pattern.compile(pattern).matcher(key);
-                    boolean matcherFindResult = matcher.find();
-                    if (matcherFindResult) {
-                        String ven = matcher.group("ven");
-                        String prod = matcher.group("prod");
-                        String rev = matcher.group("rev");
-                        String serial = matcher.group("serial");
-                        String volLabel = matcher.group("volLabel");
-                        long volumeId = Long.parseLong(matcher.group("volId"));
-                        USBDevice tmp = new USBDevice()
-                                .setRevision(rev)
-                                .setSerial(serial)
-                                .setProductNameByRegistry(prod)
-                                .setVendorNameByRegistry(ven)
-                                .addVolumeLabel(volLabel)
-                                .addVolumeId(volumeId);
-
-                        usbDeviceMap.merge(serial, tmp, (dst, src) -> {
-                            dst.addVolumeLabel(volLabel);
-                            dst.addVolumeId(volumeId);
-                            dst.setVendorNameByRegistry(src.getVendorNameByRegistry());
-                            dst.setProductNameByRegistry(src.getProductNameByRegistry());
-                            dst.setRevision(src.getRevision());
-                            return dst;
-                        });
-                    } else {
-                        LOGGER.warn("Запись пропущена - не соответствует паттерну:\n\t\tKey = {}", key);
-                    }
-                } catch (IllegalStateException | NoSuchElementException e) {
-                    LOGGER.warn("Запись об устройстве не удалось распознать.\n\tЗапись: {}\n\tПричина: {}", key, e.getLocalizedMessage());
-                    LOGGER.debug("Запись об устройстве не удалось распознать.\n\tЗапись: {}", key, e);
-                }
+                parseReadyBoostKey(key);
             }
 
         } catch (IOException | InterruptedException e) {
@@ -405,6 +372,56 @@ public class RegistryAnalyzer implements Analyzer {
     private Optional<String> parsePid(String pidvid) {
         Matcher matcher = Pattern.compile("(?i)pid_(.{4})").matcher(pidvid);
         return matcher.find() ? Optional.of(matcher.group(1)) : Optional.empty();
+    }
+
+    /**
+     * Парсинг подключа {@code HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\EMDMgmt}.
+     * По результату парсинга/анализа мапа устройств заполняется данными об устройстве:
+     * <ul>
+     *     <li>VendorNameByRegistry;</li>
+     *     <li>ProductNameByRegistry;</li>
+     *     <li>Revision;</li>
+     *     <li>VolumeLabel (список дополняется уникальными метками тома);</li>
+     *     <li>VolumeId (в список добавляются все ID тома).</li>
+     * </ul>
+     *
+     * @param key анализируемый подраздел ветки {@code HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\EMDMgmt}
+     */
+    private void parseReadyBoostKey(String key) {
+        try {
+            String pattern = ".*&Ven_(?<ven>\\p{Graph}*)&Prod_(?<prod>[\\p{Graph}&&[^&]]*)(&Rev_(?<rev>\\p{Graph}*))?#(?<serial>\\w&?\\w*)(&\\d)?.*}(?<volLabel>\\p{Print}*)_(?<volId>\\d*)";
+            Matcher matcher = Pattern.compile(pattern).matcher(key);
+            boolean matcherFindResult = matcher.find();
+            if (matcherFindResult) {
+                String ven = matcher.group("ven");
+                String prod = matcher.group("prod");
+                String rev = matcher.group("rev");
+                String serial = matcher.group("serial");
+                String volLabel = matcher.group("volLabel");
+                long volumeId = Long.parseLong(matcher.group("volId"));
+                USBDevice tmp = new USBDevice()
+                        .setRevision(rev)
+                        .setSerial(serial)
+                        .setProductNameByRegistry(prod)
+                        .setVendorNameByRegistry(ven)
+                        .addVolumeLabel(volLabel)
+                        .addVolumeId(volumeId);
+
+                usbDeviceMap.merge(serial, tmp, (dst, src) -> {
+                    dst.addVolumeLabel(volLabel);
+                    dst.addVolumeId(volumeId);
+                    dst.setVendorNameByRegistry(src.getVendorNameByRegistry());
+                    dst.setProductNameByRegistry(src.getProductNameByRegistry());
+                    dst.setRevision(src.getRevision());
+                    return dst;
+                });
+            } else {
+                LOGGER.warn("Запись пропущена - не соответствует паттерну:\n\t\tKey = {}", key);
+            }
+        } catch (IllegalStateException | NoSuchElementException e) {
+            LOGGER.warn("Запись об устройстве не удалось распознать.\n\tЗапись: {}\n\tПричина: {}", key, e.getLocalizedMessage());
+            LOGGER.debug("Запись об устройстве не удалось распознать.\n\tЗапись: {}", key, e);
+        }
     }
 
     /**
