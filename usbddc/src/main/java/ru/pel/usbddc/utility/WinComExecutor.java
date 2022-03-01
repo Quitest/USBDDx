@@ -34,7 +34,7 @@ public class WinComExecutor {
         reader.start();
         int exitCode = process.waitFor();
         reader.join();
-        String result = reader.getResult();
+        String result = reader.getResult().trim();
         return new Result<>(exitCode, result);
     }
 
