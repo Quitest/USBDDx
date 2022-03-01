@@ -3,7 +3,8 @@ package ru.pel.usbddc.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import ru.pel.usbddc.utility.WinComExecutor;
-import ru.pel.usbddc.utility.WinRegReader;
+import ru.pel.usbddc.utility.winreg.WinRegReader;
+import ru.pel.usbddc.utility.winreg.exception.RegistryAccessDeniedException;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,5 +61,14 @@ class WinRegReaderTest {
     void whenGetAllCyrillicValuesInKey_thenReadable(){
         Optional<Map<String, String>> allValuesInKey = winRegReader.getAllValuesInKey("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\WinSAT");
         assertThat(allValuesInKey.get(), hasEntry("Новый параметр #1", "значение нового параметра"));
+    }
+
+    @Test
+    @DisplayName("Проверка исключения при отсутствии прав доступа на операцию загрузки/выгрузки куста реестра")
+    void whenLoadUnLoadWithNoPermissions_thenThrowRegistryAccessDeniedException() {
+        RegistryAccessDeniedException exception = assertThrows(RegistryAccessDeniedException.class, () -> winRegReader.loadHive(NODE_NAME, HIVE));
+        String actual = exception.getMessage();
+        String expected = "Ошибка: Клиент не обладает требуемыми правами. Код: 1";
+        assertThat(actual,equalToIgnoringCase(expected));
     }
 }

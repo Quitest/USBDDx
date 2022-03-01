@@ -1,7 +1,9 @@
-package ru.pel.usbddc.utility;
+package ru.pel.usbddc.utility.winreg;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.pel.usbddc.utility.WinComExecutor;
+import ru.pel.usbddc.utility.winreg.exception.RegistryAccessDeniedException;
 
 import java.io.IOException;
 import java.util.*;
@@ -19,7 +21,8 @@ public class WinRegReader {
 
     private final WinComExecutor winComExecutor = new WinComExecutor();
 
-    public WinRegReader() {}
+    public WinRegReader() {
+    }
 
     /**
      * Служит для чтения всех параметров из указанного ключа реестра.
@@ -136,9 +139,16 @@ public class WinRegReader {
      * @param nodeName Имя подраздела реестра, в который загружается файл куста. Создание нового раздела.
      * @param hive     Имя файла куста, подлежащего загрузке.
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
+     * @throws RegistryAccessDeniedException при загрузке каста реестра в отсутствии повышенных привелегий пользователя.
      */
     public WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
-        return winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
+        WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
+        if (result.getExitCode() == 1) {
+            String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
+            throw new RegistryAccessDeniedException(msg);
+        }
+        return result;
+//        return winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
     }
 
     /**
