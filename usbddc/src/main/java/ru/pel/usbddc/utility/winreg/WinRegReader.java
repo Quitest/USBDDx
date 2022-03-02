@@ -139,11 +139,11 @@ public class WinRegReader {
      * @param nodeName Имя подраздела реестра, в который загружается файл куста. Создание нового раздела.
      * @param hive     Имя файла куста, подлежащего загрузке.
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
-     * @throws RegistryAccessDeniedException при загрузке каста реестра в отсутствии повышенных привелегий пользователя.
+     * @throws RegistryAccessDeniedException при загрузке куста реестра в отсутствии повышенных привелегий пользователя.
      */
     public WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
-        if (result.getExitCode() == 1) {
+        if (result.getExitCode() != 0) {
             String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
             throw new RegistryAccessDeniedException(msg);
         }
@@ -157,9 +157,17 @@ public class WinRegReader {
      *
      * @param nodeName выгружаемый куст реестра
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
+     * @throws RegistryAccessDeniedException при выгрузке куста реестра в отсутствии повышенных привелегий пользователя или попытке выгрузить
+     * несуществующую ветку.
      */
     public WinComExecutor.Result<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
         //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
+
+        WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg unload " + nodeName);
+        if (result.getExitCode() != 0){
+            String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
+            throw new RegistryAccessDeniedException(msg);
+        }
         return winComExecutor.exec("reg unload " + nodeName);
     }
 }
