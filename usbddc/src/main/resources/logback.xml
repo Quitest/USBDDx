@@ -8,14 +8,15 @@
         </encoder>
     </appender>
 
-    <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>
+<!--    <logger name="org.apache.commons.beanutils.BeanUtils" level="warn"/>-->
 <!--    <logger name="ru.pel.usbddc.utility.IgnoreNullBeanUtilsBean" level="debug"/>-->
-    <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>
-    <logger name="ru.pel.usbddc.collector.SystemInfoCollector" level="debug"/>
-    <logger name="ru.pel.usbddc.collector.OSInfoCollector" level="debug"/>
-    <logger name="ru.pel.usbddc.entity.USBDevice" level="trace"/>
+<!--    <logger name="ru.pel.usbddc.gui.MainFrame" level="debug"/>-->
+<!--    <logger name="ru.pel.usbddc.collector.SystemInfoCollector" level="debug"/>-->
+<!--    <logger name="ru.pel.usbddc.collector.OSInfoCollector" level="debug"/>-->
+<!--    <logger name="ru.pel.usbddc.entity.USBDevice" level="debug"/>-->
+    <logger name="ru.pel.usbddc.analyzer.RegistryAnalyzer" level="debug"/>
 
-    <root level="debug">
+    <root level="warn">
         <appender-ref ref="STDOUT"/>
     </root>
 
