@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Класс для чтения данных из реестра. Состоит исключительно из static методов чтения данных из реестра.
+ * Класс для чтения данных из реестра.
  * <p>
  * Задумка взята с <a href=https://stackoverflow.com/questions/62289/read-write-to-windows-registry-using-java>https://stackoverflow.com...</a>
  * </p>
@@ -22,6 +22,7 @@ public class WinRegReader {
     private final WinComExecutor winComExecutor = new WinComExecutor();
 
     public WinRegReader() {
+        //Что бы случайно не потерять конструктор по умолчанию.
     }
 
     /**
@@ -34,7 +35,8 @@ public class WinRegReader {
     public Optional<Map<String, String>> getAllValuesInKey(String key) {
         Optional<Map<String, String>> valuesOptional = Optional.empty();
         try {
-            String output = winComExecutor.exec("reg query \"" + key + "\"").getBody();
+            String command = String.format("reg query \"%s\"", key);
+            String output = winComExecutor.exec(command).getBody();
 
             if (output.matches("\\s+")) {
                 return Optional.empty();
@@ -50,7 +52,7 @@ public class WinRegReader {
             valuesOptional = Optional.of(values);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить список параметров реестра в разделе {}. Причина: {}", key, e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("Stack trace: ", e);
             Thread.currentThread().interrupt();
         }
         return valuesOptional;
@@ -68,7 +70,6 @@ public class WinRegReader {
         //<key>\subkey1 - первая строка, в моем случае вседга пустая.
         //<key>\subkey2
         //<key>\subkeyN
-//        String output = winComExecutor.exec("reg query \"" + key + "\"").getBody();
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg query \"" + key + "\"");
         if (result.getExitCode() != 0){
             String msg = String.format("%s Код: %d\n" +
@@ -105,9 +106,6 @@ public class WinRegReader {
             }
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
-            //не пойму его назначения оригинального условия if(!output.contains("\t")){
-            //  В моем случае всегда было true, т.к. output всегда не содержал \t, вместо табуляции в строке было четыре
-            //  символа пробела.
             if (output.matches("\\s+")) {
                 return Optional.empty();
             }
@@ -117,7 +115,7 @@ public class WinRegReader {
             valueOptional = Optional.of(parsed[parsed.length - 1]);
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
-            LOGGER.debug("{}", e);
+            LOGGER.debug("Stack trace: ", e);
             Thread.currentThread().interrupt();
         }
         return valueOptional;
@@ -129,8 +127,8 @@ public class WinRegReader {
      *
      * @param key раздел, существование которого необходимо проверить.
      * @return true - раздел реестра существует, false - указанного раздела нет.
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException If an I/O error occurs
+     * @throws InterruptedException if the current thread is interrupted by another thread while it is waiting, then the wait is ended and an InterruptedException is thrown.
      */
     public boolean isKeyExists(String key) throws IOException, InterruptedException {
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg query \"" + key + "\" /ve ");
@@ -151,11 +149,11 @@ public class WinRegReader {
     public WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
         if (result.getExitCode() != 0) {
-            String msg = String.format("%s Код: %d\n\tФайл: %s", result.getBody(), result.getExitCode(), hive);
+            String msg = String.format("%s Код: %d%n" +
+                    "\tФайл: %s", result.getBody(), result.getExitCode(), hive);
             throw new RegistryAccessDeniedException(msg);
         }
         return result;
-//        return winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
     }
 
     /**
@@ -175,6 +173,6 @@ public class WinRegReader {
             String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
             throw new RegistryAccessDeniedException(msg);
         }
-        return winComExecutor.exec("reg unload " + nodeName);
+        return result;
     }
 }
