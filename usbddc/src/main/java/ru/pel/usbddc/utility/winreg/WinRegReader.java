@@ -61,14 +61,21 @@ public class WinRegReader {
      *
      * @param key раздел (ключ) реестра, подразделы (подключи) которого необходимо получить
      * @return список подразделов (подключей). Если подразделов нет, то возращается список с размером 0.
+     * @throws RegistryAccessDeniedException если не найден ключ реестра
      */
     public List<String> getSubkeys(String key) throws IOException, InterruptedException {
         //Вывод имеет следующий формат
         //<key>\subkey1 - первая строка, в моем случае вседга пустая.
         //<key>\subkey2
         //<key>\subkeyN
-        String output = winComExecutor.exec("reg query \"" + key + "\"").getBody();
-
+//        String output = winComExecutor.exec("reg query \"" + key + "\"").getBody();
+        WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg query \"" + key + "\"");
+        if (result.getExitCode() != 0){
+            String msg = String.format("%s Код: %d\n" +
+                    "\tРаздел реестра: %s", result.getBody(),result.getExitCode(), key);
+            throw new RegistryAccessDeniedException(msg);
+        }
+        String output = result.getBody();
         return Arrays.stream(output.split(System.lineSeparator()))
                 .filter(s -> !s.isEmpty() &&            //отбрасываем пустые строки
                         s.matches("HKEY.+") &&    //строки с параметрами
@@ -144,7 +151,7 @@ public class WinRegReader {
     public WinComExecutor.Result<Integer, String> loadHive(String nodeName, String hive) throws IOException, InterruptedException {
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg load " + nodeName + " \"" + hive + "\"");
         if (result.getExitCode() != 0) {
-            String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
+            String msg = String.format("%s Код: %d\n\tФайл: %s", result.getBody(), result.getExitCode(), hive);
             throw new RegistryAccessDeniedException(msg);
         }
         return result;

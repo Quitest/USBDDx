@@ -126,7 +126,8 @@ public class RegistryAnalyzer implements Analyzer {
                             return usbDevice;
                         }).count();
             }catch (RegistryAccessDeniedException e){
-                LOGGER.warn("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}", userProfile.getUsername());
+                LOGGER.warn("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}\n" +
+                        "\tПричина: {}", userProfile.getUsername(), e.getCause().getLocalizedMessage());
                 LOGGER.debug("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}", userProfile.getUsername(),e);
             }
         }
