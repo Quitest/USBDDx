@@ -4,7 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
-import ru.pel.usbddc.utility.WinRegReader;
+import ru.pel.usbddc.utility.winreg.WinRegReader;
+import ru.pel.usbddc.utility.winreg.exception.RegistryAccessDeniedException;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -110,19 +111,25 @@ public class RegistryAnalyzer implements Analyzer {
      *
      * @return число устройств, пользователей которых удалось определить.
      */
-    public long determineDeviceUsers() {
+    public long determineDeviceUsers(){
         List<UserProfile> userProfileList = getUserProfileList();
         String currentUserHomeDir = System.getProperty("user.home");
         long counter = 0;
         for (UserProfile userProfile : userProfileList) {
-            List<String> mountedGUIDsOfUser = userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
-                    getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
-            counter += usbDeviceMap.values().stream()
-                    .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
-                    .map(usbDevice -> {
-                        usbDevice.addUserProfile(userProfile);
-                        return usbDevice;
-                    }).count();
+            try {
+                List<String> mountedGUIDsOfUser = userProfile.getProfileImagePath().toString().equals(currentUserHomeDir) ?
+                        getMountedGUIDsOfCurrentUser() : getMountedGUIDsOfUser(userProfile);
+                counter += usbDeviceMap.values().stream()
+                        .filter(usbDevice -> mountedGUIDsOfUser.contains(usbDevice.getGuid()))
+                        .map(usbDevice -> {
+                            usbDevice.addUserProfile(userProfile);
+                            return usbDevice;
+                        }).count();
+            }catch (RegistryAccessDeniedException e){
+                LOGGER.warn("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}\n" +
+                        "\tПричина: {}", userProfile.getUsername(), e.getCause().getLocalizedMessage());
+                LOGGER.debug("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}", userProfile.getUsername(),e);
+            }
         }
         return counter;
     }
@@ -215,7 +222,7 @@ public class RegistryAnalyzer implements Analyzer {
      * @param userProfile профиль пользователя, из которого необходимо получить GUID'ы.
      * @return список GUID всех когда-либо подключенных указанным пользователем устройств.
      */
-    public List<String> getMountedGUIDsOfUser(UserProfile userProfile) {
+    public List<String> getMountedGUIDsOfUser(UserProfile userProfile) throws RegistryAccessDeniedException {
         String currentUserHomedir = System.getProperty("user.home");
         String profileHomedir = userProfile.getProfileImagePath().toString();
         if (profileHomedir.equals(currentUserHomedir)) {
@@ -234,11 +241,14 @@ public class RegistryAnalyzer implements Analyzer {
                     .map(e -> e.substring(e.lastIndexOf("{")))
                     .toList();
             winRegReader.unloadHive(nodeName);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            LOGGER.error("ОШИБКА. Не удалось получить GUID'ы устройств, используемых пользователем {}. Причина: {}",
+        } catch (RegistryAccessDeniedException e){
+            String msg = String.format("Не удалось получить GUID'ы устройств, используемых пользователем %s", username);
+            throw new RegistryAccessDeniedException(msg,e);
+        }
+        catch (IOException | InterruptedException e) {
+            LOGGER.warn("Предупреждение! Не удалось получить GUID'ы устройств, используемых пользователем {}. Причина: {}",
                     username, e.getLocalizedMessage());
-            LOGGER.debug("{}", e.toString());
+            LOGGER.debug("Не удалось получить GUID'ы устройств, используемых пользователем {}", username, e);
             Thread.currentThread().interrupt();
         }
         return guidList;

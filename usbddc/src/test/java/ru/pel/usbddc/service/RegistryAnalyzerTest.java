@@ -7,9 +7,9 @@ import ru.pel.usbddc.analyzer.Analyzer;
 import ru.pel.usbddc.analyzer.RegistryAnalyzer;
 import ru.pel.usbddc.entity.USBDevice;
 import ru.pel.usbddc.entity.UserProfile;
+import ru.pel.usbddc.utility.winreg.exception.RegistryAccessDeniedException;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ class RegistryAnalyzerTest {
         USBDevice usbDevice = new RegistryAnalyzer().associateSerialToGuid().entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(/*USBDevice.getBuilder().build()*/new USBDevice());
+                .findFirst().orElse(new USBDevice());
 
         assertEquals(expectedGuid, usbDevice.getGuid());
     }
@@ -100,7 +100,7 @@ class RegistryAnalyzerTest {
         USBDevice usbDevice = allUsbDeviceMap.entrySet().stream()
                 .filter(entry -> entry.getKey().equals(expectedSerial))
                 .map(Map.Entry::getValue)
-                .findFirst().orElse(/*USBDevice.getBuilder().build()*/new USBDevice());
+                .findFirst().orElse(new USBDevice());
 
         assertEquals(expectedGuid, usbDevice.getGuid());
     }
@@ -116,7 +116,7 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Получение GUID устройств, подключенных ДРУГИМ пользователем. Метод getMountedGUIDsOfUser()")
-    void getMountedGUIDsOfOtherUserTest() {
+    void getMountedGUIDsOfOtherUserTest() throws RegistryAccessDeniedException {
         UserProfile tmpUser = UserProfile.getBuilder()
                 .withUsername("User 2.Lenovo-PC")
                 .withProfileImagePath(Path.of("C:\\Users\\User 2.Lenovo-PC")).build();
@@ -134,7 +134,7 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Получение GUID устройств, подключенных ТЕКУЩИМ пользователем. Метод getMountedGUIDsOfUser()")
-    void getMountedGUIDsOfUserTest() {
+    void getMountedGUIDsOfUserTest() throws RegistryAccessDeniedException {
         //находим профиль текущего пользователя
         UserProfile currentUserProfile = new RegistryAnalyzer().getUserProfileList().stream()
                 .filter(userProfile -> userProfile.getProfileImagePath().toString().equals(System.getProperty("user.home")))
@@ -173,7 +173,7 @@ class RegistryAnalyzerTest {
 
     @Test
     @DisplayName("Сбор всех подключенных USB устройств. Ожидается успех - найдено хотя бы одно устройство")
-    void getUsbDevicesTest() throws InvocationTargetException, IllegalAccessException {
+    void getUsbDevicesTest() {
         Map<String, USBDevice> usbDevices = new RegistryAnalyzer().getUsbDevices();
 
 
@@ -203,19 +203,19 @@ class RegistryAnalyzerTest {
     }
 
     @Test
-    void whenDoNewAnalysisIsTRUEGetAnalysisReturnNEWResult() throws IOException {
-        Analyzer analyzer = new RegistryAnalyzer(true);
-        Map<String, USBDevice> firstAnalysis = analyzer.getAnalysis();
-        Map<String, USBDevice> secondAnalysis = analyzer.getAnalysis();
-        assertThat(firstAnalysis, not(sameInstance(secondAnalysis)));
-    }
-
-    @Test
     void whenDoNewAnalysisIsFALSEGetAnalysisReturnOLDResult() throws IOException {
         Analyzer analyzer = new RegistryAnalyzer(true);
         Map<String, USBDevice> firstAnalysis = analyzer.getAnalysis();
         analyzer.setDoNewAnalysis(false);
         Map<String, USBDevice> secondAnalysis = analyzer.getAnalysis();
-        assertThat(firstAnalysis,sameInstance(secondAnalysis));
+        assertThat(firstAnalysis, sameInstance(secondAnalysis));
+    }
+
+    @Test
+    void whenDoNewAnalysisIsTRUEGetAnalysisReturnNEWResult() throws IOException {
+        Analyzer analyzer = new RegistryAnalyzer(true);
+        Map<String, USBDevice> firstAnalysis = analyzer.getAnalysis();
+        Map<String, USBDevice> secondAnalysis = analyzer.getAnalysis();
+        assertThat(firstAnalysis, not(sameInstance(secondAnalysis)));
     }
 }
