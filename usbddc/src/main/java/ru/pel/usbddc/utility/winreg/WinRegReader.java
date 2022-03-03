@@ -166,8 +166,6 @@ public class WinRegReader {
      * несуществующую ветку.
      */
     public WinComExecutor.Result<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
-        //TODO делать выгрузку после проверки существования раздела - нужен отдельный метод проверки.
-
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg unload " + nodeName);
         if (result.getExitCode() != 0){
             String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
