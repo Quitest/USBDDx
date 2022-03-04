@@ -75,17 +75,17 @@ public class SystemInfoCollector {
         try {
             executeAnalysis();
             systemInfo.setUuid(uuidFuture.get());
-            systemInfo.setOsInfo(osInfoFuture.get(30, TimeUnit.SECONDS));
+            systemInfo.setOsInfo(osInfoFuture.get(/*30, TimeUnit.SECONDS*/));
 
         } catch (InterruptedException | ExecutionException e) {
             LOGGER.error("Текущий поток был прерван во время работы анализатора. Причина: {}", e.getLocalizedMessage());
             LOGGER.debug("Текущий поток был прерван во время работы анализатора.", e);
             Thread.currentThread().interrupt();
-        } catch (TimeoutException e) {
+        } /*catch (TimeoutException e) {
             LOGGER.error("Анализатор работал слишком долго. {}", e.getLocalizedMessage());
             LOGGER.debug("Анализатор работал слишком долго. ", e);
             Thread.currentThread().interrupt();
-        }
+        }*/
 
 //        executorService.shutdown();
         LOGGER.trace("Время работы общее - {}мс", System.currentTimeMillis() - startTime);

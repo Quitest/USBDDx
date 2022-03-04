@@ -16,7 +16,7 @@
 <!--    <logger name="ru.pel.usbddc.entity.USBDevice" level="debug"/>-->
 <!--    <logger name="ru.pel.usbddc.analyzer.RegistryAnalyzer" level="debug"/>-->
 
-    <root level="warn">
+    <root level="debug">
         <appender-ref ref="STDOUT"/>
     </root>
 

@@ -6,7 +6,10 @@ import ru.pel.usbddc.utility.WinComExecutor;
 import ru.pel.usbddc.utility.winreg.exception.RegistryAccessDeniedException;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -71,9 +74,9 @@ public class WinRegReader {
         //<key>\subkey2
         //<key>\subkeyN
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg query \"" + key + "\"");
-        if (result.getExitCode() != 0){
+        if (result.getExitCode() != 0) {
             String msg = String.format("%s Код: %d\n" +
-                    "\tРаздел реестра: %s", result.getBody(),result.getExitCode(), key);
+                    "\tРаздел реестра: %s", result.getBody(), result.getExitCode(), key);
             throw new RegistryAccessDeniedException(msg);
         }
         String output = result.getBody();
@@ -102,7 +105,8 @@ public class WinRegReader {
                         %s
                         \tРаздел: %s
                         \tПараметр: %s""", output.trim(), key, value);
-                throw new NoSuchElementException(msg);
+                LOGGER.warn("{}",msg);
+                throw new RegistryAccessDeniedException(msg);
             }
             // Вывод имеет следующий формат:
             // \n<Version information>\n\n<value>\t<registry type>\t<value>
@@ -127,7 +131,7 @@ public class WinRegReader {
      *
      * @param key раздел, существование которого необходимо проверить.
      * @return true - раздел реестра существует, false - указанного раздела нет.
-     * @throws IOException If an I/O error occurs
+     * @throws IOException          If an I/O error occurs
      * @throws InterruptedException if the current thread is interrupted by another thread while it is waiting, then the wait is ended and an InterruptedException is thrown.
      */
     public boolean isKeyExists(String key) throws IOException, InterruptedException {
@@ -163,11 +167,11 @@ public class WinRegReader {
      * @param nodeName выгружаемый куст реестра
      * @return {@code WinRegReader.ExecResult}, в котором первое значение код выхода (0 - успешно, 1 - провал), второе - пустая строка.
      * @throws RegistryAccessDeniedException при выгрузке куста реестра в отсутствии повышенных привелегий пользователя или попытке выгрузить
-     * несуществующую ветку.
+     *                                       несуществующую ветку.
      */
     public WinComExecutor.Result<Integer, String> unloadHive(String nodeName) throws IOException, InterruptedException {
         WinComExecutor.Result<Integer, String> result = winComExecutor.exec("reg unload " + nodeName);
-        if (result.getExitCode() != 0){
+        if (result.getExitCode() != 0) {
             String msg = String.format("%s Код: %d", result.getBody(), result.getExitCode());
             throw new RegistryAccessDeniedException(msg);
         }
