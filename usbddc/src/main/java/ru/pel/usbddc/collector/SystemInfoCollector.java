@@ -87,7 +87,7 @@ public class SystemInfoCollector {
             Thread.currentThread().interrupt();
         }
 
-        executorService.shutdown();
+//        executorService.shutdown();
         LOGGER.trace("Время работы общее - {}мс", System.currentTimeMillis() - startTime);
         return this;
     }
