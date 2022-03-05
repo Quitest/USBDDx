@@ -120,7 +120,8 @@ public class WinRegReader {
         } catch (IOException | InterruptedException e) {
             LOGGER.error("ОШИБКА. Не удалось получить значение параметра {} в разделе {}. Причина: {}", value, key, e.getLocalizedMessage());
             LOGGER.debug("Stack trace: ", e);
-            Thread.currentThread().interrupt();
+//            Thread.currentThread().interrupt();
+            //прерывание текущего потока в данном месте вызывает прерывание анализа в целом. Ввести нормальную обраотку
         }
         return valueOptional;
     }
