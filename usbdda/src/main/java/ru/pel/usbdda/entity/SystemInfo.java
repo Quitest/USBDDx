@@ -14,6 +14,12 @@ public class SystemInfo {
     private Long id;
 
     private String uuid;
+    /**
+     * True - если запуск производится из-под учетки админа и при наличии расширенных полномочий - "Запустить от имени администратора".<br>
+     * False - в остальных случаях.
+     */
+    private boolean isScannedWithAdminPrivileges;
+    private String comment;
 
     @OneToOne
     @MapsId
@@ -26,9 +32,4 @@ public class SystemInfo {
             inverseJoinColumns = @JoinColumn(name = "usb_device_id", referencedColumnName = "id"))
     private List<USBDevice> usbDeviceList;
 
-    /**
-     * True - если запуск производится из-под учетки админа и при наличии расширенных полномочий - "Запустить от имени администратора".<br>
-     * False - в остальных случаях.
-     */
-    private boolean isScannedWithAdminPrivileges;
 }

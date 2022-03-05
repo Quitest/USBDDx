@@ -114,8 +114,8 @@ public class RegistryAnalyzer implements Analyzer {
     public static boolean determineAdminPermissionsGranted() {
         //FIXME хардкод заменить на строки из ресурсов - полезно при введении множества языков в приложение.
         final String ACCESS_DENIED = "Ошибка: Отказано в доступе. Код: 1";
-        final String INVALID_PARAMETER = "Ошибка: Параметр задан неверно.  Код: 1";
-        final String HAVE_NOT_PERMISSIONS = "Ошибка: Клиент не обладает требуемыми правами.  Код: 1";
+        final String INVALID_PARAMETER = "Ошибка: Параметр задан неверно. Код: 1";
+        final String HAVE_NOT_PERMISSIONS = "Ошибка: Клиент не обладает требуемыми правами. Код: 1";
         try {
             new WinRegReader().unloadHive("HKEY_LOCAL_MACHINE\\SYSTEM\\tryUnloadNotExistsKeyForDetermineAdminPermissions");
             isAdminPermissionsGranted = true;
