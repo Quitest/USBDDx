@@ -78,6 +78,12 @@ class RegistryAnalyzerTest {
     }
 
     @Test
+    void determineAdminPermissionsGranted() {
+        boolean isGranted = new RegistryAnalyzer().determineAdminPermissionsGranted();
+
+    }
+
+    @Test
     @DisplayName("Получение информации о всех пользователях устройств")
     void findDevicesWithManyUsers() {
         List<USBDevice> collect = allUsbDeviceMap.values().stream()

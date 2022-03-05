@@ -15,9 +15,16 @@ public class SystemInfoDto {
     @JsonProperty("uuid")
     private String uuid;
 
+    @JsonProperty("scannedWithAdminPrivileges")
+    private boolean isScannedWithAdminPrivileges;
+
+    @JsonProperty("comment")
+    private String comment;
+
     @JsonProperty("osInfo")
     private OSInfoDto osInfo;
 
     @JsonProperty("usbDeviceList")
     private List<USBDeviceDto> usbDeviceList;
+
 }

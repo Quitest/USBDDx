@@ -292,7 +292,7 @@ public class USBDevice {
      */
     public USBDevice mergeProperties(USBDevice src) {
         final String traceMsg = "Добавлено в свойство {} значение {}";
-        LOGGER.debug("Начата процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
+        LOGGER.trace("Начата процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
         //TODO в следующий подход к методу или с ростом навыков эту лапшу заменить на более грамотный код.
         //Далее идет лапша из однотипных блоков кода:
         // 1. Получаем значение свойства из источника.
@@ -372,7 +372,7 @@ public class USBDevice {
         LOGGER.trace(traceMsg, "userAccountList", src.getUserAccountsList());
         volumeLabelList.addAll(src.getVolumeLabelList());
         LOGGER.trace(traceMsg, "volumeLabelList", src.getVolumeLabelList());
-        LOGGER.debug("Закончена процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
+        LOGGER.trace("Закончена процедура слияния свойств устройств с серийными номерами [{}] <-- [{}]", getSerial(), src.getSerial());
         return this;
     }
 

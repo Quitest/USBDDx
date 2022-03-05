@@ -12,6 +12,7 @@ import java.io.IOException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SystemInfoCollectorTest {
     private static String json;
@@ -29,6 +30,11 @@ class SystemInfoCollectorTest {
     @Test
     void whenJsonContainsComment_thenTrue(){
         assertThat(json, containsString("\"comment\" : \"test comment\""));
+    }
+
+    @Test
+    void whenScannedWithAdminPrivileges_thenTrue(){
+        assertTrue(systemInfo.isScannedWithAdminPrivileges());
     }
 
     @Test

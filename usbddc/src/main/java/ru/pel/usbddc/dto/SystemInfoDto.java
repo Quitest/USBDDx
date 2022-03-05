@@ -15,11 +15,13 @@ public class SystemInfoDto {
     private String uuid;
     private String comment;
     private List<USBDevice> usbDeviceList;
+    private boolean isScannedWithAdminPrivileges;
 
     public SystemInfoDto(final SystemInfo systemInfo) {
         this.osInfo = systemInfo.getOsInfo();
         this.uuid = systemInfo.getUuid();
         this.comment = systemInfo.getComment();
+        this.isScannedWithAdminPrivileges = systemInfo.isScannedWithAdminPrivileges();
         this.usbDeviceList = systemInfo.getUsbDeviceMap().values().parallelStream().toList();
     }
 

@@ -23,6 +23,7 @@ public class RegistryAnalyzer implements Analyzer {
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
     private static final String REG_KEY_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
     private static final String REG_KEY_USBSTOR = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
+    private static boolean isAdminPermissionsGranted = false;
     /**
      * Ветка службы ReadyBoost
      */
@@ -104,6 +105,38 @@ public class RegistryAnalyzer implements Analyzer {
     }
 
     /**
+     * Определяет наличие прав на загрузку/выгрузку пользовательских кустов реестра путем выгрузки заведомо несуществующего.
+     * В первую очередь используется для определения списка пользователей, использовавших носители.
+     *
+     * @return true - анализ происходил с расширенными правами. false - анализа происходил из-под учетной записи "пользователь"
+     * или "администратор", но без повышения привилегий (запуск с правами администратора).
+     */
+    public static boolean determineAdminPermissionsGranted() {
+        //FIXME хардкод заменить на строки из ресурсов - полезно при введении множества языков в приложение.
+        final String ACCESS_DENIED = "Ошибка: Отказано в доступе. Код: 1";
+        final String INVALID_PARAMETER = "Ошибка: Параметр задан неверно. Код: 1";
+        final String HAVE_NOT_PERMISSIONS = "Ошибка: Клиент не обладает требуемыми правами. Код: 1";
+        try {
+            new WinRegReader().unloadHive("HKEY_LOCAL_MACHINE\\SYSTEM\\tryUnloadNotExistsKeyForDetermineAdminPermissions");
+            isAdminPermissionsGranted = true;
+        } catch (RegistryAccessDeniedException e) {
+            isAdminPermissionsGranted = switch (e.getLocalizedMessage()) {
+                case ACCESS_DENIED, INVALID_PARAMETER -> true;
+                case HAVE_NOT_PERMISSIONS -> false; //строка лишняя, но решено оставить для более простого понимания логики.
+                default -> false;
+            };
+        } catch (IOException | InterruptedException e) {
+            LOGGER.error("В процессе определения привилегий пользователя произошла ошибка:%n" +
+                    "{}", e.getLocalizedMessage());
+            LOGGER.debug("", e);
+            isAdminPermissionsGranted = false;
+        }finally {
+            LOGGER.info("Уровень полномочий анализатора: {}", isAdminPermissionsGranted ? "полные" : "ограниченные");
+        }
+        return isAdminPermissionsGranted;
+    }
+
+    /**
      * <p>Определяет под какой учетной записью осуществлялось использование устройства.</p>
      * <p>Определение происходит путем сопоставления имеющегося GUID и
      * из куста реестра пользователя \Software\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2
@@ -111,7 +144,7 @@ public class RegistryAnalyzer implements Analyzer {
      *
      * @return число устройств, пользователей которых удалось определить.
      */
-    public long determineDeviceUsers(){
+    public long determineDeviceUsers() {
         List<UserProfile> userProfileList = getUserProfileList();
         String currentUserHomeDir = System.getProperty("user.home");
         long counter = 0;
@@ -125,10 +158,10 @@ public class RegistryAnalyzer implements Analyzer {
                             usbDevice.addUserProfile(userProfile);
                             return usbDevice;
                         }).count();
-            }catch (RegistryAccessDeniedException e){
+            } catch (RegistryAccessDeniedException e) {
                 LOGGER.warn("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}\n" +
                         "\tПричина: {}", userProfile.getUsername(), e.getCause().getLocalizedMessage());
-                LOGGER.debug("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}", userProfile.getUsername(),e);
+                LOGGER.debug("Внимание! Не удалось определить GUID'ы устройств, используемых пользователем {}", userProfile.getUsername(), e);
             }
         }
         return counter;
@@ -241,11 +274,10 @@ public class RegistryAnalyzer implements Analyzer {
                     .map(e -> e.substring(e.lastIndexOf("{")))
                     .toList();
             winRegReader.unloadHive(nodeName);
-        } catch (RegistryAccessDeniedException e){
+        } catch (RegistryAccessDeniedException e) {
             String msg = String.format("Не удалось получить GUID'ы устройств, используемых пользователем %s", username);
-            throw new RegistryAccessDeniedException(msg,e);
-        }
-        catch (IOException | InterruptedException e) {
+            throw new RegistryAccessDeniedException(msg, e);
+        } catch (IOException | InterruptedException e) {
             LOGGER.warn("Предупреждение! Не удалось получить GUID'ы устройств, используемых пользователем {}. Причина: {}",
                     username, e.getLocalizedMessage());
             LOGGER.debug("Не удалось получить GUID'ы устройств, используемых пользователем {}", username, e);
@@ -353,6 +385,10 @@ public class RegistryAnalyzer implements Analyzer {
             Thread.currentThread().interrupt();
         }
         return userProfileList;
+    }
+
+    public boolean isAdminPermissionsGranted() {
+        return determineAdminPermissionsGranted();
     }
 
     public boolean isDoNewAnalysis() {

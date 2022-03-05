@@ -44,8 +44,6 @@ public class SystemInfoCollector {
 
     private List<Callable<Map<String, USBDevice>>> analyzerTaskList = new ArrayList<>();
     private SystemInfo systemInfo;
-    //TODO #52
-    // private String scannedWithAdminPrivileges;
 
     public SystemInfoCollector() {
         systemInfo = new SystemInfo();
@@ -64,13 +62,13 @@ public class SystemInfoCollector {
      */
     public SystemInfoCollector collectSystemInfo() {
         long startTime = System.currentTimeMillis();
-
+        systemInfo.setScannedWithAdminPrivileges(RegistryAnalyzer.determineAdminPermissionsGranted());
         Future<OSInfo> osInfoFuture = executorService.submit(() -> new OSInfoCollector().collectInfo());
         Future<String> uuidFuture = executorService.submit(this::getSystemUUID);
 
-        List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
-
         addAnalyzer(new RegistryAnalyzer(true));
+
+        List<Path> logList = new OSInfoCollector().getSetupapiDevLogList();
         addAnalyzer(new SetupapiDevLogAnalyzer(logList, true));
         try {
             executeAnalysis();
