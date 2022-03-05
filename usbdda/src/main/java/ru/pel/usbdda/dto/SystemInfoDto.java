@@ -20,4 +20,7 @@ public class SystemInfoDto {
 
     @JsonProperty("usbDeviceList")
     private List<USBDeviceDto> usbDeviceList;
+
+    @JsonProperty("scannedWithAdminPrivileges")
+    private boolean isScannedWithAdminPrivileges;
 }

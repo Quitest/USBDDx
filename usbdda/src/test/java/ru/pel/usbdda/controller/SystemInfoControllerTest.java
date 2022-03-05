@@ -21,6 +21,7 @@ class SystemInfoControllerTest {
     private String postJson = """
             {
              "uuid" : "edcba098-7654-3210-fedc-ab9876543210",
+             "scannedWithAdminPrivileges": "true",
              "osInfo" : {
                 "osId" : "01234567-89ab-cdef-0123-4567890abcde",
                 "osName" : "Windows 10",
@@ -104,5 +105,12 @@ class SystemInfoControllerTest {
                 .andExpect(status().isOk())
                 .andExpectAll(content().string(containsString("\"id\":1,")),
                         content().string(containsString("\"uuid\":\"edcba098-7654-3210-fedc-ab9876543210\",")));
+    }
+
+    @Test
+    void postSystemInfoHasPropertyScannedWithAdminPrivileges() throws Exception {
+        mockMvc.perform(post("/systeminfo").contentType(MediaType.APPLICATION_JSON).content(postJson))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("\"scannedWithAdminPrivileges\": \"true\"")));
     }
 }
