@@ -23,6 +23,7 @@ public class RegistryAnalyzer implements Analyzer {
     private static final String REG_KEY_MOUNTED_DEVICES = "HKEY_LOCAL_MACHINE\\SYSTEM\\MountedDevices";
     private static final String REG_KEY_PROFILE_LIST = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
     private static final String REG_KEY_USBSTOR = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Enum\\USBSTOR";
+    private static boolean isAdminPermissionsGranted = false;
     /**
      * Ветка службы ReadyBoost
      */
@@ -31,7 +32,6 @@ public class RegistryAnalyzer implements Analyzer {
     private final WinRegReader winRegReader = new WinRegReader();
     private Map<String, USBDevice> usbDeviceMap;
     private boolean doNewAnalysis;
-    private boolean isAdminPermissionsGranted = false;
 
     public RegistryAnalyzer() {
         this(true, new HashMap<>());
@@ -111,13 +111,13 @@ public class RegistryAnalyzer implements Analyzer {
      * @return true - анализ происходил с расширенными правами. false - анализа происходил из-под учетной записи "пользователь"
      * или "администратор", но без повышения привилегий (запуск с правами администратора).
      */
-    public boolean determineAdminPermissionsGranted() {
+    public static boolean determineAdminPermissionsGranted() {
         //FIXME хардкод заменить на строки из ресурсов - полезно при введении множества языков в приложение.
         final String ACCESS_DENIED = "Ошибка: Отказано в доступе. Код: 1";
         final String INVALID_PARAMETER = "Ошибка: Параметр задан неверно.  Код: 1";
         final String HAVE_NOT_PERMISSIONS = "Ошибка: Клиент не обладает требуемыми правами.  Код: 1";
         try {
-            winRegReader.unloadHive("HKEY_LOCAL_MACHINE\\SYSTEM\\tryUnloadNotExistsKeyForDetermineAdminPermissions");
+            new WinRegReader().unloadHive("HKEY_LOCAL_MACHINE\\SYSTEM\\tryUnloadNotExistsKeyForDetermineAdminPermissions");
             isAdminPermissionsGranted = true;
         } catch (RegistryAccessDeniedException e) {
             isAdminPermissionsGranted = switch (e.getLocalizedMessage()) {
