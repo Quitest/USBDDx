@@ -15,6 +15,11 @@ public class SystemInfo {
     private String uuid = "";
     private String comment = "";
     private Map<String, USBDevice> usbDeviceMap = new HashMap<>();
+    /**
+     * True - если запуск производится из-под учетки админа и при наличии расширенных полномочий - "Запустить от имени администратора".<br>
+     * False - в остальных случаях.
+     */
+    private boolean isScannedWithAdminPrivileges;
 
     public SystemInfo() {
         //Во избежание утраты конструктора по умолчанию при создании в будущем конструктора с параметрами.
