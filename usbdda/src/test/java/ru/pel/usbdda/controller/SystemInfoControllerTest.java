@@ -67,35 +67,55 @@ class SystemInfoControllerTest {
              } ]
              } ]
              },
-             "usbDeviceList" : [
+             "usbDeviceList" : [ {
+                  "friendlyName" : "Flash Drive",
+                  "guid" : "{87654321-90ab-cdef-1234-567890abcdef}",
+                  "pid" : "312b",
+                  "productName" : "S102 Pro",
+                  "productNameByRegistry" : "USB_Flash_Drive",
+                  "serial" : "ser1234567890ser",
+                  "vendorName" : "DATA Technology Co., Ltd.",
+                  "vendorNameByRegistry" : "Super Puper Vendor",
+                  "vid" : "125f",
+                  "revision" : "0.00",
+                  "diskId" : "{11111111-2222-3333-4444-555555555555}",
+                  "dateTimeFirstInstall" : [ 2021, 8, 7, 16, 27, 36 ],
+                  "volumeIdList" : [ 1, 1, 4165588826 ],
+                  "userAccountsList" : [ {
+                    "username" : "Tester",
+                    "profileImagePath" : "file:///C:/Users/Tester/",
+                    "securityId" : "S-1-5-21-1234567890-098765432-1234567890-1001"
+                  },
+                   {
+                    "username" : "Tester2",
+                    "profileImagePath" : "file:///C:/Users/Tester2/",
+                    "securityId" : "S-1-5-21-1234567890-098765432-1234567890-1002"
+                  }],
+                  "volumeLabelList" : [ "TESTER", "rus", "Z", "spring" ],
+                  "serialOSGenerated" : false
+                },
              {
-             "friendlyName" : "ADATA USB Flash Drive USB Device",
-             "guid" : "{1234567a-890b-0987-abcd-1234567890ab}",
-             "pid" : "312b",
-             "productName" : "Superior S102 Pro",
-             "serial" : "1234567890123456789",
-             "vendorName" : "A-DATA Technology Co., Ltd.",
-             "vid" : "125f",
-             "volumeName" : "TESTER_FlashDrive",
-             "revision" : "0.00",
-             "dateTimeFirstInstall" : [ 2021, 8, 7, 16, 27, 36 ],
-             "userAccountsList" : [ ],
-             "serialOSGenerated" : false
-             },
-             {
-             "friendlyName" : "",
-             "guid" : "{12345678-4321-4321-abcd-abcdef987654}",
-             "pid" : "",
-             "productName" : "",
-             "serial" : "ABCDEF123456",
-             "vendorName" : "",
-             "vid" : "",
-             "volumeName" : "UsbStorage",
-             "revision" : "",
-             "dateTimeFirstInstall" : [ -999999999, 1, 1, 0, 0 ],
-             "userAccountsList" : [ ],
-             "serialOSGenerated" : false
-             }
+                  "friendlyName" : "USB Flash Drive USB Device",
+                  "guid" : "{12345678-90ab-cdef-1234-567890abcdef}",
+                  "pid" : "312b",
+                  "productName" : "Superior S102 Pro",
+                  "productNameByRegistry" : "USB_Flash_Drive",
+                  "serial" : "123456SeRiAl",
+                  "vendorName" : "DATA Technology Co., Ltd.",
+                  "vendorNameByRegistry" : "DATA",
+                  "vid" : "125f",
+                  "revision" : "0.00",
+                  "diskId" : "{11111111-2222-3333-4444-555555555555}",
+                  "dateTimeFirstInstall" : [ 2021, 8, 7, 16, 27, 36 ],
+                  "volumeIdList" : [ 1, 1, 4165588826 ],
+                  "userAccountsList" : [ {
+                    "username" : "Tester",
+                    "profileImagePath" : "file:///C:/Users/Tester/",
+                    "securityId" : "S-1-5-21-1234567890-098765432-1234567890-1001"
+                  } ],
+                  "volumeLabelList" : [ "TESTER", "русская", "Z", "весна" ],
+                  "serialOSGenerated" : false
+                }
               ]
              }""";
 
