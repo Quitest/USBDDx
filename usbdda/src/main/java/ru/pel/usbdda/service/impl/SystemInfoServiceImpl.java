@@ -13,17 +13,17 @@ import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.entity.USBDevice;
 import ru.pel.usbdda.repository.SystemInfoRepository;
 import ru.pel.usbdda.service.SystemInfoService;
+import ru.pel.usbdda.service.UserProfileService;
 
 import java.util.List;
 
 @Service
 public class SystemInfoServiceImpl implements SystemInfoService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemInfoServiceImpl.class);
     //https://www.baeldung.com/jpa-get-auto-generated-id
 // пыатемся работать по статье
     @Autowired
     SystemInfoRepository systemInfoRepository;
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemInfoServiceImpl.class);
 
     @Override
     public SystemInfo getByKey(long key) {
@@ -47,26 +47,24 @@ public class SystemInfoServiceImpl implements SystemInfoService {
                     networkInterface.setOsInfo(osInfo); //а тут сетевойИнтерфейс -> операционнаяСистема.
                 });
 
+//        UserProfileService userProfileService = new UserProfileServiceImpl();
         List<USBDevice> usbDeviceList = systemInfo.getUsbDeviceList();
         usbDeviceList.stream()
                 .forEach(usbDevice -> {
-//                    usbDevice.getUserProfileList()
-//                            .forEach(userProfile -> userProfile.setUsbDeviceList(usbDeviceList));
                     usbDevice.addSystemInfo(systemInfo);
-                    usbDevice.getUserProfileList().forEach(userProfile -> userProfile.setUsbDeviceList(usbDeviceList));//FIXME не set, а add надо
-//                    usbDevice.addUserProfileList();
-//                    usbDevice.addSystemInfo(systemInfo);
-
+                    usbDevice.getUserProfileList().forEach(userProfile -> {
+                        userProfile.setUsbDeviceList(usbDeviceList);//FIXME не set, а add надо
+//                        userProfileService.save(userProfile);
+                    });
                 });
-
 
 
         systemInfoRepository.save(systemInfo);
         LOGGER.debug("""
-                Сохранено в БД: 
-                \tUSBDevice: {}
-                \tСписок пользователей{}""",
-                "149*",systemInfo.getUsbDeviceList().stream().filter(d->d.getSerial().contains("149")).findFirst().get().getUserProfileList());
+                        Сохранено в БД: 
+                        \tUSBDevice: {}
+                        \tСписок пользователей{}""",
+                "149*", systemInfo.getUsbDeviceList().stream().filter(d -> d.getSerial().contains("149")).findFirst().get().getUserProfileList());
         return systemInfo.getId();
     }
 }

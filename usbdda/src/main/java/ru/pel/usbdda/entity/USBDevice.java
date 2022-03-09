@@ -24,7 +24,7 @@ public class USBDevice {
     private String guid;
     private String pid;
 
-    @ManyToMany(mappedBy = "usbDeviceList")
+    @ManyToMany(mappedBy = "usbDeviceList", cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<UserProfile> userProfileList;
     private String vendorName;
     private String friendlyName;
@@ -37,6 +37,13 @@ public class USBDevice {
     @ManyToMany(mappedBy = "usbDeviceList")
     private List<SystemInfo> systemInfoList;
 
+    public void addSystemInfo(SystemInfo systemInfo) {
+        if (systemInfoList == null) {
+            systemInfoList = new ArrayList<>();
+        }
+        systemInfoList.add(systemInfo);
+    }
+
     //    private List<OsInfo> osInfoList;
     public void addUserProfile(UserProfile userProfile) {
         if (userProfileList == null) {
@@ -45,14 +52,7 @@ public class USBDevice {
         userProfileList.add(userProfile);
     }
 
-    public void addUserProfileList(List<UserProfile> userProfileList){
+    public void addUserProfileList(List<UserProfile> userProfileList) {
         this.userProfileList.addAll(userProfileList);
-    }
-
-    public void addSystemInfo(SystemInfo systemInfo){
-        if (systemInfoList == null){
-            systemInfoList = new ArrayList<>();
-        }
-        systemInfoList.add(systemInfo);
     }
 }

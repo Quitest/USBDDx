@@ -18,9 +18,9 @@ public class UserProfile {
     private String profileImagePath;
     private String securityId;
 
-    @ManyToMany
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(name = "userProfile_usbDevice",
-            joinColumns = @JoinColumn(name = "user_profile_id",referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "usb_device_id",referencedColumnName = "id"))
+            joinColumns = @JoinColumn(name = "user_profile_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "usb_device_id", referencedColumnName = "id"))
     private List<USBDevice> usbDeviceList;
 }
