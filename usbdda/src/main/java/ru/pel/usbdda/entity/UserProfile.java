@@ -9,6 +9,8 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
+/*@Table(name = "user_profiles",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"securityId"}))*/
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -18,7 +20,7 @@ public class UserProfile {
     private String profileImagePath;
     private String securityId;
 
-    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    @ManyToMany//(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(name = "userProfile_usbDevice",
             joinColumns = @JoinColumn(name = "user_profile_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "usb_device_id", referencedColumnName = "id"))

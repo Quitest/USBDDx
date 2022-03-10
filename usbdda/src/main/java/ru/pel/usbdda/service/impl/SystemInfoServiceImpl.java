@@ -3,6 +3,7 @@ package ru.pel.usbdda.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -13,7 +14,6 @@ import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.entity.USBDevice;
 import ru.pel.usbdda.repository.SystemInfoRepository;
 import ru.pel.usbdda.service.SystemInfoService;
-import ru.pel.usbdda.service.UserProfileService;
 
 import java.util.List;
 
@@ -36,6 +36,9 @@ public class SystemInfoServiceImpl implements SystemInfoService {
         return systemInfoPage.getContent();
     }
 
+    /*
+    Мысль: в методе каждую сущность сохранять явно, вручную. Перед сохранением выполнять проверку, что
+     */
     @Transactional
     public long save(SystemInfo systemInfo) {
         //устанавливаем обратные связи сущностей (для записи внешних ключей в БД)...
@@ -47,24 +50,15 @@ public class SystemInfoServiceImpl implements SystemInfoService {
                     networkInterface.setOsInfo(osInfo); //а тут сетевойИнтерфейс -> операционнаяСистема.
                 });
 
-//        UserProfileService userProfileService = new UserProfileServiceImpl();
         List<USBDevice> usbDeviceList = systemInfo.getUsbDeviceList();
         usbDeviceList.stream()
                 .forEach(usbDevice -> {
                     usbDevice.addSystemInfo(systemInfo);
                     usbDevice.getUserProfileList().forEach(userProfile -> {
                         userProfile.setUsbDeviceList(usbDeviceList);//FIXME не set, а add надо
-//                        userProfileService.save(userProfile);
                     });
                 });
-
-
-        systemInfoRepository.save(systemInfo);
-        LOGGER.debug("""
-                        Сохранено в БД: 
-                        \tUSBDevice: {}
-                        \tСписок пользователей{}""",
-                "149*", systemInfo.getUsbDeviceList().stream().filter(d -> d.getSerial().contains("149")).findFirst().get().getUserProfileList());
-        return systemInfo.getId();
+            systemInfoRepository.save(systemInfo);
+            return systemInfo.getId();
     }
 }
