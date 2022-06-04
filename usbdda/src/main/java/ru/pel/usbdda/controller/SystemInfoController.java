@@ -11,7 +11,7 @@ import ru.pel.usbdda.dto.SystemInfoDto;
 import ru.pel.usbdda.dto.USBDeviceDto;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.entity.USBDevice;
-import ru.pel.usbdda.service.SystemInfoServiceImpl;
+import ru.pel.usbdda.service.impl.SystemInfoServiceImpl;
 
 import javax.websocket.server.PathParam;
 import java.util.List;
