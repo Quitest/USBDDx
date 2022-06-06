@@ -82,6 +82,10 @@
             <artifactId>maven-site-plugin</artifactId>
             <version>3.11.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
 
 
 <!--Возможно понадобится в будущем для Mockito+JUnit 4-->
