@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Start page</title>
+    <link rel="stylesheet" href="styles/main.css"/>
+</head>
+
+<body>
+<header>
+    <div class="container">
+        <div th:replace="~{fragments/header::header}"> Шапка страницы</div>
+    </div>
+</header>
+<div th:replace="fragments/left-panel::left-panel">левая панель</div>
+<div th:replace="fragments/body/device-by-serial:: device-info">центральная часть</div>
+
+<footer>
+    <div class="container">
+        <div th:replace="~{fragments/footer :: footer}"></div>
+    </div>
+</footer>
+</body>
+</html>
