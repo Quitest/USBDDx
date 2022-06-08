@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class WelcomeController {
     @GetMapping("/welcome")
     public String welcomePage(){
-        return "welcome-page";
+        return "/home/homeNotSignedIn";
     }
 }
