@@ -47,11 +47,11 @@
     </dependencies>
 
 
-<!--    <build>-->
-<!--        <resources>-->
-<!--            <resource>-->
-<!--                <directory>src/main/webapp</directory>-->
-<!--            </resource>-->
-<!--        </resources>-->
-<!--    </build>-->
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/webapp</directory>
+            </resource>
+        </resources>
+    </build>
 </project>
