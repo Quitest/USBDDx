@@ -1,24 +1,32 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout (title, content)">
 <head>
     <meta charset="UTF-8">
-    <title>Start page</title>
-    <link rel="stylesheet" href="styles/main.css"/>
+    <title th:replace="${title}">Start page</title>
+    <link rel="stylesheet" href="/styles/main.css"/>
 </head>
 
 <body>
-<header>
-    <div class="container">
+<header class="container">
+<!--    <div class="container">-->
         <div th:replace="~{fragments/header::header}"> Шапка страницы</div>
-    </div>
+<!--    </div>-->
 </header>
-<div th:replace="fragments/left-panel::left-panel">левая панель</div>
-<div th:replace="fragments/body/device-by-serial:: device-info">центральная часть</div>
 
-<footer>
-    <div class="container">
-        <div th:replace="~{fragments/footer :: footer}"></div>
+<div th:replace="${content}"></div>
+
+<div class="container">
+    <div class="box">
+        <div th:replace="fragments/menu-panel::menu-panel">левая панель</div>
+<!--        <div th:replace="fragments/body/device-by-serial:: device-info">центральная часть</div>-->
+        <div> Добро пожаловать в USBDDa. Это стартовая страница. Для начала работы воспользуйтесь меню сверху.</div>
     </div>
+</div>
+
+<footer class="container">
+<!--    <div class="container">-->
+        <div th:replace="~{fragments/footer :: footer}"></div>
+<!--    </div>-->
 </footer>
 </body>
 </html>

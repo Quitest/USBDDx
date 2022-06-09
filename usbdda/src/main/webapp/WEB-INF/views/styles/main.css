@@ -3,7 +3,20 @@
   max-width: 1024px; /*максимальная ширина может иметь другое значение*/
   padding: 0 15px;
   margin: 0 auto;
+  overflow:auto;
 }
+
+box{
+    white-space:nowrap
+    border: 1px solid red;
+    display:inline-block;
+}
+.box div{
+    /*width:90px;*/
+    display:inline-block;
+    border:1px solid black
+}
+
 
 h1{
   color: #7FFF00;

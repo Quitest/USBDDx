@@ -1,14 +1,101 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:decorate="~{index}">
 <head>
-  <meta charset="UTF-8">
-  <title>Сводная информация об устройстве</title>
+    <meta charset="UTF-8">
+    <title>Сводная информация об устройстве</title>
 </head>
 <body>
-  <div th:fragment="device-info">
+<div th:fragment="device-info">
     <div>
-      Вся информация об устройстве с заданным серийником
+        Вся информация об устройстве с заданным серийником
+        <table border="1">
+            <thead>
+            <tr>
+                <td>Свойство</td>
+                <td>Значение</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>ID в БД</td>
+                <td th:text="${device.id}"></td>
+            </tr>
+            <tr>
+                <td>VID</td>
+                <td th:text="${device.vid}"></td>
+            </tr>
+            <tr>
+                <td>PID</td>
+                <td th:text="${device.pid}"></td>
+            </tr>
+            <tr>
+                <td>Serial</td>
+                <td th:text="${device.serial}"></td>
+            </tr>
+            <tr>
+                <td>Date+time first install</td>
+                <td th:text="${device.dateTimeFirstInstall}"></td>
+            </tr>
+            <tr>
+                <td>volumeName</td>
+                <td th:text="${device.volumeName}"></td>
+            </tr>
+            <tr>
+                <td>serialOSGenerated</td>
+                <td th:text="${device.serialOSGenerated}"></td>
+            </tr>
+            <tr>
+                <td>guid</td>
+                <td th:text="${device.guid}"></td>
+            </tr>
+            <tr>
+                <td>userProfileList</td>
+                <!--                <td th:text="${device.userProfileList}"></td>-->
+                <td>
+                    <div th:each="profile : ${device.getUserProfileList()}">
+                        <div th:text="${profile.profileImagePath}">путь к профилю пользователя</div>
+                    </div>
+                    <!--                    <table>-->
+                    <!--                        <tr th:each="profile : ${profileList}">-->
+                    <!--                        <tr th:each="profile : ${device.getUserProfileList()}">-->
+                    <!--                            <td th:text="${profile.profileImagePath}">путь к профилю пользователя</td>-->
+                    <!--                        </tr>-->
+                    <!--                    </table>-->
+                </td>
+            </tr>
+            <tr>
+                <td>vendorName</td>
+                <td th:text="${device.vendorName}"></td>
+            </tr>
+            <tr>
+                <td>friendlyName</td>
+                <td th:text="${device.friendlyName}"></td>
+            </tr>
+            <tr>
+                <td>productName</td>
+                <td th:text="${device.productName}"></td>
+            </tr>
+            <tr>
+                <td>revision</td>
+                <td th:text="${device.revision}"></td>
+            </tr>
+            <tr>
+                <td>systemInfoList</td>
+                <!--                <td th:text="${device.systemInfoList}"></td>-->
+                <table>
+                    <tr th:each="system : ${device.getSystemInfoList()}">
+                        <td th:text="${system}"
+                    </tr>
+                </table>
+            </tr>
+            </tbody>
+        </table>
     </div>
-  </div>
+</div>
+<footer class="container">
+    <!--    <div class="container">-->
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    <!--    </div>-->
+</footer>
 </body>
 </html>

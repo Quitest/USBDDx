@@ -16,13 +16,13 @@ import ru.pel.usbdda.service.UsbDeviceService;
 import javax.websocket.server.PathParam;
 
 @Controller
-@RequestMapping("/usbdevice")
+@RequestMapping("api/usbdevice")
 public class UsbDeviceController {
     @Autowired
-    UsbDeviceService usbDeviceService;
+    private UsbDeviceService usbDeviceService;
 
     @Autowired
-    ModelMapper modelMapper;
+    private ModelMapper modelMapper;
 
     @GetMapping
     @ResponseBody
