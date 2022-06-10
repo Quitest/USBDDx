@@ -31,6 +31,8 @@ public class USBDevice {
     private String productName;
     private String revision;
     private String vendorNameByRegistry;
+    private String diskId;
+    private String productNameByRegistry;
 
     //    @ManyToOne
 //    @JoinColumn(name = "system_info_id")

@@ -62,7 +62,6 @@ public class USBDeviceDto {
     @JsonProperty("productNameByRegistry")
     private String productNameByRegistry;
 
-    // FIXME: 05.03.2022 записывать в БД
     @JsonProperty("diskId")
     private String diskId;
 
