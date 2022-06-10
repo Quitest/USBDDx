@@ -30,6 +30,7 @@ public class USBDevice {
     private String friendlyName;
     private String productName;
     private String revision;
+    private String vendorNameByRegistry;
 
     //    @ManyToOne
 //    @JoinColumn(name = "system_info_id")

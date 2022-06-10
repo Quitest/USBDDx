@@ -49,7 +49,6 @@ public class USBDeviceDto {
     @JsonProperty("vendorName")
     private String vendorName;
 
-    // FIXME: 05.03.2022 записывать в БД
     @JsonProperty("vendorNameByRegistry")
     private String vendorNameByRegistry;
 
