@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Список всех устройств в БД</title>
+</head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<div>
+    <table border="1">
+        <thead>
+        <tr>
+            <th>ID в БД</th>
+            <th>diskId</th>
+            <th>VID</th>
+            <th>PID</th>
+            <th>Serial</th>
+            <th>Date+time first install</th>
+            <th>volumeLabelList</th>
+            <th>volumeIdList</th>
+            <th>serialOSGenerated</th>
+            <th>guid</th>
+            <th>userProfileList</th>
+            <th>vendorName</th>
+            <th>vendorNameByRegistry</th>
+            <th>friendlyName</th>
+            <th>productName</th>
+            <th>productNameByRegistry</th>
+            <th>revision</th>
+            <th>systemInfoList</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="device : ${deviceList}" th:object="${device}">
+            <td th:text="*{id}"></td>
+            <td th:text="*{diskId}"></td>
+            <td th:text="*{vid}"></td>
+            <td th:text="*{pid}"></td>
+            <td th:text="*{serial}"></td>
+            <td th:text="*{dateTimeFirstInstall}"></td>
+            <td th:text="*{volumeLabelList}"></td>
+            <td th:text="*{volumeIdList}"></td>
+            <td th:text="*{serialOSGenerated}"></td>
+            <td th:text="*{guid}"></td>
+            <td th:text="*{userProfileList}"></td>
+            <td th:text="*{vendorName}"></td>
+            <td th:text="*{vendorNameByRegistry}"></td>
+            <td th:text="*{friendlyName}"></td>
+            <td th:text="*{productName}"></td>
+            <td th:text="*{productNameByRegistry}"></td>
+            <td th:text="*{revision}"></td>
+            <td th:text="*{systemInfoList}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
