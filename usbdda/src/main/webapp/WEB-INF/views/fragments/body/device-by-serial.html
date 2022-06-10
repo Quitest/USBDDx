@@ -6,10 +6,13 @@
 </head>
 <body>
 <div th:fragment="device-info">
-    <div>
-        Вся информация об устройстве с заданным серийником
-        <table border="1">
+    <div th:object="${device}">
+
+        <table border="1" id="general-info">
             <thead>
+            <tr>
+                <td>Вся информация об устройстве с заданным серийником</td>
+            </tr>
             <tr>
                 <td>Свойство</td>
                 <td>Значение</td>
@@ -18,42 +21,44 @@
             <tbody>
             <tr>
                 <td>ID в БД</td>
-                <td th:text="${device.id}"></td>
+                <!--                <td th:text="${device.id}"></td>-->
+                <td th:text="*{id}"></td>
             </tr>
             <tr>
                 <td>VID</td>
-                <td th:text="${device.vid}"></td>
+                <!--                <td th:text="${device.vid}"></td>-->
+                <td th:text="*{vid}"></td>
             </tr>
             <tr>
                 <td>PID</td>
-                <td th:text="${device.pid}"></td>
+                <td th:text="*{pid}"></td>
             </tr>
             <tr>
                 <td>Serial</td>
-                <td th:text="${device.serial}"></td>
+                <td th:text="*{serial}"></td>
             </tr>
             <tr>
                 <td>Date+time first install</td>
-                <td th:text="${device.dateTimeFirstInstall}"></td>
+                <td th:text="*{dateTimeFirstInstall}"></td>
             </tr>
             <tr>
                 <td>volumeName</td>
-                <td th:text="${device.volumeName}"></td>
+                <td th:text="*{volumeName}"></td>
             </tr>
             <tr>
                 <td>serialOSGenerated</td>
-                <td th:text="${device.serialOSGenerated}"></td>
+                <td th:text="*{serialOSGenerated}"></td>
             </tr>
             <tr>
                 <td>guid</td>
-                <td th:text="${device.guid}"></td>
+                <td th:text="*{guid}"></td>
             </tr>
             <tr>
                 <td>userProfileList</td>
                 <!--                <td th:text="${device.userProfileList}"></td>-->
                 <td>
-                    <div th:each="profile : ${device.getUserProfileList()}">
-                        <div th:text="${profile.profileImagePath}">путь к профилю пользователя</div>
+                    <div th:each="profile : ${device.getUserProfileList()}" th:object="${profile}">
+                        <div th:text="*{profileImagePath}">путь к профилю пользователя</div>
                     </div>
                     <!--                    <table>-->
                     <!--                        <tr th:each="profile : ${profileList}">-->
@@ -65,26 +70,26 @@
             </tr>
             <tr>
                 <td>vendorName</td>
-                <td th:text="${device.vendorName}"></td>
+                <td th:text="*{vendorName}"></td>
             </tr>
             <tr>
                 <td>friendlyName</td>
-                <td th:text="${device.friendlyName}"></td>
+                <td th:text="*{friendlyName}"></td>
             </tr>
             <tr>
                 <td>productName</td>
-                <td th:text="${device.productName}"></td>
+                <td th:text="*{productName}"></td>
             </tr>
             <tr>
                 <td>revision</td>
-                <td th:text="${device.revision}"></td>
+                <td th:text="*{revision}"></td>
             </tr>
             <tr>
                 <td>systemInfoList</td>
                 <!--                <td th:text="${device.systemInfoList}"></td>-->
                 <table>
                     <tr th:each="system : ${device.getSystemInfoList()}">
-                        <td th:text="${system}"
+                        <td th:text="${system.osInfo.osName}"></td>
                     </tr>
                 </table>
             </tr>
