@@ -7,6 +7,7 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -34,11 +35,11 @@ public class USBDevice {
     private String diskId;
     private String productNameByRegistry;
 
-    //    @ManyToOne
-//    @JoinColumn(name = "system_info_id")
-//    private SystemInfo systemInfo;
     @ManyToMany(mappedBy = "usbDeviceList")
     private List<SystemInfo> systemInfoList;
+
+    @ElementCollection
+    private Set<String> volumeLabelList;
 
     public void addSystemInfo(SystemInfo systemInfo) {
         if (systemInfoList == null) {

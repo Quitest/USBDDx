@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,7 +25,6 @@ public class USBDeviceDto {
     @JsonProperty("volumeLabel")
     private String volumeName;
 
-    // FIXME: 05.03.2022 записывать в БД
     @JsonProperty("volumeLabelList")
     private Set<String> volumeLabelList;
 
@@ -58,7 +56,6 @@ public class USBDeviceDto {
     @JsonProperty("productName")
     private String productName;
 
-    // FIXME: 05.03.2022 записывать в БД
     @JsonProperty("productNameByRegistry")
     private String productNameByRegistry;
 
