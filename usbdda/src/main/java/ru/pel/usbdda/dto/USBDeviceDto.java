@@ -21,14 +21,9 @@ public class USBDeviceDto {
     @JsonProperty("dateTimeFirstInstall")
     private LocalDateTime dateTimeFirstInstall;
 
-    //FIXME удалить. Замещен списком volumeLabelList
-    @JsonProperty("volumeLabel")
-    private String volumeName;
-
     @JsonProperty("volumeLabelList")
     private Set<String> volumeLabelList;
 
-    // FIXME: 05.03.2022 записывать в БД
     @JsonProperty("volumeIdList")
     private List<Long> volumeIdList;
 

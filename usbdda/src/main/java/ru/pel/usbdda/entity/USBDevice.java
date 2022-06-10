@@ -20,7 +20,6 @@ public class USBDevice {
     private String vid;
     private String serial;
     private LocalDateTime dateTimeFirstInstall;
-    private String volumeName;
     private boolean serialOSGenerated;
     private String guid;
     private String pid;
@@ -40,6 +39,8 @@ public class USBDevice {
 
     @ElementCollection
     private Set<String> volumeLabelList;
+    @ElementCollection
+    private List<Long> volumeIdList;
 
     public void addSystemInfo(SystemInfo systemInfo) {
         if (systemInfoList == null) {
@@ -48,7 +49,7 @@ public class USBDevice {
         systemInfoList.add(systemInfo);
     }
 
-    //    private List<OsInfo> osInfoList;
+    //TODO вспомнить нужно ли это свойство:    private List<OsInfo> osInfoList;
     public void addUserProfile(UserProfile userProfile) {
         if (userProfileList == null) {
             userProfileList = new ArrayList<>();

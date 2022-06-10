@@ -47,14 +47,18 @@
                 <td th:text="*{dateTimeFirstInstall}"></td>
             </tr>
             <tr>
-                <td>volumeName</td>
-                <td th:text="*{volumeName}"></td>
-            </tr>
-            <tr>
                 <td>volumeLabelList</td>
                 <td>
                     <div th:each="label : ${device.volumeLabelList}">
                         <dev th:text="${label}"> Метки тома</dev>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>volumeIdList</td>
+                <td>
+                    <div th:each="volumeId : ${device.volumeIdList}">
+                        <dev th:text="${volumeId}"> ID (серийники) тома</dev>
                     </div>
                 </td>
             </tr>
