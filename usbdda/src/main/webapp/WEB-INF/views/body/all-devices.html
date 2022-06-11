@@ -37,7 +37,8 @@
             <td th:text="*{diskId}"></td>
             <td th:text="*{vid}"></td>
             <td th:text="*{pid}"></td>
-            <td th:text="*{serial}"></td>
+<!--            <td th:text="*{serial}"></td>-->
+            <td><a th:href="@{/usbdevice/}+*{serial}">[[*{serial}]]</a></td>
             <td th:text="*{dateTimeFirstInstall}"></td>
             <td th:text="*{volumeLabelList}"></td>
             <td th:text="*{volumeIdList}"></td>
