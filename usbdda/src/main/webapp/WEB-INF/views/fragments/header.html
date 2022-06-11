@@ -7,10 +7,10 @@
 </head>
 
 <body>
-<div th:fragment="header">
+<header th:fragment="header">
     <div><h1>Крутая система анализа.</h1></div>
-    <div></div>
+    <div th:replace="/fragments/menu-panel :: menu-panel"></div>
 
-</div>
+</header>
 </body>
 </html>
