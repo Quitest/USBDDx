@@ -6,6 +6,7 @@
     <title>Сводная информация об устройстве</title>
 </head>
 <body>
+<header th:replace="~{fragments/header :: header}"></header>
 <div th:fragment="device-info">
     <div th:object="${device}">
 
