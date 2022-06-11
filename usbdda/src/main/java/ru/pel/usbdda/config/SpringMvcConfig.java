@@ -35,7 +35,6 @@ public class SpringMvcConfig implements WebMvcConfigurer {
         templateResolver.setCacheable(false);
         templateResolver.setSuffix(".html");
         templateResolver.setTemplateMode(TemplateMode.HTML);
-        templateResolver.setCacheable(false);
         templateResolver.setCharacterEncoding("UTF-8");
         return templateResolver;
     }
