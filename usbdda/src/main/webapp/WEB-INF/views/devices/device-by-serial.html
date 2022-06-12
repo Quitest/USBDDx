@@ -73,7 +73,6 @@
             </tr>
             <tr>
                 <td>userProfileList</td>
-                <!--                <td th:text="${device.userProfileList}"></td>-->
                 <td>
                     <div th:each="profile : ${device.getUserProfileList()}">
                         <div th:text="${profile.profileImagePath}">путь к профилю пользователя</div>
@@ -109,7 +108,7 @@
                 <!--                <td th:text="${device.systemInfoList}"></td>-->
                 <td>
                     <div th:each="system : ${device.getSystemInfoList()}">
-                        <div th:text="${system.osInfo.osName}"></div>
+                            <a th:href="@{/systeminfo/}+${system.uuid}">[[${system.osInfo.osName}]] ([[${system.uuid}]])</a>
                     </div>
                 </td>
 <!--                <table>-->

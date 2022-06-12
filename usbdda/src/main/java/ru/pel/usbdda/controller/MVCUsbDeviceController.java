@@ -21,13 +21,13 @@ public class MVCUsbDeviceController {
     public String getDeviceInfoBySerial(Model model, @PathVariable("serial") String serial){
         USBDevice device = usbDeviceService.getBySerial(serial);
         model.addAttribute("device", device);
-        return "body/device-by-serial";
+        return "devices/device-by-serial";
     }
 
     @GetMapping("/all")
     public String getAllDevices(Model model){
         List<USBDevice> deviceList = usbDeviceService.getDeviceList();
         model.addAttribute("deviceList", deviceList);
-        return "body/all-devices";
+        return "devices/all-devices";
     }
 }
