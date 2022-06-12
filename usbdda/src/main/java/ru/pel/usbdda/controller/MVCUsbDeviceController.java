@@ -12,7 +12,7 @@ import ru.pel.usbdda.service.UsbDeviceService;
 import java.util.List;
 
 @Controller
-@RequestMapping("/usbdevice")
+@RequestMapping("/usbdevices")
 public class MVCUsbDeviceController {
     @Autowired
     private UsbDeviceService usbDeviceService;
