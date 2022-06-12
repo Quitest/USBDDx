@@ -13,43 +13,43 @@
         <tr>
             <th>ID в БД</th>
             <th>diskId</th>
+            <th>Serial</th>
             <th>VID</th>
             <th>PID</th>
-            <th>Serial</th>
+            <th>vendor Name</th>
+            <th>vendor Name By Registry</th>
+            <th>product Name</th>
+            <th>product Name By Registry</th>
             <th>Date+time first install</th>
-            <th>volumeLabelList</th>
-            <th>volumeIdList</th>
-            <th>serialOSGenerated</th>
+            <th>volume Label List</th>
+            <th>volume Id List</th>
+            <th>serial OS Generated</th>
             <th>guid</th>
-            <th>userProfileList</th>
-            <th>vendorName</th>
-            <th>vendorNameByRegistry</th>
-            <th>friendlyName</th>
-            <th>productName</th>
-            <th>productNameByRegistry</th>
+            <th>user Profile List</th>
+            <th>friendly Name</th>
             <th>revision</th>
-            <th>systemInfoList</th>
+            <th>system Info List</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="device : ${deviceList}" th:object="${device}">
             <td th:text="*{id}"></td>
             <td th:text="*{diskId}"></td>
+            <td><a th:href="@{/usbdevice/}+*{serial}">[[*{serial}]]</a></td>
             <td th:text="*{vid}"></td>
             <td th:text="*{pid}"></td>
-<!--            <td th:text="*{serial}"></td>-->
-            <td><a th:href="@{/usbdevice/}+*{serial}">[[*{serial}]]</a></td>
+            <td th:text="*{vendorName}"></td>
+            <td th:text="*{vendorNameByRegistry}"></td>
+            <td th:text="*{productName}"></td>
+            <td th:text="*{productNameByRegistry}"></td>
+            <!--            <td th:text="*{serial}"></td>-->
             <td th:text="*{dateTimeFirstInstall}"></td>
             <td th:text="*{volumeLabelList}"></td>
             <td th:text="*{volumeIdList}"></td>
             <td th:text="*{serialOSGenerated}"></td>
             <td th:text="*{guid}"></td>
             <td th:text="*{userProfileList}"></td>
-            <td th:text="*{vendorName}"></td>
-            <td th:text="*{vendorNameByRegistry}"></td>
             <td th:text="*{friendlyName}"></td>
-            <td th:text="*{productName}"></td>
-            <td th:text="*{productNameByRegistry}"></td>
             <td th:text="*{revision}"></td>
             <td th:text="*{systemInfoList}"></td>
         </tr>
