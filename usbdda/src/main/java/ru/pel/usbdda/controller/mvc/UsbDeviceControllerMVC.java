@@ -1,4 +1,4 @@
-package ru.pel.usbdda.controller;
+package ru.pel.usbdda.controller.mvc;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,7 +13,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/usbdevices")
-public class MVCUsbDeviceController {
+public class UsbDeviceControllerMVC {
     @Autowired
     private UsbDeviceService usbDeviceService;
 

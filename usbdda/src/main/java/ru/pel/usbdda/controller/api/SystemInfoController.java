@@ -1,4 +1,4 @@
-package ru.pel.usbdda.controller;
+package ru.pel.usbdda.controller.api;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
