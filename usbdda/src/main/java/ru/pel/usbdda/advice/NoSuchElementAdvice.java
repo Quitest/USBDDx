@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
 
 @ControllerAdvice
 @ResponseBody
-public class NoSuchDeviceAdvice {
+public class NoSuchElementAdvice {
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Problem> response(NoSuchElementException exception) {
