@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout (title, content)">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      th:fragment="layout (title, content)">
 <head>
     <meta charset="UTF-8">
 <!--    <title th:replace="${title}">Start page</title>-->
@@ -14,12 +16,12 @@
 <!--    </div>-->
 </header>
 
-<div th:replace="${content}"></div>
+<<div th:replace="${content}"></div>>
 
 <div class="container">
     <div class="box">
         <div th:replace="fragments/menu-panel::menu-panel">левая панель</div>
-<!--        <div th:replace="fragments/body/device-by-serial:: device-info">центральная часть</div>-->
+<!--        <div th:replace="fragments/devices/device-by-serial:: device-info">центральная часть</div>-->
         <div> Добро пожаловать в USBDDa. Это стартовая страница. Для начала работы воспользуйтесь меню сверху.</div>
     </div>
 </div>
