@@ -7,7 +7,7 @@ import java.util.List;
 public interface UsbDeviceService {
     USBDevice getBySerial(String serial);
 
-    List<USBDevice> getDeviceList();
+    List<USBDevice> getAllDevices();
 
     long save(USBDevice entity);
 }

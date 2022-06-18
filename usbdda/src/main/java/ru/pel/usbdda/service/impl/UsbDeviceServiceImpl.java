@@ -26,7 +26,7 @@ public class UsbDeviceServiceImpl implements UsbDeviceService {
     }
 
     @Override
-    public List<USBDevice> getDeviceList() {
+    public List<USBDevice> getAllDevices() {
         return repository.findAll();
     }
 
