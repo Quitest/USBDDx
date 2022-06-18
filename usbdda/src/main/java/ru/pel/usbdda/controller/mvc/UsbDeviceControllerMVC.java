@@ -26,7 +26,7 @@ public class UsbDeviceControllerMVC {
 
     @GetMapping("/all")
     public String getAllDevices(Model model){
-        List<USBDevice> deviceList = usbDeviceService.getDeviceList();
+        List<USBDevice> deviceList = usbDeviceService.getAllDevices();
         model.addAttribute("deviceList", deviceList);
         return "devices/all-devices";
     }
