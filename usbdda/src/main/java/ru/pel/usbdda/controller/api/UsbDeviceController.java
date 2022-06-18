@@ -13,6 +13,7 @@ import ru.pel.usbdda.dto.SystemInfoDto;
 import ru.pel.usbdda.dto.USBDeviceDto;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.entity.USBDevice;
+import ru.pel.usbdda.exception.NoSuchDevice;
 import ru.pel.usbdda.model.assembler.UsbdeviceModelAssembler;
 import ru.pel.usbdda.service.UsbDeviceService;
 
@@ -52,7 +53,8 @@ public class UsbDeviceController {
 
     @GetMapping("/{serial}")
     public EntityModel<USBDeviceDto> getUsbDeviceBySerial(@PathVariable("serial") String serial) {
-        USBDevice device = usbDeviceService.getBySerial(serial).orElseThrow();
+        USBDevice device = usbDeviceService.getBySerial(serial).orElseThrow(
+                ()->new NoSuchDevice("Устройства с серийником "+ serial + " не найдено"));
         return assembler.toModel(toDto(device));
     }
 
