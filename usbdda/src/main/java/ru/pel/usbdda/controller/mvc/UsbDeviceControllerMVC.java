@@ -19,14 +19,14 @@ public class UsbDeviceControllerMVC {
 
     @GetMapping("/{serial}")
     public String getDeviceInfoBySerial(Model model, @PathVariable("serial") String serial){
-        USBDevice device = usbDeviceService.getBySerial(serial);
+        USBDevice device = usbDeviceService.getBySerial(serial).orElseThrow();
         model.addAttribute("device", device);
         return "devices/device-by-serial";
     }
 
     @GetMapping("/all")
     public String getAllDevices(Model model){
-        List<USBDevice> deviceList = usbDeviceService.getDeviceList();
+        List<USBDevice> deviceList = usbDeviceService.getAllDevices();
         model.addAttribute("deviceList", deviceList);
         return "devices/all-devices";
     }

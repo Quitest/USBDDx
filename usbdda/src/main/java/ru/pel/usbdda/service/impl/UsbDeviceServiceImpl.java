@@ -9,6 +9,7 @@ import ru.pel.usbdda.service.UsbDeviceService;
 
 import javax.persistence.EntityManager;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UsbDeviceServiceImpl implements UsbDeviceService {
@@ -21,13 +22,13 @@ public class UsbDeviceServiceImpl implements UsbDeviceService {
     }
 
     @Override
-    public USBDevice getBySerial(String serial) {
-        return repository.findBySerial(serial);
+    public List<USBDevice> getAllDevices() {
+        return repository.findAll();
     }
 
     @Override
-    public List<USBDevice> getDeviceList() {
-        return repository.findAll();
+    public Optional<USBDevice> getBySerial(String serial) {
+        return repository.findBySerial(serial);
     }
 
     @Transactional
