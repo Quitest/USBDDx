@@ -4,55 +4,57 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeMap;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.pel.usbdda.dto.SystemInfoDto;
 import ru.pel.usbdda.dto.USBDeviceDto;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.entity.USBDevice;
+import ru.pel.usbdda.model.assembler.SystemInfoModelAssembler;
 import ru.pel.usbdda.service.impl.SystemInfoServiceImpl;
 
-import javax.websocket.server.PathParam;
-import java.util.List;
-
-@Controller
+@RestController
 @RequestMapping("/systeminfo")
 public class SystemInfoController {
 
     @Autowired
-    SystemInfoServiceImpl service;
+    private SystemInfoServiceImpl service;
+    @Autowired
+    private PagedResourcesAssembler<SystemInfo> pagedResourcesAssembler;
+    @Autowired
+    private SystemInfoModelAssembler assembler;
 
     @GetMapping("/page")
-    @ResponseBody
-    public List<SystemInfoDto> getAllSystemInfo(@PathParam("page") int page, @PathParam("size") int size,
-                                                @PathParam("sortDir") String sortDir, @PathParam("sortBy") String sortBy) {
-        List<SystemInfo> list = service.getSystemInfoList(page, size, sortDir, sortBy);
-        return list.stream()
-                .map(this::toDto)
-                .toList();
+    public PagedModel<EntityModel<SystemInfo>> getAllSystemInfo(Pageable page) {
+        Page<SystemInfo> systemInfoList = service.getSystemInfoList(page);
+        return pagedResourcesAssembler.toModel(systemInfoList, assembler);
     }
 
-    @GetMapping("{id}")
-    public ResponseEntity<SystemInfoDto> getSystemInfo(@PathVariable long id) {
+    @GetMapping("/{id}")
+    public EntityModel<SystemInfo> getSystemInfo(@PathVariable long id) {
         SystemInfo sysInfo = service.getByKey(id);
-        SystemInfoDto dto = toDto(sysInfo);
-        return ResponseEntity.ok(dto);
+        return assembler.toModel(sysInfo);
     }
 
     @PostMapping
-    @ResponseBody
-    public SystemInfoDto postSystemInfo(@RequestBody SystemInfoDto systemInfoDto) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public EntityModel<SystemInfo> postSystemInfo(@RequestBody SystemInfoDto systemInfoDto) {
         SystemInfo sysInfo = toEntity(systemInfoDto);
-        service.save(sysInfo);
-        return toDto(sysInfo);
+        return assembler.toModel(service.save(sysInfo));
     }
 
-    /** Преобразование в DTO и "выкусывание" информацию о вложенных SystemInfo, что бы не было зацикливания. */
-    private SystemInfoDto toDto(SystemInfo entity){
+    /**
+     * Преобразование в DTO и "выкусывание" информацию о вложенных SystemInfo, что бы не было зацикливания.
+     */
+    private SystemInfoDto toDto(SystemInfo entity) {
         ModelMapper modelMapper = new ModelMapper();
         TypeMap<USBDevice, USBDeviceDto> typeMap = modelMapper.createTypeMap(USBDevice.class, USBDeviceDto.class);
-        typeMap.addMappings(m->m.skip(USBDeviceDto::setSystemInfoList));
+        typeMap.addMappings(m -> m.skip(USBDeviceDto::setSystemInfoList));
         return modelMapper.map(entity, SystemInfoDto.class);
     }
 

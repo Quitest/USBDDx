@@ -4,5 +4,5 @@ import ru.pel.usbdda.entity.SystemInfo;
 
 public interface SystemInfoService {
     SystemInfo getByKey(long key);
-    long save(SystemInfo entity);
+    SystemInfo save(SystemInfo entity);
 }
