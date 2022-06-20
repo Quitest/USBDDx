@@ -1,5 +1,6 @@
 package ru.pel.usbdda.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,5 +18,6 @@ public class InetAddress {
     private String canonicalName;
     @ManyToOne
     @JoinColumn(name = "network_interface_id", referencedColumnName = "id")
+    @JsonBackReference
     private NetworkInterface networkInterface;
 }

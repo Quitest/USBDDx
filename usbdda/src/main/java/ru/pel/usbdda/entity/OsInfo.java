@@ -1,5 +1,6 @@
 package ru.pel.usbdda.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -39,5 +40,6 @@ public class OsInfo {
     private String computerName;
 
     @OneToMany(mappedBy = "osInfo", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<NetworkInterface> networkInterfaceList;
 }

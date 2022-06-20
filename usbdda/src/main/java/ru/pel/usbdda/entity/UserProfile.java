@@ -1,5 +1,6 @@
 package ru.pel.usbdda.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,5 +25,6 @@ public class UserProfile {
     @JoinTable(name = "userProfile_usbDevice",
             joinColumns = @JoinColumn(name = "user_profile_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "usb_device_id", referencedColumnName = "id"))
+    @JsonManagedReference
     private List<USBDevice> usbDeviceList;
 }

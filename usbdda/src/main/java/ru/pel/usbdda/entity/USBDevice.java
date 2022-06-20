@@ -1,5 +1,6 @@
 package ru.pel.usbdda.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,6 +26,7 @@ public class USBDevice {
     private String pid;
 
     @ManyToMany(mappedBy = "usbDeviceList", cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    @JsonBackReference
     private List<UserProfile> userProfileList;
     private String vendorName;
     private String friendlyName;
@@ -35,6 +37,7 @@ public class USBDevice {
     private String productNameByRegistry;
 
     @ManyToMany(mappedBy = "usbDeviceList")
+    @JsonBackReference
     private List<SystemInfo> systemInfoList;
 
     @ElementCollection
