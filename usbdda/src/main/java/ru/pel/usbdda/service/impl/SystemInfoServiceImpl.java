@@ -3,9 +3,9 @@ package ru.pel.usbdda.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,11 +36,15 @@ public class SystemInfoServiceImpl implements SystemInfoService {
         return systemInfoPage.getContent();
     }
 
+    public Page<SystemInfo> getSystemInfoList(Pageable page) {
+        return systemInfoRepository.findAll(page);
+    }
+
     /*
     Мысль: в методе каждую сущность сохранять явно, вручную. Перед сохранением выполнять проверку, что
      */
     @Transactional
-    public long save(SystemInfo systemInfo) {
+    public SystemInfo save(SystemInfo systemInfo) {
         //устанавливаем обратные связи сущностей (для записи внешних ключей в БД)...
         OsInfo osInfo = systemInfo.getOsInfo();
         osInfo.getNetworkInterfaceList()
@@ -58,7 +62,6 @@ public class SystemInfoServiceImpl implements SystemInfoService {
                         userProfile.setUsbDeviceList(usbDeviceList);//FIXME не set, а add надо
                     });
                 });
-            systemInfoRepository.save(systemInfo);
-            return systemInfo.getId();
+        return systemInfoRepository.save(systemInfo);
     }
 }
