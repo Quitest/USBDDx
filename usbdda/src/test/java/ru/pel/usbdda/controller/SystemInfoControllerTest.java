@@ -1,22 +1,33 @@
 package ru.pel.usbdda.controller;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.pel.usbdda.entity.SystemInfo;
+import ru.pel.usbdda.service.impl.SystemInfoServiceImpl;
+
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 class SystemInfoControllerTest {
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private SystemInfoServiceImpl service;
 
     private String postJson = """
             {
@@ -118,6 +129,35 @@ class SystemInfoControllerTest {
                 }
               ]
              }""";
+
+    @Test
+    @DisplayName("Запрос существующей сущности. Ожидается статус 200 OK и JSON-ответ с заданным id")
+    void getExistsSystemInfo_expectedStatus200OK() throws Exception {
+        long id = 123L;
+        SystemInfo systemInfo = new SystemInfo();
+        systemInfo.setId(id);
+        Mockito.when(service.getByKey(id)).thenReturn(Optional.of(systemInfo));
+
+        mockMvc.perform(get("/systeminfo/" + id).accept(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isOk(),
+                        jsonPath("id", is(123))
+                );
+    }
+
+    @Test
+    @DisplayName("Запрос несуществующей сущности. Ожидается NoSuchSystemInfoException")
+    void getNotExistsSystemInfo_expectedNoSuchSystemInfo() throws Exception {
+        long id = 999999999L;
+        String exceptionMsg = "Не существует системы с id = " + id;
+        Mockito.when(service.getByKey(id)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/systeminfo/" + id).accept(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isNotFound(),
+                        jsonPath("detail", is(exceptionMsg))
+                );
+    }
 
     @Test
     void postSystemInfo() throws Exception {
