@@ -15,8 +15,11 @@ import ru.pel.usbdda.dto.SystemInfoDto;
 import ru.pel.usbdda.dto.USBDeviceDto;
 import ru.pel.usbdda.entity.SystemInfo;
 import ru.pel.usbdda.entity.USBDevice;
+import ru.pel.usbdda.exception.NoSuchSystemInfoException;
 import ru.pel.usbdda.model.assembler.SystemInfoModelAssembler;
 import ru.pel.usbdda.service.impl.SystemInfoServiceImpl;
+
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/systeminfo")
@@ -37,7 +40,7 @@ public class SystemInfoController {
 
     @GetMapping("/{id}")
     public EntityModel<SystemInfo> getSystemInfo(@PathVariable long id) {
-        SystemInfo sysInfo = service.getByKey(id);
+        SystemInfo sysInfo = service.getByKey(id).orElseThrow(()->new NoSuchSystemInfoException("Не существует системы с id = " + id));
         return assembler.toModel(sysInfo);
     }
 
