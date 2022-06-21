@@ -16,6 +16,7 @@ import ru.pel.usbdda.repository.SystemInfoRepository;
 import ru.pel.usbdda.service.SystemInfoService;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SystemInfoServiceImpl implements SystemInfoService {
@@ -26,8 +27,8 @@ public class SystemInfoServiceImpl implements SystemInfoService {
     SystemInfoRepository systemInfoRepository;
 
     @Override
-    public SystemInfo getByKey(long key) {
-        return systemInfoRepository.findById(key).orElseThrow();
+    public Optional<SystemInfo> getByKey(long key) {
+        return systemInfoRepository.findById(key);
     }
 
     public List<SystemInfo> getSystemInfoList(int page, int size, String sortDir, String sortBy) {
