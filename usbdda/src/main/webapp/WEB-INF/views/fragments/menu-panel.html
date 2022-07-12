@@ -7,6 +7,9 @@
 <body>
 <div th:fragment="menu-panel">
     <nav>
+        <form th:action="@{/logout}" method="post">
+            <input type="submit" value="Sign Out"/>
+        </form>
         <a href="http://localhost:8080/">Главная</a>
         <a href="/usbdevices/all">Список всех устройств</a>
 <!--        <form action="#" th:action="@{/usbdevices}" th:object="${serial}" method="get">-->
