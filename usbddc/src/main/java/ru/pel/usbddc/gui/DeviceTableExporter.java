@@ -12,8 +12,8 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 public class DeviceTableExporter implements ActionListener {
-    private final JTable devicesTable;
     private static final Logger LOGGER = LoggerFactory.getLogger(DeviceTableExporter.class);
+    private final JTable devicesTable;
 
     public DeviceTableExporter(JTable devicesTable) {
         this.devicesTable = devicesTable;
@@ -29,7 +29,7 @@ public class DeviceTableExporter implements ActionListener {
         fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
-            try (PrintWriter printWriter = new PrintWriter(fileChooser.getSelectedFile(), StandardCharsets.UTF_8)) {
+            try (PrintWriter printWriter = new PrintWriter(fileChooser.getSelectedFile() + ".csv", StandardCharsets.UTF_8)) {
                 for (int col = 0; col < devicesTable.getColumnCount(); col++) {
                     printWriter.print(devicesTable.getColumnName(col) + COLUMN_SEPARATOR);
                 }
@@ -38,7 +38,7 @@ public class DeviceTableExporter implements ActionListener {
                     for (int col = 0; col < devicesTable.getColumnCount(); col++) {
                         printWriter.print(devicesTable.getValueAt(row, col) + COLUMN_SEPARATOR);
 
-                            LOGGER.trace("{} : {}",devicesTable.getColumnName(col), devicesTable.getValueAt(row, col));
+                        LOGGER.trace("{} : {}", devicesTable.getColumnName(col), devicesTable.getValueAt(row, col));
                     }
                     printWriter.println();
                 }
