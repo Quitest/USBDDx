@@ -3,7 +3,6 @@ package ru.pel.usbddc.gui;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import org.apache.http.entity.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.pel.usbddc.collector.SystemInfoCollector;
@@ -20,15 +19,13 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -224,69 +221,29 @@ public class MainFrame extends JFrame {
 
             remoteStatusLabel.setText("Статус: " + response.statusCode());
             logger.info("Ответ сервера: {}", response.statusCode());
-
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }finally {
             localStatusLabel.setText("ГОТОВ");
+        } catch (JsonProcessingException e) {
+            logger.error("Ошибка генерации JSON: {}", e.getLocalizedMessage());
+            showErrorMessage("Ошибка генерации JSON", e.getLocalizedMessage());
+        } catch (MalformedURLException e) {
+            logger.error("Ошибка в адресе сервера USBDDa: {}", e.getLocalizedMessage());
+            showErrorMessage("Ошибка в адресе сервера USBDDa", e.getLocalizedMessage());
+        } catch (URISyntaxException e) {
+            logger.error("URL сервера USBDDa не соответствует RFC2390: {}", e.getLocalizedMessage());
+            showErrorMessage("URL сервера USBDDa не соответствует RFC2390", e.getLocalizedMessage());
+        } catch (InterruptedException e) {
+            logger.error("Процесс отправки данных прерван: {}", e.getLocalizedMessage());
+            showErrorMessage("Процесс отправки данных прерван", e.getLocalizedMessage());
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            logger.error("При отправке произошла ошибка ввода/вывода: {}", e.getLocalizedMessage());
+            showErrorMessage("При отправке произошла ошибка ввода/вывода", e.getLocalizedMessage());
         }
+    }
 
-//        URL url;
-//
-//        try {
-//            url = new URL(UsbddcConfig.getInstance().getUrlPostSystemInfo());
-//            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-//            con.setRequestMethod("POST");
-//            con.setRequestProperty("Content-Type", "application/json; utf-8");
-//            con.setRequestProperty("Accept", "application/json");
-//            con.setDoOutput(true);
-
-//            saveComment();
-//            SystemInfoDto dto = new SystemInfoDto(systemInfo);
-//            ObjectWriter ow = new ObjectMapper().findAndRegisterModules().writer().withDefaultPrettyPrinter();
-//            String jsonInputString = ow.writeValueAsString(dto);
-
-
-//            try (OutputStream os = con.getOutputStream()) {
-//                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
-//                os.write(input, 0, input.length);
-//            }
-
-//            int code = con.getResponseCode();
-//            remoteStatusLabel.setText(code + "[" + con.getResponseMessage() + "]");
-//            logger.info("Ответ сервера: {} [{}]", code, con.getResponseMessage());
-//
-//            try (BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-//                StringBuilder response = new StringBuilder();
-//                String responseLine;
-//                while ((responseLine = br.readLine()) != null) {
-//                    response.append(responseLine.trim());
-//                }
-//                logger.debug("Получен JSON-ответ: {}", response);
-//            }
-//            localStatusLabel.setText("Отчет отправлен...");
-//        } catch (ProtocolException protocolException) {
-//            remoteStatusLabel.setText(protocolException.getLocalizedMessage());
-//            logger.error("Ошибка протокола (Protocol Exception). {}", protocolException.getLocalizedMessage());
-//        } catch (MalformedURLException malformedURLException) {
-//            remoteStatusLabel.setText(malformedURLException.getLocalizedMessage());
-//            logger.error("Ошибка URL (Malformed URL Exception). {}", malformedURLException.getLocalizedMessage());
-//        } catch (JsonProcessingException jsonProcessingException) {
-//            remoteStatusLabel.setText(jsonProcessingException.getLocalizedMessage());
-//            logger.error("Ошибка обработки JSON (Json Processing Exception). {}", jsonProcessingException.getLocalizedMessage());
-//        } catch (IOException ioException) {
-//            remoteStatusLabel.setText(ioException.getLocalizedMessage());
-//            logger.error("Ошибка ввода/вывода (I/O Exception). {}", ioException.getLocalizedMessage());
-//        } finally {
-//            localStatusLabel.setText("ГОТОВ");
-//        }
+    private void showErrorMessage(String title, String message) {
+        JOptionPane.showMessageDialog(this, message, title, JOptionPane.ERROR_MESSAGE);
+        String text = String.format("Отчет не отправлен: %s [%s]", title, message);
+        localStatusLabel.setText(text);
     }
 }
